@@ -22,7 +22,7 @@ WinSetupShell is a simple and easily installed alternative for applications like
 - Download the lastest `WinSetupShell` release .7z, unpack it and copy its contents (2 folders and 2 files) to the root directory of the USB flash drive.
 - Done.
 
-*Windows setup USB flash drive created with Rufus, with the 4 additional WinSetupShell items copied to it*  
+*Windows 11 setup USB flash drive created with Rufus, with the 4 additional WinSetupShell items copied to it*  
 ![](screenshots/rufus.png)
 
 ## Usage
@@ -94,6 +94,7 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 - There might be issues with some HiDPI displays.
 
 ## ToDos
+- Test if there are issues with using Win 11 setup .isos of languages other than english and german
 - Explain how to add other (compatible) portable applications
 - Explain how to customize start menu and quick launch toolbar links
 - Clean up the Python code
