@@ -39,7 +39,7 @@ WinSetupShell is a simple and easily installed alternative for applications like
 
 ## Network
 
-Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the systray or selecting `PENetwork` from the startmenu, both do the same thing, they start `PENetwork`. If DHCP is available, nothing else is needed, you should now be connected and you can close the `PENetwork` window.
+Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `PENetwork` from the start menu, both do the same thing, they start `PENetwork`. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
 
 If you want to start network by default, copy the LNK file `shell\_internal\app_data\start_menu\Programs\PENetwork` into folder `shell\_internal\startup`.
 
@@ -95,5 +95,5 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 
 ## ToDos
 - Explain how to add other portable applications
-- Explain how to customize startmenu and quicklaunch links
+- Explain how to customize start menu and quick launch toolbar links
 - Clean up the Python code
