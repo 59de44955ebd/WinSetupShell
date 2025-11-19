@@ -31,9 +31,11 @@ WinSetupShell is a simple and easily installed alternative for applications like
 
 - When you see the Windows 11 Setup window, press `Shift+F10` to open a CMD prompt.
 
-- Enter `D:\shell` to start the shell.
+- Enter `D:\shell` to start the shell. [*]
 
-Where "D" is a placeholder for the actual drive letter of your USB stick (NOT the drive letter of the booted system, loaded from boot.wim, which AFAIK is always "X"). It will be the first letter, starting at "C", that is not used by existing volumes on your PC. If there are no (valid) volumes with drive letters, it will be "C", in my case it's "D". You can enter `echo list vol | diskpart` to see a list of all existing volumes and their letters.
+- You can quit the shell by right-clicking on the start menu button and selecting "Quit" from the popup menu, you will then return to the naked Windows 11 setup window and can continue the Windows setup. Or select "Reboot" or "Shutdown" in the start menu to reboot resp. shut down the PC.
+
+[*] "D" is a placeholder for the actual drive letter of your USB stick (NOT the drive letter of the booted system, loaded from boot.wim, which AFAIK is always "X"). It will be the first letter, starting at "C", that is not used by existing volumes on your PC. If there are no (valid) volumes with drive letters, it will be "C", in my case it's "D". You can enter `echo list vol | diskpart` to see a list of all existing volumes and their letters.
 
 ## Network
 
@@ -75,12 +77,20 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 - VhdManager
 
 ## Notes
+- WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Quit" from the popup menu.
+
 - The shell itself, which only uses a couple of words like "Start", "Shutdown" and "Quit", is english only, no localisation (since I don't care). But time and date formats in the clock are localized, and various applications, either by Microsoft or 3rd party, are as well.
-- You can of course save files either on the USB stick or preexisting volumes on the local PC, but there is no persistance concerning registry changes etc. Which is actually a good thing, "boot.wim" is never altered, so you can't mess up the actual installation media (unless you alter it manually e.g. by using included 7-zip, which can load and save .wim files) 
-- There is no UAC, you are always administrator with elevated access.
+
+- You can of course save files either on the USB stick or preexisting volumes on the local PC, but there is no persistance concerning registry changes etc. Which is actually a good thing, "boot.wim" is never altered, so you can't mess up the actual installation media (unless you alter it manually e.g. by using included 7-zip, which can load and save .wim files)
+
+- There is no UAC, you are always user `Administrator` with elevated access.
+
 - No sound (IMHO pointless for a system repair live system)
+
 - No 32-bit support, only 64-bit binaries are supported.
+
 - Only portable x64 applications based on the plain WinAPI can be used, so no .NET, UWP etc.
+
 - There might be issues with some HiDPI displays.
 
 ## ToDos
