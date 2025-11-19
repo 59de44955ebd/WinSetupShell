@@ -1,0 +1,44 @@
+#include "windows.h"
+#include "resources.h"
+
+IDI_APP ICON "app.ico"
+IDI_START ICON "start.ico"
+IDI_NETWORK ICON "icon-network.ico"
+IDI_USB ICON "icon-usb.ico"
+
+1 VERSIONINFO
+FILEVERSION 0,1,0,0
+PRODUCTVERSION 0,1,0,0
+FILEOS 0x40004
+FILETYPE 0x1
+{
+BLOCK "StringFileInfo"
+{
+	BLOCK "040904B0"
+	{
+		VALUE "CompanyName", "59de44955ebd"
+		VALUE "FileDescription", "PyShell"
+		VALUE "FileVersion", "0.1.0.0)"
+		VALUE "InternalName", "PyShell"
+		VALUE "OriginalFilename", "shell.exe"
+		VALUE "ProductName", "PyShell"
+		VALUE "ProductVersion", "0,1,0,0"
+	}
+}
+
+BLOCK "VarFileInfo"
+{
+	VALUE "Translation", 0x0409 0x04B0
+}
+}
+
+POPUP_MENU_START MENU
+BEGIN
+  POPUP "Popup"
+  BEGIN
+    MENUITEM "== PyShell ==",-1,GRAYED
+    MENUITEM "Debug Console",IDM_DEBUG_TOGGLE_CONSOLE
+    MENUITEM SEPARATOR
+    MENUITEM "Quit",IDM_QUIT
+  END
+END
