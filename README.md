@@ -1,6 +1,6 @@
 # WinSetupShell (Win11PE)
 
-WinSetupShell is a simple desktop shell (startmenu, taskbar, systray) for Windows PE x64 written in Python that can be used to enhance a regular Windows 11 (and possibly also Windows 10, not tested) setup USB stick/flash drive with a desktop live system that can optionally be used for system repair tasks etc., with a comfortable GUI instead of only hacking commands into a CMD prompt. It provides network support (via [PENetwork](https://www.penetworkmanager.de/)) and a web browser (Firefox), so you can search for documentation etc. right from the live system, no other PC needed.
+WinSetupShell is a simple desktop shell (start menu, quick launch toolbar, taskbar, system tray) for Windows PE x64 written in Python that can be used to enhance a regular Windows 11 (and possibly also Windows 10, not tested) setup USB stick/flash drive with a desktop live system that can optionally be used for system repair tasks etc., with a comfortable GUI instead of only hacking commands into a CMD prompt. It provides network support (via [PENetwork](https://www.penetworkmanager.de/)) and a web browser (Firefox), so you can search for documentation etc. right from the live system, no other PC needed.
 
 Windows PE/RE is a reduced Windows OS that provides the basic WinAPI, but no Explorer file manager, and no Explorer-based desktop, therefor such a custom shell/desktop is needed. WinSetupShell uses [Explorer++](https://github.com/derceg/explorerplusplus) as alternative filemanager.
 
