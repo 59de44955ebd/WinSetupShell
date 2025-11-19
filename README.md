@@ -22,6 +22,9 @@ WinSetupShell is a simple and easily installed alternative for applications like
 - Download the lastest `WinSetupShell` release .7z, unpack it and copy its contents (2 folders and 2 files) to the root directory of the USB stick.
 - Done.
 
+*Windows setup USB stick created with Rufus, with the 4 additional WinSetupShell items copied to it*  
+![](screenshots/rufus.png)
+
 ## Usage
 
 - Boot from the enhanced Windows 11 setup stick. If you want to install Windows on the local PC, continue as usual. But if you instead want to (first) start the live system, see below.
