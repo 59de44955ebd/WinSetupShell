@@ -85,7 +85,7 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 
 - There is no UAC, you are always user `Administrator` with elevated access.
 
-- No sound (IMHO pointless for a system repair live system)
+- No sound/video/multimedia (IMHO pointless for a system repair live system)
 
 - No 32-bit support, only 64-bit binaries are supported.
 
