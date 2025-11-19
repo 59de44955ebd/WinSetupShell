@@ -39,7 +39,7 @@ Where "D" is a placeholder for the actual drive letter of your USB stick (NOT th
 
 Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the systray or selecting `PENetwork` from the startmenu, both do the same thing, they start `PENetwork`. If DHCP is available, nothing else is needed, you should now be connected and you can close the `PENetwork` window.
 
-If you want to start network by default, copy the LNK file `shell\_internal\app_data\start_menu\Programs` into folder `shell\_internal\startup`.
+If you want to start network by default, copy the LNK file `shell\_internal\app_data\start_menu\Programs\PENetwork` into folder `shell\_internal\startup`.
 
 ## Included applications (Freeware/Shareware/Trialware)
 - 7-Zip
