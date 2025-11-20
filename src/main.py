@@ -242,7 +242,6 @@ class Main(MainWin):
         uxtheme.SetWindowTheme(self.rebar.hwnd, "", "")
 
         self.h_imagelist_start= comctl32.ImageList_Create(START_ICON_SIZE * self._scale, START_ICON_SIZE * self._scale, ILC_COLOR32, 1, 0)
-        self.h_imagelist_quick = comctl32.ImageList_Create(self._quick_icon_size, self._quick_icon_size, ILC_COLOR32, 4, 0)
         self.h_imagelist_tasks = comctl32.ImageList_Create(self._task_icon_size, self._task_icon_size, ILC_COLOR32, 64, 0)
         self.h_imagelist_tray = comctl32.ImageList_Create(self._tray_icon_size, self._tray_icon_size, ILC_COLOR32, 3, 0)
 
@@ -393,7 +392,6 @@ class Main(MainWin):
         user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETPADDING, 0, MAKELONG(12 * self._scale, dy))
         user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETPADDING, 0, MAKELONG(18 * self._scale, dy))
 
-        user32.SendMessageW(self.toolbar_quick.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_quick)
         user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tasks)
         user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tray)
 
@@ -823,11 +821,22 @@ class Main(MainWin):
         num_buttons = len(quick_config)
         tb_buttons = (TBBUTTON * num_buttons)()
 
+        h_bitmap = user32.LoadImageW(
+            None,
+            os.path.join(QUICKBAR_DIR, f'quick-{self._scale}.bmp'),
+            IMAGE_BITMAP,
+            0, 0,
+            LR_LOADFROMFILE | LR_CREATEDIBSECTION,
+        )
+
+        tb = TBADDBITMAP()
+        tb.hInst = None
+        tb.nID = h_bitmap
+        user32.SendMessageW(self.toolbar_quick.hwnd, TB_ADDBITMAP, num_buttons, byref(tb))
+
         for i, row in enumerate(quick_config):
-            label, command, icon = row
-            h_icon = user32.LoadImageW(None, os.path.join(QUICKBAR_DIR, 'icons', icon), IMAGE_ICON, self._quick_icon_size, self._quick_icon_size, LR_LOADFROMFILE)
-            comctl32.ImageList_ReplaceIcon(self.h_imagelist_quick, -1, h_icon)
-            user32.DestroyIcon(h_icon)
+            label, command = row
+
             tb_buttons[i] = TBBUTTON(
                 i,
                 command_id_counter,

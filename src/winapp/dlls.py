@@ -274,6 +274,7 @@ user32.PostMessageW.argtypes = (HWND, UINT, LPVOID, LPVOID)
 user32.PostMessageW.restype = LONG_PTR
 user32.PostThreadMessageW.argtypes = (DWORD, UINT, WPARAM, LPARAM)
 user32.PrintWindow.argtypes = (HWND, HDC, UINT)
+user32.PrivateExtractIconsW.argtypes = (LPCWSTR, INT, INT, INT, POINTER(HICON), POINTER(UINT), UINT, UINT)
 user32.RegisterShellHookWindow.argtypes = (HWND,)
 user32.ReleaseDC.argtypes = (HWND, HANDLE)
 user32.SendDlgItemMessageW.argtypes = (HWND, INT, UINT, LPVOID, LPVOID)

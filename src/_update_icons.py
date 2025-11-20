@@ -8,7 +8,6 @@ from const import *
 #
 ########################################
 def load_menu(scale):
-    debug('Creating icons, scale =', scale)
 
     ico_size = 16 * scale
 
@@ -60,6 +59,7 @@ def load_menu(scale):
             make_menus({'items': []}, f.subdirs[k])
 
         for fn in sorted(f.files, key=lambda f: f.name.lower()):
+
             missing[fn.path[len(root_dir) + 1:]] = get_file_hbitmap(fn.path, ico_size)
 
     make_menus(menu_data, root_folder.subdirs['start_menu'])
@@ -105,7 +105,71 @@ def load_menu(scale):
 
         f.write(new_icons)
 
+########################################
+#
+########################################
+def load_quick(scale):
+
+    ico_size = 16 * scale
+
+    with open(os.path.join(QUICKBAR_DIR, 'quick.pson'), 'r') as f:
+        data = eval(f.read())
+
+    num_icons = len(data)
+
+    data_size = num_icons * 4 * ico_size ** 2
+
+    hdc = user32.GetDC(None)
+    h_bitmap = gdi32.CreateCompatibleBitmap(hdc, ico_size * num_icons, ico_size)
+    hdc_dest = gdi32.CreateCompatibleDC(hdc)
+
+    gdi32.SelectObject(hdc_dest, h_bitmap)
+
+    x = 0
+
+    for row in data:
+        h_icon = HICON()
+        res = user32.PrivateExtractIconsW(
+            os.path.expandvars(row[1]),
+            0,
+            ico_size, ico_size,
+            byref(h_icon),
+            None,
+            1,
+            0
+        )
+#        print(res)
+
+        user32.DrawIconEx(hdc_dest, x, 0, h_icon, ico_size, ico_size, 0, None, DI_NORMAL)
+        x += ico_size
+
+#    h_bitmap_copy = user32.CopyImage(h_bitmap, IMAGE_BITMAP, ico_size * num_icons, ico_size, LR_CREATEDIBSECTION)
+
+    bmi: BITMAPINFO = BITMAPINFO()
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
+    bmi.bmiHeader.biWidth = ico_size * num_icons
+    bmi.bmiHeader.biHeight = -ico_size
+    bmi.bmiHeader.biPlanes = 1
+    bmi.bmiHeader.biBitCount = 32
+    bmi.bmiHeader.biCompression = BI_RGB
+    bmi.bmiHeader.biSizeImage = data_size
+
+    bits = ctypes.create_string_buffer(data_size)
+    gdi32.GetDIBits(hdc, h_bitmap, 0, ico_size, bits, byref(bmi), DIB_RGB_COLORS)
+
+    # Clean up
+    gdi32.DeleteDC(hdc_dest)
+    user32.ReleaseDC(None, hdc)
+    gdi32.DeleteObject(h_bitmap)
+
+    with open(os.path.join(QUICKBAR_DIR, f'quick-{scale}.bmp'), 'wb') as f:
+        f.write(bytes(BMPHEADER()))
+        f.write(bytes(bmi))
+        f.write(bits)
+
+
 if __name__ == '__main__':
-    load_menu(1)
-    load_menu(2)
-    load_menu(3)
+    for scale in range(1, 4):
+        debug('Creating icons, scale =', scale)
+        load_menu(scale)
+        load_quick(scale)

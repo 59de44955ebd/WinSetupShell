@@ -50,18 +50,8 @@ class RGBQUAD(Structure):
 class BITMAPINFO(Structure):
     _fields_ = [
         ("bmiHeader", BITMAPINFOHEADER),
-        ("bmiColors", RGBQUAD * 1),
+#        ("bmiColors", RGBQUAD * 1),
     ]
-
-# custom
-#class BMPHEADER(Structure):
-#    _pack_ = 2
-#    _fields_ = [
-#        ('magic', SHORT),
-#        ('size', DWORD),
-#        ('reserved', DWORD),
-#        ('offset', DWORD),
-#    ]
 
 # custom
 class BMPHEADER(Structure):
@@ -103,7 +93,6 @@ def bytes_to_hbitmap(data, idx, ico_size):
 
     ico_data_size = 4 * ico_size ** 2
 
-
     pos = 54 + ico_data_size * idx
     bits = create_string_buffer(data[pos:pos+ico_data_size], ico_data_size)
 
@@ -118,8 +107,6 @@ def bytes_to_hbitmap(data, idx, ico_size):
 
     bi = BITMAPINFO()
     bi.bmiHeader = bmiHeader
-#    bi.bmiColors[0] = RGBQUAD(1024 + sizeof(BMPHEADER) + sizeof(BITMAPINFOHEADER))
-
     h_bitmap = gdi32.CreateDIBSection(NULL, byref(bi), DIB_RGB_COLORS, None, NULL, 0)
     gdi32.SetDIBits(NULL, h_bitmap, 0, ico_size, bits, byref(bi), DIB_RGB_COLORS)
 
@@ -129,16 +116,19 @@ def bytes_to_hbitmap(data, idx, ico_size):
 #
 ########################################
 def get_file_hicon(filename):
+
     sfi = SHFILEINFOW()
-    # this has LNK overlay
+
+    # This returns HICON with LNK arrow as overlay
 #    shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_SMALLICON)
 #    return sfi.hIcon
-    # this has not LNK overlay
-    h_imagelist = shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_SYSICONINDEX | SHGFI_SHELLICONSIZE)  # SHGFI_SHELLICONSIZE is crucial!!!
+
+    # This returns HICON without LNK arrow
+    h_imagelist = shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_SYSICONINDEX)
     return comctl32.ImageList_GetIcon(h_imagelist, sfi.iIcon, ILD_NORMAL)
 
 ########################################
-# This returns  32-bit alpha hbitmap that can't be processed using gdi functions
+# This returns 32-bit alpha hbitmap that can't be processed using gdi functions
 ########################################
 def get_file_hbitmap(filename, bitmap_size):
     icon_info = ICONINFO()
