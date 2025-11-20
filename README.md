@@ -53,10 +53,12 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 - Crystal Disk Info
 - Defraggler
 - DiskGenius
+- Drive Snapshots
 - EasyUEFI (Trial)
 - Explorer++
 - FileZilla
 - Firefox
+- HWiNFO
 - HxD
 - IrfanView
 - IsoBuster
@@ -69,12 +71,13 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 - PowerShell 7
 - Q-Dir
 - Recuva
-- Drive Snapshot
 - Speccy
 - SumatraPDF
+- SwiftSearch
 - SysinternalsSuite
 - Total Commander (with plugin "DiskInternals Reader", which allows to explore Linux and Mac partitions and disk images)
 - VhdManager
+- Windows Login Unlocker
 
 ## Notes
 - WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Quit" from the popup menu.
