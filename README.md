@@ -94,7 +94,6 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 - There might be issues with some HiDPI displays.
 
 ## ToDos
-- Test if there are issues with using Win 11 setup .isos of languages other than english and german
 - Explain how to add other (compatible) portable applications
 - Explain how to customize start menu and quick launch toolbar links
 - Clean up the Python code
