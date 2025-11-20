@@ -8,7 +8,7 @@ from const import *
 #
 ########################################
 def load_menu(scale):
-    debug('Loading menu...', scale)
+    debug('Creating icons, scale =', scale)
 
     ico_size = 16 * scale
 
