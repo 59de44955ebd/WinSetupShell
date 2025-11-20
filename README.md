@@ -47,7 +47,6 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 - 7-Zip
 - AgentRansack
 - BootIce
-- CCleaner
 - Check Disk GUI
 - CPU-Z
 - Crystal Disk Info
