@@ -1,7 +1,7 @@
 ﻿from ctypes import byref
 from ctypes.wintypes import RECT
 
-from winapp.window import Window, WNDCLASSEX
+from winapp.window import Window, WNDCLASSEXW
 from winapp.const import *
 from winapp.dlls import gdi32, user32
 from winapp.wintypes_extended import WNDPROC
@@ -23,7 +23,7 @@ class Desktop(Window):
 #            return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
 #        self.windowproc = WNDPROC(_window_proc_callback)
 
-        newclass = WNDCLASSEX()
+        newclass = WNDCLASSEXW()
         newclass.lpfnWndProc = mainwin.windowproc
         newclass.style = CS_VREDRAW | CS_HREDRAW
         newclass.lpszClassName = DESKTOP_CLASS
@@ -35,12 +35,12 @@ class Desktop(Window):
         # create main window
         ########################################
         super().__init__(
-            window_class=newclass.lpszClassName,
-            window_title='Program Manager',
-            left=0, top=0,
-            width=rc_desktop.right, height=rc_desktop.bottom - taskbar_height,
-            style=WS_POPUP | WS_CHILD,
-            ex_style=WS_EX_TOOLWINDOW,
+            window_class = newclass.lpszClassName,
+            window_title = 'Program Manager',
+#            left=0, top=0,
+            width = rc_desktop.right, height = rc_desktop.bottom - taskbar_height,
+            style = WS_POPUP | WS_CHILD,
+            ex_style = WS_EX_TOOLWINDOW,
         )
 
         self.show()

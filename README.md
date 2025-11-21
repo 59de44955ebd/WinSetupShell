@@ -98,4 +98,3 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 ## ToDos
 - Explain how to add other (compatible) portable applications
 - Explain how to customize start menu and quick launch toolbar links
-- Clean up the Python code

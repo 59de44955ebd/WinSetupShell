@@ -123,7 +123,8 @@ class Main(MainWin):
             window_class = APP_CLASS,
             style = WS_POPUP,
             ex_style = WS_EX_TOOLWINDOW,
-            bg_brush_dark = TASKBAR_BG_BRUSH
+#            bg_brush_dark = TASKBAR_BG_BRUSH
+            hbrush = TASKBAR_BG_BRUSH
         )
 
         self._scale = max(1, min(3, user32.GetDpiForWindow(self.hwnd) // 96))
@@ -176,8 +177,6 @@ class Main(MainWin):
         self._hmenu_start = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START)), 0)
         if not DEBUG_CONSOLE:
             user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
-
-        self._hmenu_programs = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_PROGRAMS)), 0)
         self._hmenu_quick = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_QUICK)), 0)
 
         ########################################
@@ -201,7 +200,10 @@ class Main(MainWin):
         self.register_message_callback(WM_NOTIFY, self.on_WM_NOTIFY)
         self.register_message_callback(WM_MENUSELECT, self.on_WM_MENUSELECT)
 
-        self.apply_theme(True)
+#        self.apply_theme(True)
+
+        Window.apply_theme(self, True)
+        uxtheme.SetPreferredAppMode(PreferredAppMode.ForceDark)
 
         self.show()
 
@@ -908,7 +910,6 @@ class Main(MainWin):
 
         ico_size = 16 * self._scale
 
-
         class Folder():
             def __init__(self, name, parent=None, path=None):
                 self.name = name
@@ -922,15 +923,10 @@ class Main(MainWin):
                 self.name = name
                 self.path = path
 
-
         node_map = {}
         root_folder = Folder('')
         node_map[''] = root_folder
         prog_node = None
-
-        ########################################
-        #
-        ########################################
         root_dir = STARTMENU_DIR
 
         l = len(root_dir) + 1
@@ -942,70 +938,99 @@ class Main(MainWin):
             f.files = [File(f[:-4], os.path.join(root, f)) for f in files if f.lower() != 'desktop.ini']
             parent_node.subdirs[folder_name] = f
             node_map[root[l:]] = f
-
             if parent_node.parent == root_folder and folder_name == 'Programs':
                 prog_node = f
 
-        menu_data = {'items': []}
+        self._hmenu_main = user32.CreatePopupMenu()
+
         self.menu_item_paths = {}
 
-        ########################################
-        # Load icons from cache
-        ########################################
+        mii = MENUITEMINFOW()
+        mii.fMask = MIIM_BITMAP
+
+        def add_menu_item(_hmenu, id, caption, hbitmap = None):
+            user32.AppendMenuW(_hmenu, MF_STRING, id, caption)
+            if hbitmap:
+                mii.hbmpItem = hbitmap
+                user32.SetMenuItemInfoW(_hmenu, id, FALSE, byref(mii))
+
+        # Load icons from cache (bmp)
         with open(os.path.join(CACHE_DIR, 'icons.pson'), 'r') as f:
             thumb_dict = eval(f.read())
-
         with open(os.path.join(CACHE_DIR, f'icons-{self._scale}.bmp'), 'rb') as f:
             data = f.read()
 
-        def make_menus(menu, f):
+        def make_hmenus(hmenu, f):
 
-            for k in sorted(f.subdirs.keys(), key=str.lower):
+            for k in sorted(f.subdirs.keys(), key = str.lower):
                 if f.subdirs[k] == prog_node:
-                    m = {'id': self._get_id(), 'caption': f.subdirs[k].name, 'hbitmap': self._icon_bitmaps['progs'], 'items': []}
-                    self.menu_progs = m
+                    hmenu_child = user32.CreateMenu()
+                    self.hmenu_progs = hmenu_child
+
                 else:
                     mid = self._get_id()
-                    m = {'id': mid, 'caption': f.subdirs[k].name, 'hbitmap': self._icon_bitmaps['folder'], 'items': []}
-                    menu['items'].append(m)
                     self.menu_item_paths[mid] = f.subdirs[k].path
 
-                make_menus(m, f.subdirs[k])
+                    hmenu_child = user32.CreateMenu()
+                    user32.AppendMenuW(hmenu, MF_POPUP, hmenu_child, f.subdirs[k].name)
 
-            for fn in sorted(f.files, key=lambda f: f.name.lower()):
+                    info = MENUITEMINFOW()
+                    info.fMask = MIIM_ID | MIIM_BITMAP
+                    info.wID = mid
+                    info.hbmpItem = self._icon_bitmaps['folder']
+                    user32.SetMenuItemInfoW(hmenu, hmenu_child, FALSE, byref(info))
+
+                make_hmenus(hmenu_child, f.subdirs[k])
+
+            for fn in sorted(f.files, key = lambda f: f.name.lower()):
                 path_rel = fn.path[len(root_dir) + 1:]
                 if path_rel in thumb_dict:
-                    h_bitmap = bytes_to_hbitmap(data, thumb_dict[path_rel], ico_size)
                     mid = self._get_id(lambda p=fn.path: shell32.ShellExecuteW(None, None, p, None, None, 1))
-                    menu['items'].append({'id': mid, 'caption': fn.name, 'hbitmap': h_bitmap})
+                    add_menu_item(
+                        hmenu,
+                        mid,
+                        fn.name,
+                        bytes_to_hbitmap(data, thumb_dict[path_rel], ico_size)
+                    )
                     self.menu_item_paths[mid] = fn.path
+
                 else:
                     debug('Path missing in icons.pson:', path_rel)
 
-        make_menus(menu_data, root_folder.subdirs['start_menu'])
+        make_hmenus(self._hmenu_main, root_folder.subdirs['start_menu'])
 
-        if len(menu_data['items']):
-            menu_data['items'].append(None)
+        if user32.GetMenuItemCount(self._hmenu_main):
+            user32.AppendMenuW(self._hmenu_main, MF_SEPARATOR, 0, '-')
 
-        menu_data['items'].append(self.menu_progs)
+        user32.AppendMenuW(self._hmenu_main, MF_POPUP, self.hmenu_progs, 'Programs')
+        info = MENUITEMINFOW()
+        info.fMask = MIIM_BITMAP
+        info.hbmpItem = self._icon_bitmaps['progs']
+        user32.SetMenuItemInfoW(self._hmenu_main, self.hmenu_progs, FALSE, byref(info))
 
-        menu_data['items'].append({
-            'id': self._get_id(lambda: shell32.RunFileDlg(self.hwnd, 0, None, None, None, 0)),
-            'caption': 'Run...', 'hbitmap': self._icon_bitmaps['run']
-        })
+        add_menu_item(
+            self._hmenu_main,
+            self._get_id(lambda: shell32.RunFileDlg(self.hwnd, 0, None, None, None, 0)),
+            'Run...',
+            self._icon_bitmaps['run']
+        )
 
-        menu_data['items'].append(None)
+        user32.AppendMenuW(self._hmenu_main, MF_SEPARATOR, 0, '-')
 
-        menu_data['items'].append({
-            'id': self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/r /t 0', BIN_DIR, 0)),
-            'caption': 'Reboot', 'hbitmap': self._icon_bitmaps['reboot']
-        })
-        menu_data['items'].append({
-            'id': self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/s /t 0', BIN_DIR, 0)),
-            'caption': 'Shutdown', 'hbitmap': self._icon_bitmaps['shutdown']
-        })
+        add_menu_item(
+            self._hmenu_main,
+            self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/r /t 0', BIN_DIR, 0)),
+            'Reboot',
+            self._icon_bitmaps['reboot']
+        )
 
-        self._hmenu_main = self.make_popup_menu(menu_data)
+        add_menu_item(
+            self._hmenu_main,
+            self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/s /t 0', BIN_DIR, 0)),
+            'Shutdown',
+            self._icon_bitmaps['shutdown']
+        )
+
         debug('Menu loaded')
 
     ########################################
@@ -1198,21 +1223,12 @@ class Main(MainWin):
             if '======================= Disk Devices ========================' in l:
                 break
 
-        menu_data = {"items": []}
+        hmenu_usb = user32.CreatePopupMenu()
         if len(drives):
             for i, d in enumerate(drives):
-                menu_data['items'].append({
-                    "caption": f"[{d[0]}] {d[1]} - {d[2]}",
-                    "id": i + 1
-                })
+                user32.AppendMenuW(hmenu_usb, MF_STRING, i + 1, f'[{d[0]}] {d[1]} - {d[2]}')
         else:
-            menu_data['items'].append({
-                "caption": "No USB disks found",
-                "flags": "GRAYED",
-                "id": 0
-            })
-
-        hmenu_usb = self.make_popup_menu(menu_data)
+            user32.AppendMenuW(hmenu_usb, MF_STRING | MF_GRAYED, 0, 'No USB disks found')
 
         x = self._rc_desktop.right
         y = self._rc_desktop.bottom - self._taskbar_height

@@ -7,14 +7,14 @@ from .dlls import gdi32, kernel32, user32, uxtheme
 from .controls.common import *
 from .themes import *
 
-hdc = user32.GetDC(0)
+hdc = user32.GetDC(None)
 DPI_Y = gdi32.GetDeviceCaps(hdc, LOGPIXELSY)
-user32.ReleaseDC(0, hdc)
+user32.ReleaseDC(None, hdc)
 
 
-class WNDCLASSEX(Structure):
+class WNDCLASSEXW(Structure):
     def __init__(self, *args, **kwargs):
-        super(WNDCLASSEX, self).__init__(*args, **kwargs)
+        super(WNDCLASSEXW, self).__init__(*args, **kwargs)
         self.cbSize = sizeof(self)
     _fields_ = [
         ("cbSize", c_uint),
@@ -209,21 +209,3 @@ class Window(object):
         self.is_dark = is_dark
         for child in self.children:
             child.apply_theme(is_dark)
-
-    def connect(self, evt, func):
-        if evt not in self._listeners:
-            self._listeners[evt] = []
-        self._listeners[evt].append(func)
-
-    def disconnect(self, evt, func):
-        if evt not in self._listeners:
-            return
-        idx = self._listeners[evt].find(func)
-        if idx <= 0:
-            del self._listeners[evt][idx]
-
-    def emit(self, evt, *args):
-        if evt not in self._listeners:
-            return
-        for func in self._listeners[evt]:
-            func(*args)

@@ -249,6 +249,7 @@ user32.GetDpiForWindow.restype = UINT
 user32.GetForegroundWindow.restype = HANDLE
 user32.GetIconInfo.argtypes = (HANDLE, LPVOID)
 user32.GetMenuBarInfo.argtypes = (HWND, LONG, LONG, LPVOID)  # PMENUBARINFO
+user32.GetMenuItemCount.argtypes = (HMENU,)
 user32.GetMenuItemInfoW.argtypes = (HMENU, UINT, BOOL, LPVOID)  # LPMENUITEMINFOW
 user32.GetMenuStringW.argtypes = (HMENU, UINT, LPWSTR, INT, UINT)
 user32.GetMessageW.argtypes = (POINTER(MSG),HWND,UINT,UINT)
