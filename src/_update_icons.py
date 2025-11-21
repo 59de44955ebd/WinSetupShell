@@ -170,6 +170,6 @@ def load_quick(scale):
 
 if __name__ == '__main__':
     for scale in range(1, 4):
-        debug('Creating icons, scale =', scale)
+        print(f'Creating icons for scale level {scale}...')
         load_menu(scale)
         load_quick(scale)
