@@ -120,16 +120,32 @@ gdi32.RestoreDC.argtypes = (HDC, INT)
 ########################################
 # kernel32
 ########################################
+kernel32.AttachConsole.argtypes = (DWORD,)
+kernel32.CloseHandle.argtypes = (HANDLE,)
+kernel32.CreatePipe.argtypes = (POINTER(HANDLE), POINTER(HANDLE), LPVOID, DWORD)  # POINTER(SECURITY_ATTRIBUTES)
+kernel32.CreateProcessW.argtypes = (
+    LPCWSTR, LPWSTR,
+    LPVOID,  # POINTER(SECURITY_ATTRIBUTES),
+    LPVOID,  #POINTER(SECURITY_ATTRIBUTES),
+    BOOL, DWORD, LPVOID, LPCWSTR,
+    LPVOID,  #POINTER(STARTUPINFOW),
+    LPVOID,  #POINTER(PROCESS_INFORMATION)
+)
+kernel32.DuplicateHandle.argtypes = (HANDLE, HANDLE, HANDLE, POINTER(HANDLE), DWORD, BOOL, DWORD)
 kernel32.EnumResourceNamesW.argtypes = (HMODULE, LPCWSTR, ENUMRESNAMEPROCW, LONG_PTR)
 kernel32.EnumResourceNamesW.restype = BOOL
 kernel32.FindResourceW.argtypes = (HANDLE, LPCWSTR, LPCWSTR)
 kernel32.FindResourceW.restype = HANDLE
-kernel32.FreeLibrary.argtypes = (HMODULE, )
+kernel32.FreeLibrary.argtypes = (HMODULE,)
+kernel32.GetCurrentProcess.restype = HANDLE
+kernel32.GetExitCodeProcess.argtypes = (HANDLE, LPDWORD)
 kernel32.GetModuleHandleW.argtypes = (LPCWSTR,)
 kernel32.GetModuleHandleW.restype = HMODULE
 kernel32.GetProcAddress.argtypes = (HMODULE, LPCSTR)
 kernel32.GetProcAddress.restype = HANDLE  #FARPROC
 kernel32.GetProcessId.argytypes = (HANDLE,)
+kernel32.GetStdHandle.argtypes = (DWORD,)
+kernel32.GetStdHandle.restype = INT_PTR
 kernel32.GlobalAlloc.argtypes = (UINT, DWORD)
 kernel32.GlobalAlloc.restype = HGLOBAL
 kernel32.GlobalLock.argtypes = (HGLOBAL, )
@@ -150,9 +166,14 @@ kernel32.LocalLock.restype = LPVOID
 kernel32.LocalUnlock.argtypes = (HANDLE,)
 kernel32.LockResource.argtypes = (HANDLE, )
 kernel32.LockResource.restype = HANDLE
+kernel32.OpenProcess.argtypes = (DWORD, BOOL, DWORD)
+kernel32.OpenProcess.restype = HANDLE
+kernel32.PeekNamedPipe.argtypes = (HANDLE, LPVOID, DWORD, POINTER(DWORD), POINTER(DWORD), POINTER(DWORD))
+kernel32.ReadFile. argtypes = (HANDLE, LPVOID, DWORD, POINTER(DWORD), LPVOID)  # POINTER(OVERLAPPED))
 kernel32.SetThreadExecutionState.argtypes = (UINT,)
 kernel32.SetThreadExecutionState.restype = UINT
 kernel32.SizeofResource.argtypes = (HANDLE, HANDLE)
+kernel32.TerminateProcess.argtypes = (HANDLE, UINT)
 
 ########################################
 # shell32

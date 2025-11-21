@@ -1,10 +1,11 @@
 from ctypes.wintypes import *
 from datetime import datetime
 import io
+import locale
+locale.setlocale(locale.LC_TIME, '')
 import msvcrt
 import os
 import shutil
-import subprocess  # used for console an usb
 import sys
 import time
 
@@ -20,14 +21,10 @@ from winapp.mainwin import *
 from winapp.menu import *
 from winapp.wintypes_extended import WNDENUMPROC
 
-from desktop import Desktop
-
 from const import *
+from desktop import Desktop
 from resources import *
-
-import locale
-# use user's default settings for time/date
-locale.setlocale(locale.LC_TIME, '')
+from utils import *
 
 ########################################
 # CONFIG
@@ -35,7 +32,10 @@ locale.setlocale(locale.LC_TIME, '')
 LOAD_TASKBAR = True
 LOAD_DESKTOP = True
 
-DEBUG = not IS_CONSOLE and '/debug' in sys.argv
+DEBUG_CONSOLE = not IS_CONSOLE and '/debug' in sys.argv
+
+def debug(*args):
+    print('[PyShell]', *args)
 
 TASK_HWNDS_IGNORE = []
 
@@ -48,7 +48,7 @@ else:
     HAS_EXPLORER = False
 
 
-# find other weird hidden windows
+# Find weird hidden windows (if run inside regular Windows)
 for classname in ('CiceroUIWndFrame',):
     hwnd = user32.FindWindowW(classname, None)
     if hwnd:
@@ -83,18 +83,21 @@ class Main(MainWin):
     ########################################
     def __init__(self):
 
-        # Add and register Segoe UI (Regular), so GUI apps look nicer
-        fnt_src = os.path.expandvars('%SystemDrive%\\sources\\segoeui.ttf')
-        fnt_dst = os.path.expandvars('%windir%\\fonts\\segoeui.ttf')
-        if os.path.isfile(fnt_src) and not os.path.isfile(fnt_dst):
-            shutil.copyfile(fnt_src, fnt_dst)
-            hkey = HKEY()
-            if advapi32.RegOpenKeyW(HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts', byref(hkey)) == ERROR_SUCCESS:
-                buf = create_unicode_buffer("segoeui.ttf")
-                advapi32.RegSetValueExW(hkey, 'Segoe UI (TrueType)', 0, REG_SZ, buf, sizeof(buf))
-                advapi32.RegCloseKey(hkey)
+        # In PE mode, add and register Segoe UI (Regular), so GUI apps look nicer
+        if not HAS_EXPLORER:
+            fnt_src = os.path.expandvars('%SystemDrive%\\sources\\segoeui.ttf')
+            fnt_dst = os.path.expandvars('%windir%\\fonts\\segoeui.ttf')
+            if os.path.isfile(fnt_src) and not os.path.isfile(fnt_dst):
+                shutil.copyfile(fnt_src, fnt_dst)
+                hkey = HKEY()
+                if advapi32.RegOpenKeyW(HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts', byref(hkey)) == ERROR_SUCCESS:
+                    buf = create_unicode_buffer("segoeui.ttf")
+                    advapi32.RegSetValueExW(hkey, 'Segoe UI (TrueType)', 0, REG_SZ, buf, sizeof(buf))
+                    advapi32.RegCloseKey(hkey)
 
-        if DEBUG:
+        self._hwnd_console = None
+        self._hproc_console = None
+        if DEBUG_CONSOLE:
             self.create_console()
 
         self._startmenu_command_counter = STARTMENU_FIRST_ITEM_ID
@@ -171,7 +174,7 @@ class Main(MainWin):
         }
 
         self._hmenu_start = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START)), 0)
-        if not DEBUG:
+        if not DEBUG_CONSOLE:
             user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
 
         self._hmenu_programs = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_PROGRAMS)), 0)
@@ -777,7 +780,7 @@ class Main(MainWin):
             if user32.IsWindowVisible(hwnd) or is_iconic:
 
                 # ignore debug console window
-                if DEBUG and hwnd == self._hwnd_console:
+                if DEBUG_CONSOLE and hwnd == self._hwnd_console:
                     return 1
 
                 # ignore if WS_EX_TOOLWINDOW
@@ -977,7 +980,7 @@ class Main(MainWin):
                     menu['items'].append({'id': mid, 'caption': fn.name, 'hbitmap': h_bitmap})
                     self.menu_item_paths[mid] = fn.path
                 else:
-                    print('Path missing in icons.pson:', path_rel)
+                    debug('Path missing in icons.pson:', path_rel)
 
         make_menus(menu_data, root_folder.subdirs['start_menu'])
 
@@ -1019,8 +1022,6 @@ class Main(MainWin):
     #
     ########################################
     def _show_popupmenu(self, hmenu, x=None, y=None, flags=TPM_LEFTBUTTON, hwnd=None):
-
-        self._current_hmenu = hmenu
         uxtheme.FlushMenuThemes()
         if x is None or y is None:
             pt = POINT()
@@ -1095,21 +1096,19 @@ class Main(MainWin):
     ########################################
     def create_console(self):
 
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
-        startupinfo.wShowWindow = SW_HIDE
-
-        proc = subprocess.Popen(
-            'cmd.exe',
-            stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE,
-            stdin = subprocess.PIPE,
-            startupinfo = startupinfo
-        )
+        exec_info = SHELLEXECUTEINFOW()
+        exec_info.nShow = SW_HIDE
+        exec_info.fMask = SEE_MASK_NOCLOSEPROCESS
+        exec_info.lpFile = 'cmd.exe'
+        exec_info.lpParameters = '/k prompt $s && cls'
+        if not shell32.ShellExecuteExW(byref(exec_info)):
+            return False
+        self._hproc_console = exec_info.hProcess
+        pid = kernel32.GetProcessId(exec_info.hProcess)
 
         for i in range(50):
             time.sleep(.05)
-            if kernel32.AttachConsole(proc.pid):
+            if kernel32.AttachConsole(pid):
                 break
 
         kernel32.SetConsoleTitleW("Debug Console")
@@ -1134,6 +1133,8 @@ class Main(MainWin):
         hConHandle = msvcrt.open_osfhandle(lStdErrHandle, os.O_TEXT)
         sys.stderr = io.TextIOWrapper(os.fdopen(hConHandle, 'wb', 0), write_through=True)
 
+        print()
+
     ########################################
     #
     ########################################
@@ -1153,20 +1154,18 @@ class Main(MainWin):
         if self.desktop:
             user32.DestroyWindow(self.desktop.hwnd)
 
+        if self._hwnd_console:
+            kernel32.FreeConsole()
+            kernel32.TerminateProcess(self._hproc_console, 0)
+
         super().quit()
 
         if HWND_START:
-#            user32.ShowWindow(HWND_TRAY, SW_SHOW)
-#            user32.ShowWindow(HWND_START, SW_SHOW)
             rc = RECT()
             user32.GetWindowRect(HWND_START, byref(rc))
             system_taskbar_height = rc.bottom - rc.top
             if system_taskbar_height != self._taskbar_height:
                 self._update_workarea(system_taskbar_height)
-
-#        elif start_explorer:
-#            time.sleep(.1)
-#            shell32.ShellExecuteW(None, None, 'explorer.exe', None, None, 1)
 
     ########################################
     #
@@ -1184,13 +1183,9 @@ class Main(MainWin):
     #
     ########################################
     def show_usb_disks(self):
-        if hasattr(self, '_hmenu_usb'):
-            user32.DestroyMenu(self._hmenu_usb)
-            del self._hmenu_usb
-            return
+        out, err, returncode = run_command(os.path.join(BIN_DIR, 'ListUsbDrives.exe') + ' -cp=65001')
+        res = out.decode().splitlines()
 
-        proc = subprocess.run([os.path.join(BIN_DIR, 'ListUsbDrives.exe'), '-cp=65001'],stdout=subprocess.PIPE)
-        res = proc.stdout.decode().splitlines()
         drives = []
         for l in res:
             if l.startswith('MountPoint'):
@@ -1217,21 +1212,23 @@ class Main(MainWin):
                 "id": 0
             })
 
-        self._hmenu_usb = self.make_popup_menu(menu_data)
+        hmenu_usb = self.make_popup_menu(menu_data)
 
         x = self._rc_desktop.right
         y = self._rc_desktop.bottom - self._taskbar_height
         self.set_foreground_window()
-        item_id = user32.TrackPopupMenuEx(self._hmenu_usb, TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_BOTTOMALIGN, x, y, self.hwnd, 0)
+        item_id = user32.TrackPopupMenuEx(hmenu_usb, TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_BOTTOMALIGN, x, y, self.hwnd, 0)
         user32.PostMessageW(self.hwnd, WM_NULL, 0, 0)
+
+        user32.DestroyMenu(hmenu_usb)
 
         if len(drives) and item_id > 0:
             d = drives[item_id - 1]
-            proc = subprocess.run([os.path.join(BIN_DIR, 'RemoveDrive.exe'), d[0][:2]], stdout = subprocess.PIPE)
-            if proc.returncode == 0:
-                self.show_message_box(f'Disk "[{d[0]}] {d[1]} was succesfully ejected', 'Success')
+            out, err, returncode = run_command(os.path.join(BIN_DIR, 'RemoveDrive.exe') + ' ' + d[0][:2])
+            if returncode == 0:
+                user32.MessageBoxW(self.hwnd, f'Disk "[{d[0]}] {d[1]} was succesfully ejected', 'Success', MB_ICONINFORMATION | MB_OK)
             else:
-                print(proc.stdout.decode())
+                debug(err.decode())
 
 
 if __name__ == '__main__':

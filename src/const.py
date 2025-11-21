@@ -4,17 +4,14 @@ import locale
 import os
 import sys
 from winapp.const import WM_USER
-from winapp.dlls import gdi32, kernel32
-from winapp.const import STD_OUTPUT_HANDLE
-
-DEBUG = True
+from winapp.dlls import gdi32 #, kernel32
+#from winapp.const import STD_OUTPUT_HANDLE
 
 APP_NAME = 'Shell'
 APP_CLASS = 'Shell_TrayWnd'
 APP_VERSION = 1
 
-
-IS_CONSOLE = kernel32.GetStdHandle(STD_OUTPUT_HANDLE) != 0
+#IS_CONSOLE = kernel32.GetStdHandle(STD_OUTPUT_HANDLE) != 0
 IS_FROZEN = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 if IS_FROZEN:
@@ -83,21 +80,3 @@ CMD_ID_TASKS_START = 3000
 STARTMENU_FIRST_ITEM_ID = 4000
 
 OFFSET_ICONIC = 10000
-
-########################################
-#
-########################################
-#debug = None
-
-def debug_mode(choice):
-    """Enable/disable printing helpful information for debugging the program. Default is off."""
-    global debug
-    if choice:
-        def debug(*args):
-            print('[PyShell]', *args)
-
-    else:
-        def debug(*_):
-            pass
-
-debug_mode(True)
