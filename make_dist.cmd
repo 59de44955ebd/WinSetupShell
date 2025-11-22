@@ -44,10 +44,6 @@ echo ****************************************
 del "dist\%APP_NAME%\shell_data\libcrypto-3.dll"
 del "dist\%APP_NAME%\shell_data\ucrtbase.dll"
 
-move dist\%APP_NAME%\%APP_NAME%.exe . >nul
-move dist\%APP_NAME%\%APP_NAME%_data . >nul
-rmdir dist\%APP_NAME%
-
 echo.
 echo ****************************************
 echo Done.

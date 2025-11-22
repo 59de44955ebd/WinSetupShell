@@ -51,7 +51,7 @@ def load_menu(scale):
 
     menu_data = {'items': []}
     thumb_dict = {}
-    missing = {}
+    bitmaps = {}
 
     def make_menus(menu, f):
 
@@ -60,7 +60,7 @@ def load_menu(scale):
 
         for fn in sorted(f.files, key=lambda f: f.name.lower()):
 
-            missing[fn.path[len(root_dir) + 1:]] = get_file_hbitmap(fn.path, ico_size)
+            bitmaps[fn.path[len(root_dir) + 1:]] = get_file_hbitmap(fn.path, ico_size)
 
     make_menus(menu_data, root_folder.subdirs['start_menu'])
 
@@ -69,7 +69,7 @@ def load_menu(scale):
 
     dc = gdi32.CreateCompatibleDC(0)
 
-    bmi: BITMAPINFO = BITMAPINFO()
+    bmi = BITMAPINFO()
     bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
     bmi.bmiHeader.biWidth = ico_size
     bmi.bmiHeader.biHeight = -ico_size
@@ -80,30 +80,34 @@ def load_menu(scale):
 
     bits = ctypes.create_string_buffer(ico_data_size)
 
-    new_icons = b''
+    bits_total = b''
 
-    for p, h_bitmap in missing.items():
+    for p, h_bitmap in bitmaps.items():
         gdi32.SelectObject(dc, h_bitmap)
         gdi32.GetDIBits(dc, h_bitmap, 0, ico_size, bits, byref(bmi), DIB_RGB_COLORS)
-        new_icons += bits
+        bits_total += bits
         thumb_dict[p] = idx
         idx += 1
 
     gdi32.DeleteDC(dc)
 
+    bits_total += b'\0\0'
+
     with open(os.path.join(CACHE_DIR, 'icons.pson'), 'w') as f:
         f.write(str(thumb_dict))
 
     with open(os.path.join(CACHE_DIR, f'icons-{scale}.bmp'), 'wb') as f:
-        cnt = len(missing.keys())
+        cnt = len(bitmaps.keys())
 
-        f.write(bytes(BMPHEADER()))
+        bmh = BMPHEADER()
+        bmh.size = sizeof(BMPHEADER) + sizeof(BITMAPINFO) + len(bits_total)
+        f.write(bytes(bmh))
 
         bmi.bmiHeader.biHeight = -ico_size * cnt
-        bmi.bmiHeader.biSizeImage = ico_data_size * cnt
+        bmi.bmiHeader.biSizeImage = ico_data_size * cnt + 2
         f.write(bytes(bmi))
 
-        f.write(new_icons)
+        f.write(bits_total)
 
 ########################################
 #
@@ -117,7 +121,7 @@ def load_quick(scale):
 
     num_icons = len(data)
 
-    data_size = num_icons * 4 * ico_size ** 2
+    data_size = num_icons * 4 * ico_size ** 2 + 2
 
     hdc = user32.GetDC(None)
     h_bitmap = gdi32.CreateCompatibleBitmap(hdc, ico_size * num_icons, ico_size)
@@ -138,17 +142,16 @@ def load_quick(scale):
             1,
             0
         )
-#        print(res)
 
         user32.DrawIconEx(hdc_dest, x, 0, h_icon, ico_size, ico_size, 0, None, DI_NORMAL)
         x += ico_size
 
 #    h_bitmap_copy = user32.CopyImage(h_bitmap, IMAGE_BITMAP, ico_size * num_icons, ico_size, LR_CREATEDIBSECTION)
 
-    bmi: BITMAPINFO = BITMAPINFO()
+    bmi = BITMAPINFO()
     bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
     bmi.bmiHeader.biWidth = ico_size * num_icons
-    bmi.bmiHeader.biHeight = -ico_size
+    bmi.bmiHeader.biHeight = ico_size
     bmi.bmiHeader.biPlanes = 1
     bmi.bmiHeader.biBitCount = 32
     bmi.bmiHeader.biCompression = BI_RGB
@@ -163,7 +166,9 @@ def load_quick(scale):
     gdi32.DeleteObject(h_bitmap)
 
     with open(os.path.join(QUICKBAR_DIR, f'quick-{scale}.bmp'), 'wb') as f:
-        f.write(bytes(BMPHEADER()))
+        bmh = BMPHEADER()
+        bmh.size = sizeof(BMPHEADER) + sizeof(BITMAPINFO) + len(bits)
+        f.write(bytes(bmh))
         f.write(bytes(bmi))
         f.write(bits)
 

@@ -23,6 +23,8 @@ from .wintypes_extended import MAKEINTRESOURCEW
 
 # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
 class BITMAPINFOHEADER(Structure):
+    def __init__(self):
+        self.biSize = sizeof(self)
     _fields_ = [
         ("biSize", DWORD),
         ("biWidth", LONG),
@@ -50,7 +52,6 @@ class RGBQUAD(Structure):
 class BITMAPINFO(Structure):
     _fields_ = [
         ("bmiHeader", BITMAPINFOHEADER),
-#        ("bmiColors", RGBQUAD * 1),
     ]
 
 # custom
