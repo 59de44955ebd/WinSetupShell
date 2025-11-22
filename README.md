@@ -2,7 +2,7 @@
 
 WinSetupShell is a simple desktop shell (start menu, quick launch toolbar, taskbar, system tray) for [Windows PE](https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment) x64 written in Python that can be used to enhance a regular Windows 11 (and possibly also Windows 10, not tested) setup USB flash drive with a [live USB system](https://en.wikipedia.org/wiki/Live_USB) that can optionally be used for system repair tasks etc., using a comfortable desktop GUI instead of only hacking commands into a CMD prompt. It provides network support (via [PENetwork](https://www.penetworkmanager.de/)) and a web browser ([Firefox](https://www.firefox.com/)), so you can search for documentation or download stuff right from the live USB system, no other PC needed.
 
-Windows PE is a reduced Windows OS that provides the basic WinAPI, but no Explorer file manager, and no Explorer-based desktop, therefor such a custom shell/desktop is needed. WinSetupShell uses a customized version of [Explorer++](https://github.com/derceg/explorerplusplus) as file manager.
+WinSetupShell uses the original unaltered Windows PE that comes with the Windows setup, there is no "baking" involved. Windows PE is a reduced Windows OS that provides the basic WinAPI, but no Explorer file manager, and no Explorer-based desktop, therefor such a custom shell/desktop is needed. As file manager a customized version of [Explorer++](https://github.com/derceg/explorerplusplus) is used.
 
 The original Windows setup stuff isn't altered in any way, so the USB flash drive remains a perfectly valid Windows setup media.
 
@@ -19,10 +19,10 @@ WinSetupShell is a simple and easily installed alternative for applications like
 ## Setup
 
 - Use Rufus to download and install a Windows 11 setup .iso of the flavor and language of your choice (I used `Win11_25H2_German_x64.iso`) on the USB flash drive, turning it into a regular Windows 11 setup media. Or let Rufus use a local .iso file that you downloaded before.
-- Download the lastest `WinSetupShell` release .7z, unpack it and copy its contents (2 folders and 2 files) to the root directory of the USB flash drive.
+- Download the lastest `WinSetupShell` release .7z, unpack it and copy its contents (`shell.exe` and the 2 folders `shell_data` and `programs`) to the root directory of the USB flash drive.
 - Done.
 
-*Windows 11 setup USB flash drive created with Rufus, with the 4 additional WinSetupShell items copied to it*  
+*Windows 11 setup USB flash drive created with Rufus, with the 3 additional WinSetupShell items copied to it*  
 ![](screenshots/rufus.png)
 
 ## Usage
@@ -41,7 +41,7 @@ WinSetupShell is a simple and easily installed alternative for applications like
 
 Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `PENetwork` from the start menu, both do the same thing, they start `PENetwork`. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
 
-If you want to start network by default, copy the LNK file `shell\_internal\app_data\start_menu\Programs\PENetwork` into folder `shell\_internal\startup`.
+If you want to start network by default, copy the LNK file `shell\shell_data\app_data\start_menu\Programs\PENetwork` into folder `shell\shell_data\startup`.
 
 ## Included applications (Freeware/Shareware/Trialware)
 - 7-Zip
@@ -95,6 +95,10 @@ If you want to start network by default, copy the LNK file `shell\_internal\app_
 
 - There might be issues with some HiDPI displays.
 
-## ToDos
-- Explain how to add other (compatible) portable applications
-- Explain how to customize start menu and quick launch toolbar links
+## Customization
+
+Additional compatible (64-bit, portable and WinAPI only) applications can be added to folder `programs` on the USB flash drive. Links to them can then be added to folder `shell_data\app_data\start_menu`. But you first have to create an environment variable (in user space) called `PROGRAMS` that contains the absolute path to folder `programs` on the USB flash drive, so e.g. `F:\programs`. The new .LNK files inside folder `start_menu` then have to be edited manually (Explorer -> properties), the absolute path to `programs` has to be replaced with this environment variable `%PROGRAMS%`, both in the link's target and working directory field.
+
+To add or remove applications to/from the quick launch toolbar, edit text file `shell_data\app_data\quick\quick.pson` in any text editor, its JSON-like format is self-explanatory.
+
+Whenever you changed something in the start menu or quick launch toolbar, you have to run `shell.exe /update-icons` (e.g. in a CMD prompt) to update the pre-cached icons on the USB flash drive.

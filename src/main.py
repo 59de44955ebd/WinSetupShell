@@ -26,6 +26,11 @@ from desktop import Desktop
 from resources import *
 from utils import *
 
+if '/update-icons' in sys.argv:
+    from _update_icons import update_icons
+    update_icons()
+    sys.exit()
+
 ########################################
 # CONFIG
 ########################################

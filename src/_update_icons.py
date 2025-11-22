@@ -167,9 +167,12 @@ def load_quick(scale):
         f.write(bytes(bmi))
         f.write(bits)
 
-
-if __name__ == '__main__':
+def update_icons():
     for scale in range(1, 4):
         print(f'Creating icons for scale level {scale}...')
         load_menu(scale)
         load_quick(scale)
+
+
+if __name__ == '__main__':
+    update_icons()

@@ -7,4 +7,4 @@ _backup.rar
 app_data/*
 programs/*
 shell.exe
-shell.ini
+shell_data

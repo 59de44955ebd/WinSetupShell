@@ -16,7 +16,7 @@ IS_FROZEN = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 if IS_FROZEN:
     APP_DIR = os.path.dirname(os.path.abspath(__file__))
-    PROGS_DIR = os.path.realpath(os.path.join(APP_DIR, '..', '..', 'programs'))
+    PROGS_DIR = os.path.realpath(os.path.join(APP_DIR, '..', 'programs'))
 else:
     APP_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     PROGS_DIR = os.path.realpath(os.path.join(APP_DIR, 'programs'))
