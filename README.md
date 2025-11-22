@@ -70,6 +70,7 @@ If you want to start network by default, copy the LNK file `shell\shell_data\app
 - PowerShell 7
 - Q-Dir
 - Recuva
+- Rufus
 - Speccy
 - SumatraPDF
 - SwiftSearch
