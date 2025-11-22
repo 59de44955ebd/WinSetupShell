@@ -45,42 +45,41 @@ If you want to start network by default, add line `"%programs%\\PENetwork\\PENet
 `shell_data\app_data\startup.pson`.
 
 ## Included applications (Freeware/Shareware/Trialware)
-- 7-Zip
-- AgentRansack
-- BootIce
-- Check Disk GUI
-- CPU-Z
-- Crystal Disk Info
-- Defraggler
-- DiskGenius
-- Drive Snapshot
-- EasyUEFI (Trial)
-- Explorer++
-- FileZilla
-- Firefox
-- HWiNFO
-- HxD
-- IrfanView
-- IsoBuster
-- Macrium Reflect
-- MiniTool Partition Wizard
-- NirSoft (suite)
-- Notepad++
-- PENetwork
-- PortableGit (Git Bash, Git CMD)
-- PowerShell 7
-- Q-Dir
-- Recuva
-- Rufus
-- Speccy
-- SumatraPDF
-- SwiftSearch
-- SysinternalsSuite
-- TestDisk & PhotoRec
-- Total Commander (with plugin "DiskInternals Reader", which allows to explore Linux and Mac partitions and disk images)
-- VeryCrypt
-- VhdManager
-- Windows Login Unlocker
+- [7-Zip](https://www.7-zip.org/)
+- [AgentRansack](https://www.mythicsoft.com/agentransack/)
+- [BootIce](https://www.majorgeeks.com/files/details/bootice_64_bit.html)
+- [Check Disk GUI](https://alternativeto.net/software/chkdsk-gui/about/)
+- [CPU-Z](https://www.cpuid.com/softwares/cpu-z.html)
+- [Crystal Disk Info](https://crystalmark.info/en/software/crystaldiskinfo/)
+- [Defraggler](https://www.ccleaner.com/defraggler)
+- [DiskGenius](https://www.diskgenius.com/)
+- [Drive Snapshot](http://www.drivesnapshot.de/en/)
+- [EasyUEFI](https://www.easyuefi.com/) (Trial version)
+- [Explorer++](https://explorerplusplus.com/)
+- [FileZilla](https://filezilla-project.org/)
+- [Firefox](https://www.firefox.com/)
+- [HWiNFO](https://www.hwinfo.com/download/)
+- [HxD](https://mh-nexus.de/de/hxd/)
+- [IrfanView](https://www.irfanview.com/)
+- [IsoBuster](https://www.isobuster.com/)
+- [Macrium Reflect](https://www.macrium.com/reflectfree) (Trial version)
+- [MiniTool Partition Wizard](https://www.minitool.com/partition-manager/)
+- [NirSoft (suite)](https://www.nirsoft.net/)
+- [Notepad++](https://notepad-plus-plus.org/)
+- [PENetwork](https://www.penetworkmanager.de/)
+- [PortableGit](https://git-scm.com/install/windows) (Git Bash, Git CMD)
+- [PowerShell 7](https://github.com/PowerShell/PowerShell)
+- [Recuva](https://www.ccleaner.com/recuva)
+- [Rufus](https://rufus.ie/en/)
+- [Speccy](https://www.ccleaner.com/speccy)
+- [SumatraPDF](https://www.sumatrapdfreader.org/free-pdf-reader)
+- [SwiftSearch](https://www.majorgeeks.com/files/details/swiftsearch.html)
+- [Sysinternals Suite](https://learn.microsoft.com/en-us/sysinternals/downloads/sysinternals-suite)
+- [TestDisk & PhotoRec](https://www.cgsecurity.org/wiki/TestDisk)
+- [Total Commander](https://www.ghisler.com/index.htm) (with plugin [DiskInternals Reader](https://www.diskinternals.com/reader-for-tc/), which allows to explore Linux and Mac partitions and disk images)
+- [VeraCrypt](https://veracrypt.io/en/Home.html) (TrueCrypt fork and successor)
+- [VhdManager](https://www.sordum.org/8705/simple-vhd-manager-v1-5/)
+- [Windows Login Unlocker](https://archive.org/details/windows.-login.-unlocker.-wlu.v-2.1.-pe-10.x-64_202408)
 
 ## Notes
 - WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Quit" from the popup menu.
