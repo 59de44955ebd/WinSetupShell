@@ -103,7 +103,7 @@ If you want to start network by default, add line `"%programs%\\PENetwork\\PENet
 
 Additional compatible (64-bit, portable and WinAPI only) applications can be added to folder `programs` on the USB flash drive. Links to them can then be added to the start menu by adding them to JSON-like text file  
 `shell_data\app_data\start_menu.pson`  
-using an arbitrary text editor. The format should be self-explanatory. It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\...` or `%windir%\...`, which will then be evaluated at runtime.  
+using an arbitrary text editor. The format should be self-explanatory. Like in JSON (or JS or C...), backslashes in pathes have to be doubled. It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\\...` or `%windir%\\...`, which will then be evaluated at runtime.  
 
 To add or remove applications to/from the quick launch toolbar, edit text file  
 `shell_data\app_data\quick_launch.pson`  
