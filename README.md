@@ -41,7 +41,8 @@ WinSetupShell is a simple and easily installed alternative for applications like
 
 Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `PENetwork` from the start menu, both do the same thing, they start `PENetwork`. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
 
-If you want to start network by default, copy the LNK file `shell\shell_data\app_data\start_menu\Programs\PENetwork` into folder `shell\shell_data\startup`.
+If you want to start network by default, add line `"%programs%\\PENetwork\\PENetwork.exe"` to JSON-like config file  
+`shell_data\app_data\startup.pson`.
 
 ## Included applications (Freeware/Shareware/Trialware)
 - 7-Zip
@@ -75,7 +76,9 @@ If you want to start network by default, copy the LNK file `shell\shell_data\app
 - SumatraPDF
 - SwiftSearch
 - SysinternalsSuite
+- TestDisk & PhotoRec
 - Total Commander (with plugin "DiskInternals Reader", which allows to explore Linux and Mac partitions and disk images)
+- VeryCrypt
 - VhdManager
 - Windows Login Unlocker
 
@@ -98,8 +101,10 @@ If you want to start network by default, copy the LNK file `shell\shell_data\app
 
 ## Customization
 
-Additional compatible (64-bit, portable and WinAPI only) applications can be added to folder `programs` on the USB flash drive. Links to them can then be added to folder `shell_data\app_data\start_menu`. But you first have to create an environment variable (in user space) called `PROGRAMS` that contains the absolute path to folder `programs` on the USB flash drive, so e.g. `F:\programs`. The new .LNK files inside folder `start_menu` then have to be edited manually (Explorer -> properties), the absolute path to `programs` has to be replaced with this environment variable `%PROGRAMS%`, both in the link's target and working directory field.
+Additional compatible (64-bit, portable and WinAPI only) applications can be added to folder `programs` on the USB flash drive. Links to them can then be added to the start menu by adding them to JSON-like text file  
+`shell_data\app_data\start_menu.pson`  
+using an arbitrary text editor. The format should be self-explanatory. It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\...` or `%windir%\...`, which will then be evaluated at runtime.  
 
-To add or remove applications to/from the quick launch toolbar, edit text file `shell_data\app_data\quick\quick.pson` in any text editor, its JSON-like format is self-explanatory.
-
-Whenever you changed something in the start menu or quick launch toolbar, you have to run `shell.exe /update-icons` (e.g. in a CMD prompt) to update the pre-cached icons on the USB flash drive.
+To add or remove applications to/from the quick launch toolbar, edit text file  
+`shell_data\app_data\quick_launch.pson`  
+accordingly.

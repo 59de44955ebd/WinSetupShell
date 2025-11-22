@@ -26,14 +26,7 @@ from desktop import Desktop
 from resources import *
 from utils import *
 
-if '/update-icons' in sys.argv:
-    from _update_icons import update_icons
-    update_icons()
-    sys.exit()
-
-########################################
 # CONFIG
-########################################
 LOAD_TASKBAR = True
 LOAD_DESKTOP = True
 
@@ -52,13 +45,11 @@ else:
     HWND_START = None
     HAS_EXPLORER = False
 
-
 # Find weird hidden windows (if run inside regular Windows)
 for classname in ('CiceroUIWndFrame',):
     hwnd = user32.FindWindowW(classname, None)
     if hwnd:
         TASK_HWNDS_IGNORE.append(hwnd)
-
 
 class TaskWindow():
     def __init__(self, hwnd, h_icon, win_text, is_iconic):
@@ -68,7 +59,6 @@ class TaskWindow():
         self.is_iconic = is_iconic
         self.command_id = None
         self.toolbar_index = None
-
 
 TRAY_COMMANDS = (
     ('Network', IDI_NETWORK, CMD_ID_NETWORK),
@@ -105,7 +95,6 @@ class Main(MainWin):
         if DEBUG_CONSOLE:
             self.create_console()
 
-        self._startmenu_command_counter = STARTMENU_FIRST_ITEM_ID
         self._current_menu_item_id = None
         self._quickbar_commands = {}
 
@@ -120,15 +109,11 @@ class Main(MainWin):
         self._rc_desktop = RECT()
         user32.GetWindowRect(user32.GetDesktopWindow(), byref(self._rc_desktop))
 
-        ########################################
-        # create main window
-        ########################################
         super().__init__(
             window_title = '',
             window_class = APP_CLASS,
             style = WS_POPUP,
             ex_style = WS_EX_TOOLWINDOW,
-#            bg_brush_dark = TASKBAR_BG_BRUSH
             hbrush = TASKBAR_BG_BRUSH
         )
 
@@ -184,9 +169,7 @@ class Main(MainWin):
             user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
         self._hmenu_quick = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_QUICK)), 0)
 
-        ########################################
-        # add show desktop static (TrayClockWClass)
-        ########################################
+        # Add "show desktop" static in bottom right corner
         if SHOW_DESKTOP_CORNER_WIDTH:
             self.show_desktop = Static(
                 self,
@@ -205,8 +188,6 @@ class Main(MainWin):
         self.register_message_callback(WM_NOTIFY, self.on_WM_NOTIFY)
         self.register_message_callback(WM_MENUSELECT, self.on_WM_MENUSELECT)
 
-#        self.apply_theme(True)
-
         Window.apply_theme(self, True)
         uxtheme.SetPreferredAppMode(PreferredAppMode.ForceDark)
 
@@ -219,18 +200,20 @@ class Main(MainWin):
             self._register_win_notifications()
             self._update_workarea(self._taskbar_height)
 
-        startup_dir = os.path.join(APP_DIR, 'startup')
-        if os.path.isdir(startup_dir):
-            for filename in os.listdir(startup_dir):
-                shell32.ShellExecuteW(None, None, os.path.join(startup_dir, filename), None, None, SW_SHOW)
+        try:
+            with open(os.path.join(APPDATA_DIR, 'startup.pson')) as f:
+                startup_exes = eval(f.read())
+                for row in startup_exes:
+                    exe = os.path.expandvars(row)
+                    shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), SW_SHOW)
+        except:
+            pass
 
     ########################################
-    # create rebar and toolbars
+    # Create rebar and toolbars
     ########################################
     def create_rebar(self):
-
         rebar_width = self._rc_desktop.right - self._clock_width - SHOW_DESKTOP_CORNER_WIDTH
-
         self.rebar = ReBar(
             self,
             style = (
@@ -248,20 +231,17 @@ class Main(MainWin):
             bg_color_dark = TASKBAR_BG_COLOR
         )
 
-        # disable visual styles
+        # Disable visual styles
         uxtheme.SetWindowTheme(self.rebar.hwnd, "", "")
 
         self.h_imagelist_start= comctl32.ImageList_Create(START_ICON_SIZE * self._scale, START_ICON_SIZE * self._scale, ILC_COLOR32, 1, 0)
         self.h_imagelist_tasks = comctl32.ImageList_Create(self._task_icon_size, self._task_icon_size, ILC_COLOR32, 64, 0)
         self.h_imagelist_tray = comctl32.ImageList_Create(self._tray_icon_size, self._tray_icon_size, ILC_COLOR32, 3, 0)
 
-        ########################################
-        # create start toolbar
-        ########################################
+        # Create start toolbar
         h_icon = user32.LoadImageW(HMOD_RESOURCES, MAKEINTRESOURCEW(IDI_START), IMAGE_ICON, START_ICON_SIZE * self._scale, START_ICON_SIZE * self._scale, 0)
         comctl32.ImageList_ReplaceIcon(self.h_imagelist_start, -1, h_icon)
         user32.DestroyIcon(h_icon)
-
         self.toolbar_start = ToolBar(
             self,
             window_title = 'Start',
@@ -278,9 +258,7 @@ class Main(MainWin):
             hide_text = True,
             bg_brush_dark = TASKBAR_BG_BRUSH
         )
-
         user32.SendMessageW(self.toolbar_start.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_start)
-
         user32.SendMessageW(self.toolbar_start.hwnd, TB_SETPADDING, 0, MAKELONG(
             (START_WIDTH - START_ICON_SIZE) * self._scale,
             (TASKBAR_HEIGHT - START_ICON_SIZE) * self._scale
@@ -295,12 +273,9 @@ class Main(MainWin):
             0,
             'Start',
         )
-
         user32.SendMessageW(self.toolbar_start.hwnd, TB_ADDBUTTONS, 1, byref(tb_button))
 
-        ########################################
-        # create quick toolbar
-        ########################################
+        # Create quick launch toolbar
         self.toolbar_quick = ToolBar(
             self,
             window_title = 'QuickLaunch',
@@ -317,12 +292,9 @@ class Main(MainWin):
             hide_text = True,
             bg_brush_dark = TASKBAR_BG_BRUSH
         )
-
         user32.SetWindowLongPtrA(user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
-        ########################################
-        # create tasks toolbar
-        ########################################
+        # Create tasks toolbar
         self.toolbar_tasks = ToolBar(
             self,
             window_title = 'MSTaskSwWClass',
@@ -343,9 +315,6 @@ class Main(MainWin):
         uxtheme.SetWindowTheme(self.toolbar_tasks.hwnd, "", "")
         self.toolbar_tasks.set_font("Segoe UI", 9, FW_MEDIUM)
 
-        ########################################
-        #
-        ########################################
         def _on_WM_DROPFILES(hwnd, wparam, lparam):
             pt = POINT()
             user32.GetCursorPos(byref(pt))
@@ -374,9 +343,7 @@ class Main(MainWin):
         shell32.DragAcceptFiles(self.toolbar_tasks.hwnd, True)
         self.toolbar_tasks.register_message_callback(WM_DROPFILES, _on_WM_DROPFILES)
 
-        ########################################
-        # create tray toolbar
-        ########################################
+        # Create tray toolbar
         self.toolbar_tray = ToolBar(
             self,
             window_title = 'TrayNotifyWnd',
@@ -405,24 +372,15 @@ class Main(MainWin):
         user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tasks)
         user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tray)
 
-        ########################################
-        # add buttons to quick toolbar
-        ########################################
+        # Add buttons to quick launch toolbar
         num_buttons = self.load_quickbar()
 
-        ########################################
-        # add buttons to tasks toolbar
-        ########################################
+        # Add buttons to tasks toolbar
         num_tasks = self.load_tasks()
 
-        ########################################
-        # define tray icons
-        ########################################
         tray_width = len(TRAY_COMMANDS) * 34 * self._scale
 
-        ########################################
         # Initialize band info used by all bands.
-        ########################################
         rbBand = REBARBANDINFOW()
         rbBand.fMask  = (
             RBBIM_CHILD         # hwndChild is valid.
@@ -438,11 +396,8 @@ class Main(MainWin):
 
         s = SIZE()
 
-        ########################################
         # Add start band to rebar
-        ########################################
         user32.SendMessageW(self.toolbar_start.hwnd, TB_GETIDEALSIZE, FALSE, byref(s))
-
         rbBand.fStyle = RBBS_HIDETITLE | CCS_TOP | RBBS_TOPALIGN | RBBS_NOGRIPPER #| RBBS_USECHEVRON
         rbBand.cx = START_WIDTH * self._scale
         rbBand.cxIdeal = s.cx
@@ -450,11 +405,8 @@ class Main(MainWin):
         rbBand.hwndChild = self.toolbar_start.hwnd
         user32.SendMessageW(self.rebar.hwnd, RB_INSERTBANDW, -1, byref(rbBand))
 
-        ########################################
-        # Add quickbar band to rebar
-        ########################################
+        # Add quick launch band to rebar
         user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETIDEALSIZE, FALSE, byref(s))
-
         rbBand.fStyle = RBBS_HIDETITLE | CCS_TOP | RBBS_TOPALIGN | RBBS_NOGRIPPER #| RBBS_USECHEVRON
         rbBand.cx = self._quick_bar_width
         rbBand.cxIdeal = s.cx
@@ -462,9 +414,7 @@ class Main(MainWin):
         rbBand.hwndChild = self.toolbar_quick.hwnd
         user32.SendMessageW(self.rebar.hwnd, RB_INSERTBANDW, -1, byref(rbBand))
 
-        ########################################
         # Add tasklist band to rebar
-        ########################################
         tasklist_width = rebar_width - self._quick_bar_width - tray_width
         rbBand.fStyle =  RBBS_HIDETITLE | CCS_TOP | RBBS_TOPALIGN   | RBBS_NOGRIPPER
         rbBand.cx = rbBand.cxIdeal = tasklist_width
@@ -472,9 +422,7 @@ class Main(MainWin):
         rbBand.hwndChild = self.toolbar_tasks.hwnd
         user32.SendMessageW(self.rebar.hwnd, RB_INSERTBANDW, -1, byref(rbBand))
 
-        ########################################
         # Add tray band to rebar
-        ########################################
         num_buttons = len(TRAY_COMMANDS)
         if num_buttons:
             for cmd in TRAY_COMMANDS:
@@ -509,7 +457,7 @@ class Main(MainWin):
         self.update_taskbutton_width()
 
     ########################################
-    # add clock static (TrayClockWClass)
+    # Add clock static
     ########################################
     def create_clock(self):
         self.clock = Static(
@@ -528,7 +476,6 @@ class Main(MainWin):
 
         # Create a tooltip
         self.tooltip_clock = Tooltips(self)
-        #self.tooltip_clock.set_stayontop()
         toolInfo = TOOLINFOW()
         toolInfo.hwnd = self.hwnd
         toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS
@@ -551,11 +498,8 @@ class Main(MainWin):
     #
     ########################################
     def on_WM_MENUSELECT(self, hwnd, wparam, lparam):
-
         if self._start_menu_open:
             self._current_menu_item_id = LOWORD(wparam)
-
-#        if lparam != self.hmenu_popup_button:
             if LOWORD(wparam) < STARTMENU_FIRST_ITEM_ID:  # a menu, i.e. a folder
                 mii = MENUITEMINFOW()
                 mii.fMask = MIIM_ID
@@ -594,18 +538,18 @@ class Main(MainWin):
 
         else:
             if cmd_id in self._quickbar_commands:
-                shell32.ShellExecuteW(None, None, self._quickbar_commands[cmd_id], None, None, SW_SHOW)
+                exe = self._quickbar_commands[cmd_id]
+                shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), SW_SHOW)
 
             elif cmd_id in self._taskbar_windows_by_command:
                 hwnd = self._taskbar_windows_by_command[cmd_id].hwnd
                 hwnd_top = self.get_foreground_window()
 
                 if user32.IsIconic(hwnd):
-                    user32.ShowWindow(hwnd, SW_RESTORE) #SW_SHOWNORMAL)
+                    user32.ShowWindow(hwnd, SW_RESTORE)
 
                 elif hwnd == hwnd_top:
                     user32.ShowWindow(hwnd, SW_MINIMIZE)
-                    #user32.SendMessageW(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0)
                     user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, wparam, 0)
 
                 else:
@@ -638,7 +582,7 @@ class Main(MainWin):
                 user32.EndMenu()
                 self.create_timer(self.show_popupmenu_start, 10, True)
 
-        # clock tooltip
+        # Clock tooltip
         elif self.tooltip_clock and mh.hwndFrom == self.tooltip_clock.hwnd:
             if msg == TTN_GETDISPINFOW:
                 lpnmtdi = cast(lparam, LPNMTTDISPINFOW)
@@ -654,7 +598,7 @@ class Main(MainWin):
                 return 1
 
     ########################################
-    # register win notifications
+    # Register win notifications
     ########################################
     def _register_win_notifications(self):
         self.timer_check = None
@@ -724,18 +668,15 @@ class Main(MainWin):
                 if idChild == CHILDID_SELF and hwnd in self._taskbar_windows_by_hwnd:
                     win = self._taskbar_windows_by_hwnd[hwnd]
 
-                    # remove from toolbar
+                    # Remove from toolbar
                     user32.SendMessageW(self.toolbar_tasks.hwnd, TB_DELETEBUTTON, win.toolbar_index, 0)
 
-                    # remove from imagelist
-                    #comctl32.ImageList_Remove(self.h_imagelist_tasks, w.icon_index)
-
-                    # decrease toolbar_index
+                    # Decrease toolbar_index
                     for w in self._taskbar_windows_by_command.values():
                         if w.toolbar_index > win.toolbar_index:
                             w.toolbar_index -= 1
 
-                    # delete from taskbar dicts
+                    # Delete from taskbar dicts
                     del self._taskbar_windows_by_command[win.command_id]
                     del self._taskbar_windows_by_hwnd[hwnd]
 
@@ -745,7 +686,7 @@ class Main(MainWin):
                 if hwnd in self._taskbar_windows_by_hwnd:
                     # this test is needed because ShowWindow minimized also triggers EVENT_SYSTEM_FOREGROUND
                     if not user32.IsIconic(hwnd):
-                        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd].command_id, 1) #MAKELPARAM(1, 1))
+                        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd].command_id, 1)
 
         self.winevent_proc_callback = WINEVENTPROCTYPE(_winevent_callback)
 
@@ -774,7 +715,7 @@ class Main(MainWin):
                 return hwnd
 
     ########################################
-    # hangs if "StartMenuExperienceHost.exe" is running!
+    #
     ########################################
     def get_toplevel_windows(self):
         GCLP_HICON = -14
@@ -820,24 +761,55 @@ class Main(MainWin):
     #
     ########################################
     def load_quickbar(self):
-        debug('Loading quickbar...')
+        debug('Loading quick launch toolbar...')
 
         command_id_counter = CMD_ID_QUICK_START
         self._quickbar_commands = {}
 
-        with open(os.path.join(QUICKBAR_DIR, 'quick.pson'), 'r') as f:
+        with open(os.path.join(APPDATA_DIR, 'quick_launch.pson'), 'r') as f:
             quick_config = eval(f.read())
 
         num_buttons = len(quick_config)
         tb_buttons = (TBBUTTON * num_buttons)()
+        ico_size = 16 * self._scale
+        data_size = num_buttons * 4 * ico_size ** 2 + 2
 
-        h_bitmap = user32.LoadImageW(
-            None,
-            os.path.join(QUICKBAR_DIR, f'quick-{self._scale}.bmp'),
-            IMAGE_BITMAP,
-            0, 0,
-            LR_LOADFROMFILE | LR_CREATEDIBSECTION,
-        )
+        hdc = user32.GetDC(None)
+        h_bitmap = gdi32.CreateCompatibleBitmap(hdc, ico_size * num_buttons, ico_size)
+        hdc_dest = gdi32.CreateCompatibleDC(hdc)
+
+        gdi32.SelectObject(hdc_dest, h_bitmap)
+
+        x = 0
+        for row in quick_config:
+            h_icon = HICON()
+            res = user32.PrivateExtractIconsW(
+                os.path.expandvars(row[1]),
+                0,
+                ico_size, ico_size,
+                byref(h_icon),
+                None,
+                1,
+                0
+            )
+            user32.DrawIconEx(hdc_dest, x, 0, h_icon, ico_size, ico_size, 0, None, DI_NORMAL)
+            x += ico_size
+
+        bmi = BITMAPINFO()
+        bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
+        bmi.bmiHeader.biWidth = ico_size * num_buttons
+        bmi.bmiHeader.biHeight = ico_size
+        bmi.bmiHeader.biPlanes = 1
+        bmi.bmiHeader.biBitCount = 32
+        bmi.bmiHeader.biCompression = BI_RGB
+        bmi.bmiHeader.biSizeImage = data_size
+
+        bits = ctypes.create_string_buffer(data_size)
+        gdi32.GetDIBits(hdc, h_bitmap, 0, ico_size, bits, byref(bmi), DIB_RGB_COLORS)
+
+        # Clean up
+        gdi32.DeleteDC(hdc_dest)
+        user32.ReleaseDC(None, hdc)
 
         tb = TBADDBITMAP()
         tb.hInst = None
@@ -864,7 +836,7 @@ class Main(MainWin):
 
         self._quick_bar_width = num_buttons * (self._quick_icon_size + 6 * self._scale) + 16 * self._scale
 
-        debug('Quickbar loaded')
+        debug('Quick launch toolbar loaded')
         return num_buttons
 
     ########################################
@@ -915,40 +887,8 @@ class Main(MainWin):
 
         ico_size = 16 * self._scale
 
-        class Folder():
-            def __init__(self, name, parent=None, path=None):
-                self.name = name
-                self.parent = parent
-                self.path = path
-                self.subdirs = {} # name => foldernode
-                self.files = []
-
-        class File():
-            def __init__(self, name, path):
-                self.name = name
-                self.path = path
-
-        node_map = {}
-        root_folder = Folder('')
-        node_map[''] = root_folder
-        prog_node = None
-        root_dir = STARTMENU_DIR
-
-        l = len(root_dir) + 1
-
-        for root, subdirs, files in os.walk(root_dir):
-            parent_node = node_map[os.path.dirname(root)[l:]]
-            folder_name = os.path.basename(root)
-            f = Folder(folder_name, parent_node,  root)
-            f.files = [File(f[:-4], os.path.join(root, f)) for f in files if f.lower() != 'desktop.ini']
-            parent_node.subdirs[folder_name] = f
-            node_map[root[l:]] = f
-            if parent_node.parent == root_folder and folder_name == 'Programs':
-                prog_node = f
-
         self._hmenu_main = user32.CreatePopupMenu()
-
-        self.menu_item_paths = {}
+        self.hmenu_progs = None
 
         mii = MENUITEMINFOW()
         mii.fMask = MIIM_BITMAP
@@ -959,59 +899,51 @@ class Main(MainWin):
                 mii.hbmpItem = hbitmap
                 user32.SetMenuItemInfoW(_hmenu, id, FALSE, byref(mii))
 
-        # Load icons from cache (bmp)
-        with open(os.path.join(CACHE_DIR, 'icons.pson'), 'r') as f:
-            thumb_dict = eval(f.read())
-        with open(os.path.join(CACHE_DIR, f'icons-{self._scale}.bmp'), 'rb') as f:
-            data = f.read()
+        with open(os.path.join(APPDATA_DIR, 'start_menu.pson'), 'r') as f:
+            menu_data = eval(f.read())
 
-        def make_hmenus(hmenu, f):
+        class ctx():
+            idx = 0
 
-            for k in sorted(f.subdirs.keys(), key = str.lower):
-                if f.subdirs[k] == prog_node:
-                    hmenu_child = user32.CreateMenu()
-                    self.hmenu_progs = hmenu_child
-
+        def parse_list(l, hmenu):
+            for row in l:
+                k, v = row
+                if type(v) == list:
+                    if hmenu == self._hmenu_main and k.lower() == 'programs':
+                        hmenu_child = user32.CreateMenu()
+                        self.hmenu_progs = hmenu_child
+                    else:
+                        mid = self._get_id()
+                        hmenu_child = user32.CreateMenu()
+                        user32.AppendMenuW(hmenu, MF_POPUP, hmenu_child, k)
+                        info = MENUITEMINFOW()
+                        info.fMask = MIIM_ID | MIIM_BITMAP
+                        info.wID = mid
+                        info.hbmpItem = self._icon_bitmaps['folder']
+                        user32.SetMenuItemInfoW(hmenu, hmenu_child, FALSE, byref(info))
+                    parse_list(v, hmenu_child)
                 else:
-                    mid = self._get_id()
-                    self.menu_item_paths[mid] = f.subdirs[k].path
-
-                    hmenu_child = user32.CreateMenu()
-                    user32.AppendMenuW(hmenu, MF_POPUP, hmenu_child, f.subdirs[k].name)
-
-                    info = MENUITEMINFOW()
-                    info.fMask = MIIM_ID | MIIM_BITMAP
-                    info.wID = mid
-                    info.hbmpItem = self._icon_bitmaps['folder']
-                    user32.SetMenuItemInfoW(hmenu, hmenu_child, FALSE, byref(info))
-
-                make_hmenus(hmenu_child, f.subdirs[k])
-
-            for fn in sorted(f.files, key = lambda f: f.name.lower()):
-                path_rel = fn.path[len(root_dir) + 1:]
-                if path_rel in thumb_dict:
-                    mid = self._get_id(lambda p=fn.path: shell32.ShellExecuteW(None, None, p, None, None, 1))
+                    exe = os.path.expandvars(v)
+                    mid = self._get_id(lambda exe=exe: shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), 1))
                     add_menu_item(
                         hmenu,
                         mid,
-                        fn.name,
-                        bytes_to_hbitmap(data, thumb_dict[path_rel], ico_size)
+                        k,
+                        get_file_hbitmap(exe, ico_size)
                     )
-                    self.menu_item_paths[mid] = fn.path
+                    ctx.idx += 1
 
-                else:
-                    debug('Path missing in icons.pson:', path_rel)
-
-        make_hmenus(self._hmenu_main, root_folder.subdirs['start_menu'])
+        parse_list(menu_data, self._hmenu_main)
 
         if user32.GetMenuItemCount(self._hmenu_main):
             user32.AppendMenuW(self._hmenu_main, MF_SEPARATOR, 0, '-')
 
-        user32.AppendMenuW(self._hmenu_main, MF_POPUP, self.hmenu_progs, 'Programs')
-        info = MENUITEMINFOW()
-        info.fMask = MIIM_BITMAP
-        info.hbmpItem = self._icon_bitmaps['progs']
-        user32.SetMenuItemInfoW(self._hmenu_main, self.hmenu_progs, FALSE, byref(info))
+        if self.hmenu_progs:
+            user32.AppendMenuW(self._hmenu_main, MF_POPUP, self.hmenu_progs, 'Programs')
+            info = MENUITEMINFOW()
+            info.fMask = MIIM_BITMAP
+            info.hbmpItem = self._icon_bitmaps['progs']
+            user32.SetMenuItemInfoW(self._hmenu_main, self.hmenu_progs, FALSE, byref(info))
 
         add_menu_item(
             self._hmenu_main,
@@ -1125,7 +1057,6 @@ class Main(MainWin):
     #
     ########################################
     def create_console(self):
-
         exec_info = SHELLEXECUTEINFOW()
         exec_info.nShow = SW_HIDE
         exec_info.fMask = SEE_MASK_NOCLOSEPROCESS

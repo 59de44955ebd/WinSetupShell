@@ -34,7 +34,6 @@ echo ****************************************
 
 xcopy /e app_data "dist\%APP_NAME%\shell_data\app_data\" >nul
 xcopy /e bin "dist\%APP_NAME%\shell_data\bin\" >nul
-mkdir "dist\%APP_NAME%\shell_data\startup"
 
 echo.
 echo ****************************************

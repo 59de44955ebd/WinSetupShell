@@ -4,16 +4,13 @@ import locale
 import os
 import sys
 from winapp.const import WM_USER
-from winapp.dlls import gdi32 #, kernel32
-#from winapp.const import STD_OUTPUT_HANDLE
+from winapp.dlls import gdi32
 
 APP_NAME = 'Shell'
 APP_CLASS = 'Shell_TrayWnd'
 APP_VERSION = 1
 
-#IS_CONSOLE = kernel32.GetStdHandle(STD_OUTPUT_HANDLE) != 0
 IS_FROZEN = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
-
 if IS_FROZEN:
     APP_DIR = os.path.dirname(os.path.abspath(__file__))
     PROGS_DIR = os.path.realpath(os.path.join(APP_DIR, '..', 'programs'))
@@ -25,19 +22,10 @@ os.environ['PROGRAMS'] = PROGS_DIR
 
 RES_DIR = os.path.join(APP_DIR, 'resources')
 BIN_DIR = os.path.join(APP_DIR, 'bin')
-
-#APPDATA_DIR = os.path.join(os.environ['LOCALAPPDATA'], APP_NAME)
 APPDATA_DIR = os.path.join(APP_DIR, 'app_data')
 
 if not os.path.isdir(APPDATA_DIR):
     os.mkdir(APPDATA_DIR)
-
-STARTMENU_DIR = os.path.join(APPDATA_DIR, 'start_menu')
-QUICKBAR_DIR = os.path.join(APPDATA_DIR, 'quick')  # portable
-
-CACHE_DIR = os.path.join(APPDATA_DIR, 'icon_cache')
-if not os.path.isdir(CACHE_DIR):
-    os.mkdir(CACHE_DIR)
 
 DESKTOP_CLASS = 'Progman'
 DESKTOP_BG_COLOR = 0x763B0A
