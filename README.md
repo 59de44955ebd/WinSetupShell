@@ -53,7 +53,7 @@ If you want to start network by default, add line `"%programs%\\PENetwork\\PENet
 - Crystal Disk Info
 - Defraggler
 - DiskGenius
-- Drive Snapshots
+- Drive Snapshot
 - EasyUEFI (Trial)
 - Explorer++
 - FileZilla
