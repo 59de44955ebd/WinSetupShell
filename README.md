@@ -98,6 +98,8 @@ If you want to start network by default, add line `"%programs%\\PENetwork\\PENet
 
 - There might be issues with some HiDPI displays.
 
+- WinSetupShell can also be used with Windows 10 22H2 setup media instead of Windows 11, but not all provided prgrams will work. In particular PortableGit and TestDisk fail in the Windows 10 PE.
+
 ## Customization
 
 Additional compatible (64-bit, portable and WinAPI only) applications can be added to folder `programs` on the USB flash drive. Links to them can then be added to the start menu by adding them to JSON-like text file  
