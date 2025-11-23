@@ -107,3 +107,5 @@ using an arbitrary text editor. The format should be self-explanatory. Like in J
 To add or remove applications to/from the quick launch toolbar, edit text file  
 `shell_data\app_data\quick_launch.pson`  
 accordingly.
+
+Since the Windows PE system doesn't provide persistant icon caching, WinSetupShell uses custom caching to speed up application start. Therefor, whenever you changed something in the start menu or quick launch toolbar, you have to delete the folder `shell_data\app_data\icon_cache` or its contents on the USB flash drive. The cache will then be rebuilt when the shell is started for the next time.

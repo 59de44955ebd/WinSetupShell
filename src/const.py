@@ -22,10 +22,14 @@ os.environ['PROGRAMS'] = PROGS_DIR
 
 RES_DIR = os.path.join(APP_DIR, 'resources')
 BIN_DIR = os.path.join(APP_DIR, 'bin')
-APPDATA_DIR = os.path.join(APP_DIR, 'app_data')
 
+APPDATA_DIR = os.path.join(APP_DIR, 'app_data')
 if not os.path.isdir(APPDATA_DIR):
     os.mkdir(APPDATA_DIR)
+
+CACHE_DIR = os.path.join(APPDATA_DIR, 'icon_cache')
+if not os.path.isdir(CACHE_DIR):
+    os.mkdir(CACHE_DIR)
 
 DESKTOP_CLASS = 'Progman'
 DESKTOP_BG_COLOR = 0x763B0A

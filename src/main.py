@@ -32,9 +32,6 @@ LOAD_DESKTOP = True
 
 DEBUG_CONSOLE = not IS_CONSOLE and '/debug' in sys.argv
 
-def debug(*args):
-    print('[PyShell]', *args)
-
 TASK_HWNDS_IGNORE = []
 
 HWND_TRAY = user32.FindWindowW('Shell_TrayWnd', None)
@@ -761,8 +758,6 @@ class Main(MainWin):
     #
     ########################################
     def load_quickbar(self):
-        debug('Loading quick launch toolbar...')
-
         command_id_counter = CMD_ID_QUICK_START
         self._quickbar_commands = {}
 
@@ -770,46 +765,59 @@ class Main(MainWin):
             quick_config = eval(f.read())
 
         num_buttons = len(quick_config)
-        tb_buttons = (TBBUTTON * num_buttons)()
         ico_size = 16 * self._scale
-        data_size = num_buttons * 4 * ico_size ** 2 + 2
 
-        hdc = user32.GetDC(None)
-        h_bitmap = gdi32.CreateCompatibleBitmap(hdc, ico_size * num_buttons, ico_size)
-        hdc_dest = gdi32.CreateCompatibleDC(hdc)
+        cache_bmp = os.path.join(CACHE_DIR, f'quick_launch-{self._scale}.bmp')
+        if os.path.isfile(cache_bmp):
+            h_bitmap = user32.LoadImageW(None, cache_bmp, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION)
+        else:
+            data_size = num_buttons * 4 * ico_size ** 2 + 2
 
-        gdi32.SelectObject(hdc_dest, h_bitmap)
+            hdc = user32.GetDC(None)
+            h_bitmap = gdi32.CreateCompatibleBitmap(hdc, ico_size * num_buttons, ico_size)
+            hdc_dest = gdi32.CreateCompatibleDC(hdc)
 
-        x = 0
-        for row in quick_config:
-            h_icon = HICON()
-            res = user32.PrivateExtractIconsW(
-                os.path.expandvars(row[1]),
-                0,
-                ico_size, ico_size,
-                byref(h_icon),
-                None,
-                1,
-                0
-            )
-            user32.DrawIconEx(hdc_dest, x, 0, h_icon, ico_size, ico_size, 0, None, DI_NORMAL)
-            x += ico_size
+            gdi32.SelectObject(hdc_dest, h_bitmap)
 
-        bmi = BITMAPINFO()
-        bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
-        bmi.bmiHeader.biWidth = ico_size * num_buttons
-        bmi.bmiHeader.biHeight = ico_size
-        bmi.bmiHeader.biPlanes = 1
-        bmi.bmiHeader.biBitCount = 32
-        bmi.bmiHeader.biCompression = BI_RGB
-        bmi.bmiHeader.biSizeImage = data_size
+            x = 0
+            for row in quick_config:
+                h_icon = HICON()
+                res = user32.PrivateExtractIconsW(
+                    os.path.expandvars(row[1]),
+                    0,
+                    ico_size, ico_size,
+                    byref(h_icon),
+                    None,
+                    1,
+                    0
+                )
+                user32.DrawIconEx(hdc_dest, x, 0, h_icon, ico_size, ico_size, 0, None, DI_NORMAL)
+                x += ico_size
 
-        bits = ctypes.create_string_buffer(data_size)
-        gdi32.GetDIBits(hdc, h_bitmap, 0, ico_size, bits, byref(bmi), DIB_RGB_COLORS)
+            bmi = BITMAPINFO()
+            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
+            bmi.bmiHeader.biWidth = ico_size * num_buttons
+            bmi.bmiHeader.biHeight = ico_size
+            bmi.bmiHeader.biPlanes = 1
+            bmi.bmiHeader.biBitCount = 32
+            bmi.bmiHeader.biCompression = BI_RGB
+            bmi.bmiHeader.biSizeImage = data_size
 
-        # Clean up
-        gdi32.DeleteDC(hdc_dest)
-        user32.ReleaseDC(None, hdc)
+            bits = ctypes.create_string_buffer(data_size)
+            gdi32.GetDIBits(hdc, h_bitmap, 0, ico_size, bits, byref(bmi), DIB_RGB_COLORS)
+
+            # Clean up
+            gdi32.DeleteDC(hdc_dest)
+            user32.ReleaseDC(None, hdc)
+
+            with open(cache_bmp, 'wb') as f:
+                bmh = BMPHEADER()
+                bmh.size = sizeof(BMPHEADER) + sizeof(BITMAPINFO) + len(bits)
+                f.write(bytes(bmh))
+                f.write(bytes(bmi))
+                f.write(bits)
+
+        tb_buttons = (TBBUTTON * num_buttons)()
 
         tb = TBADDBITMAP()
         tb.hInst = None
@@ -836,14 +844,12 @@ class Main(MainWin):
 
         self._quick_bar_width = num_buttons * (self._quick_icon_size + 6 * self._scale) + 16 * self._scale
 
-        debug('Quick launch toolbar loaded')
         return num_buttons
 
     ########################################
     #
     ########################################
     def load_tasks(self):
-        debug('Loading tasks...')
         windows = self.get_toplevel_windows()
         num_buttons = len(windows)
 
@@ -874,15 +880,12 @@ class Main(MainWin):
 
             user32.SendMessageW(self.toolbar_tasks.hwnd, TB_ADDBUTTONS, num_buttons, tb_buttons)
 
-        debug('Tasks loaded')
         return num_buttons
 
     ########################################
     #
     ########################################
     def load_menu(self):
-        debug('Loading menu...')
-
         self._startmenu_command_counter = STARTMENU_FIRST_ITEM_ID
 
         ico_size = 16 * self._scale
@@ -905,6 +908,28 @@ class Main(MainWin):
         class ctx():
             idx = 0
 
+        cache_bmp = os.path.join(CACHE_DIR, f'start_menu-{self._scale}.bmp')
+        use_cache = os.path.isfile(cache_bmp)
+        if use_cache:
+            with open(cache_bmp, 'rb') as f:
+                data = f.read()
+        else:
+            ico_data_size = 4 * ico_size ** 2
+
+            bmi = BITMAPINFO()
+            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
+            bmi.bmiHeader.biWidth = ico_size
+            bmi.bmiHeader.biHeight = -ico_size
+            bmi.bmiHeader.biPlanes = 1
+            bmi.bmiHeader.biBitCount = 32
+            bmi.bmiHeader.biCompression = BI_RGB
+            bmi.bmiHeader.biSizeImage = ico_data_size
+
+            bits = ctypes.create_string_buffer(ico_data_size)
+
+            dc = gdi32.CreateCompatibleDC(0)
+            ctx.bits_total = b''
+
         def parse_list(l, hmenu):
             for row in l:
                 k, v = row
@@ -925,15 +950,30 @@ class Main(MainWin):
                 else:
                     exe = os.path.expandvars(v)
                     mid = self._get_id(lambda exe=exe: shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), 1))
-                    add_menu_item(
-                        hmenu,
-                        mid,
-                        k,
-                        get_file_hbitmap(exe, ico_size)
-                    )
+                    if use_cache:
+                        h_bitmap = bytes_to_hbitmap(data, ctx.idx, ico_size)
+                    else:
+                        h_bitmap = get_file_hbitmap(exe, ico_size)
+                        gdi32.SelectObject(dc, h_bitmap)
+                        gdi32.GetDIBits(dc, h_bitmap, 0, ico_size, bits, byref(bmi), DIB_RGB_COLORS)
+                        ctx.bits_total += bits
+
+                    add_menu_item(hmenu, mid, k, h_bitmap)
                     ctx.idx += 1
 
         parse_list(menu_data, self._hmenu_main)
+
+        if not use_cache:
+            gdi32.DeleteDC(dc)
+            ctx.bits_total += b'\0\0'
+            with open(cache_bmp, 'wb') as f:
+                bmh = BMPHEADER()
+                bmh.size = sizeof(BMPHEADER) + sizeof(BITMAPINFO) + len(ctx.bits_total)
+                f.write(bytes(bmh))
+                bmi.bmiHeader.biHeight = -ico_size * ctx.idx
+                bmi.bmiHeader.biSizeImage = ico_data_size * ctx.idx + 2
+                f.write(bytes(bmi))
+                f.write(ctx.bits_total)
 
         if user32.GetMenuItemCount(self._hmenu_main):
             user32.AppendMenuW(self._hmenu_main, MF_SEPARATOR, 0, '-')
@@ -967,8 +1007,6 @@ class Main(MainWin):
             'Shutdown',
             self._icon_bitmaps['shutdown']
         )
-
-        debug('Menu loaded')
 
     ########################################
     #
@@ -1180,7 +1218,7 @@ class Main(MainWin):
             if returncode == 0:
                 user32.MessageBoxW(self.hwnd, f'Disk "[{d[0]}] {d[1]} was succesfully ejected', 'Success', MB_ICONINFORMATION | MB_OK)
             else:
-                debug(err.decode())
+                print('Error ejecting drive', err.decode())
 
 
 if __name__ == '__main__':
