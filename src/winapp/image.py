@@ -91,7 +91,6 @@ class SHFILEINFOW(Structure):
 #
 ########################################
 def bytes_to_hbitmap(data, idx, ico_size):
-
     ico_data_size = 4 * ico_size ** 2
 
     pos = 54 + ico_data_size * idx
@@ -116,24 +115,29 @@ def bytes_to_hbitmap(data, idx, ico_size):
 ########################################
 #
 ########################################
-def get_file_hicon(filename):
-
+def get_file_hicon(filename, ico_size):
+    h_icon = HICON()
+    res = user32.PrivateExtractIconsW(
+        filename,
+        0,
+        ico_size, ico_size,
+        byref(h_icon),
+        None,
+        1,
+        0
+    )
+    if h_icon:
+        return h_icon
     sfi = SHFILEINFOW()
-
-    # This returns HICON with LNK arrow as overlay
-#    shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_SMALLICON)
-#    return sfi.hIcon
-
-    # This returns HICON without LNK arrow
-    h_imagelist = shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_SYSICONINDEX)
-    return comctl32.ImageList_GetIcon(h_imagelist, sfi.iIcon, ILD_NORMAL)
+    shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | (SHGFI_LARGEICON if ico_size > 16 else SHGFI_SMALLICON))
+    return sfi.hIcon
 
 ########################################
 # This returns 32-bit alpha hbitmap that can't be processed using gdi functions
 ########################################
 def get_file_hbitmap(filename, bitmap_size):
     icon_info = ICONINFO()
-    user32.GetIconInfo(get_file_hicon(filename), byref(icon_info))
+    user32.GetIconInfo(get_file_hicon(filename, bitmap_size), byref(icon_info))
     h_bitmap = user32.CopyImage(icon_info.hbmColor, IMAGE_BITMAP, bitmap_size, bitmap_size, LR_CREATEDIBSECTION)
     gdi32.DeleteObject(icon_info.hbmColor)
     gdi32.DeleteObject(icon_info.hbmMask)

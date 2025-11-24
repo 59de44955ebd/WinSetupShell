@@ -115,6 +115,10 @@ class Main(MainWin):
         )
 
         self._scale = max(1, min(3, user32.GetDpiForWindow(self.hwnd) // 96))
+        if '/x2' in sys.argv:
+            self._scale = 2
+        elif '/x3' in sys.argv:
+            self._scale = 3
 
         self._taskbar_height = TASKBAR_HEIGHT * self._scale
 
@@ -761,7 +765,7 @@ class Main(MainWin):
         command_id_counter = CMD_ID_QUICK_START
         self._quickbar_commands = {}
 
-        with open(os.path.join(APPDATA_DIR, 'quick_launch.pson'), 'r') as f:
+        with open(os.path.join(APPDATA_DIR, 'quick_launch.pson'), 'r', encoding='utf-8') as f:
             quick_config = eval(f.read())
 
         num_buttons = len(quick_config)
@@ -902,7 +906,7 @@ class Main(MainWin):
                 mii.hbmpItem = hbitmap
                 user32.SetMenuItemInfoW(_hmenu, id, FALSE, byref(mii))
 
-        with open(os.path.join(APPDATA_DIR, 'start_menu.pson'), 'r') as f:
+        with open(os.path.join(APPDATA_DIR, 'start_menu.pson'), 'r', encoding='utf-8') as f:
             menu_data = eval(f.read())
 
         class ctx():
