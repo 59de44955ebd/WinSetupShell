@@ -2,14 +2,17 @@
 
 cd /d %~dp0
 
-REM config
+REM Config
 set APP_NAME=shell
 set APP_DIR=%CD%\dist\%APP_NAME%\
 
-REM cleanup
+REM Cleanup
 rmdir /s /q "dist\%APP_NAME%" 2>nul
 del %APP_NAME%.exe 2>nul
 rmdir /s /q %APP_NAME%_data 2>nul
+
+REM Make sure only local modules are used
+set PYTHONPATH=
 
 REM "Compile" winapp constants
 cd src

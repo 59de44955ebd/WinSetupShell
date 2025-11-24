@@ -116,18 +116,6 @@ def bytes_to_hbitmap(data, idx, ico_size):
 #
 ########################################
 def get_file_hicon(filename, ico_size):
-    h_icon = HICON()
-    res = user32.PrivateExtractIconsW(
-        filename,
-        0,
-        ico_size, ico_size,
-        byref(h_icon),
-        None,
-        1,
-        0
-    )
-    if h_icon:
-        return h_icon
     sfi = SHFILEINFOW()
     shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | (SHGFI_LARGEICON if ico_size > 16 else SHGFI_SMALLICON))
     return sfi.hIcon
