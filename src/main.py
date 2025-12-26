@@ -19,16 +19,13 @@ from winapp.dlls import *
 from winapp.image import *
 from winapp.mainwin import *
 from winapp.menu import *
-from winapp.wintypes_extended import WNDENUMPROC
+from winapp.types import WNDENUMPROC
 
 from const import *
-from desktop import Desktop
+from desktop_listview import Desktop
+#from desktop_shellbrowser import Desktop
 from resources import *
 from utils import *
-
-# CONFIG
-LOAD_TASKBAR = True
-LOAD_DESKTOP = True
 
 DEBUG_CONSOLE = not IS_CONSOLE and '/debug' in sys.argv
 
@@ -37,10 +34,10 @@ TASK_HWNDS_IGNORE = []
 HWND_TRAY = user32.FindWindowW('Shell_TrayWnd', None)
 if HWND_TRAY:
     HWND_START = user32.FindWindowExW(HWND_TRAY, None, 'Start', 'Start')
-    HAS_EXPLORER = True
 else:
     HWND_START = None
-    HAS_EXPLORER = False
+
+HAS_EXPLORER = os.path.isfile(os.path.expandvars("%windir%\\explorer.exe"))
 
 # Find weird hidden windows (if run inside regular Windows)
 for classname in ('CiceroUIWndFrame',):
@@ -58,14 +55,11 @@ class TaskWindow():
         self.toolbar_index = None
 
 TRAY_COMMANDS = (
-    ('Network', IDI_NETWORK, CMD_ID_NETWORK),
-    ('USB Disk Ejector', IDI_USB, CMD_ID_USB),
+    ('Network', IDI_NETWORK_DARK if IS_DARK else IDI_NETWORK_LIGHT, CMD_ID_NETWORK),
+    ('USB Disk Ejector', IDI_USB_DARK if IS_DARK else IDI_USB_LIGHT, CMD_ID_USB),
 )
 
-if IS_FROZEN:
-    HMOD_RESOURCES = kernel32.GetModuleHandleW(None)
-else:
-    HMOD_RESOURCES = kernel32.LoadLibraryW(os.path.join(APP_DIR, 'resources.dll'))
+DARK_TASKBAR_BG_BRUSH = gdi32.CreateSolidBrush(DARK_TASKBAR_BG_COLOR)
 
 
 class Main(MainWin):
@@ -75,17 +69,20 @@ class Main(MainWin):
     ########################################
     def __init__(self):
 
-        # In PE mode, add and register Segoe UI (Regular), so GUI apps look nicer
         if not HAS_EXPLORER:
+            # In PE mode, add and register Segoe UI (Regular), so GUI apps look nicer
             fnt_src = os.path.expandvars('%SystemDrive%\\sources\\segoeui.ttf')
             fnt_dst = os.path.expandvars('%windir%\\fonts\\segoeui.ttf')
             if os.path.isfile(fnt_src) and not os.path.isfile(fnt_dst):
                 shutil.copyfile(fnt_src, fnt_dst)
-                hkey = HKEY()
-                if advapi32.RegOpenKeyW(HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts', byref(hkey)) == ERROR_SUCCESS:
-                    buf = create_unicode_buffer("segoeui.ttf")
-                    advapi32.RegSetValueExW(hkey, 'Segoe UI (TrueType)', 0, REG_SZ, buf, sizeof(buf))
-                    advapi32.RegCloseKey(hkey)
+
+            autoexec = os.path.join(APPDATA_DIR, 'autoexec.bat')
+            if os.path.isfile(autoexec):
+                shell32.ShellExecuteW(None, None, autoexec, None, None, SW_HIDE)
+
+        # This successfully adds the wallpaper to the setup UI, but it's not visible on the custom desktop
+#        if os.path.isfile(os.path.join(APPDATA_DIR, 'wallpaper.jpg')):
+#            user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, os.path.join(APPDATA_DIR, 'wallpaper.jpg'), SPIF_UPDATEINIFILE)
 
         self._hwnd_console = None
         self._hproc_console = None
@@ -93,6 +90,8 @@ class Main(MainWin):
             self.create_console()
 
         self._current_menu_item_id = None
+        self.menu_item_paths = {}
+
         self._quickbar_commands = {}
 
         self._taskbar_windows_by_command = {}
@@ -100,18 +99,21 @@ class Main(MainWin):
         self._taskbar_command_counter = CMD_ID_TASKS_START
 
         self._toggle_windows = None
-        self._start_menu_open = False
         self._last_menu_close = 0
 
         self._rc_desktop = RECT()
         user32.GetWindowRect(user32.GetDesktopWindow(), byref(self._rc_desktop))
+
+        self.tooltip_start = None
+        self.tooltip_clock = None
+        self.tooltip_show_desktop = None
 
         super().__init__(
             window_title = '',
             window_class = APP_CLASS,
             style = WS_POPUP,
             ex_style = WS_EX_TOOLWINDOW,
-            hbrush = TASKBAR_BG_BRUSH
+            hbrush = DARK_TASKBAR_BG_BRUSH if IS_DARK else COLOR_3DFACE + 1
         )
 
         self._scale = max(1, min(3, user32.GetDpiForWindow(self.hwnd) // 96))
@@ -122,40 +124,23 @@ class Main(MainWin):
 
         self._taskbar_height = TASKBAR_HEIGHT * self._scale
 
+        self.desktop = Desktop(self, self._taskbar_height)
+
         self._rc_start = RECT(0, self._rc_desktop.bottom - self._taskbar_height, START_WIDTH * self._scale, self._rc_desktop.bottom)
 
         self.set_window_pos(0, self._rc_desktop.bottom - self._taskbar_height, self._rc_desktop.right, self._taskbar_height)
 
-        # always small
-        self._quick_icon_size = 16 * self._scale
-        self._task_icon_size = 16 * self._scale
-        self._tray_icon_size = 16 * self._scale
+        ico_size = 16 * self._scale
+        self._quick_icon_size = ico_size
+        self._task_icon_size = ico_size
+        self._tray_icon_size = ico_size
 
-        self._icon_bitmaps = {}
-        icon_ids = {
-            'programs': 3,
-            'folder': 4,
-            'run': 25,
-            'shutdown': 28,
-            'reboot': 290,
-            'progs':  326,
-        }
-        h_lib = kernel32.LoadLibraryW('shell32.dll')
+        self._hicon_folder = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(4), IMAGE_ICON, self._task_icon_size, self._task_icon_size, LR_SHARED)
 
-        self._hicon_folder = user32.LoadImageW(h_lib, MAKEINTRESOURCEW(4), IMAGE_ICON, self._task_icon_size, self._task_icon_size, LR_SHARED)
-
-        icon_size = 16 * self._scale
-        for name, icon_id in icon_ids.items():
-            h_icon = user32.LoadImageW(h_lib, MAKEINTRESOURCEW(icon_id), IMAGE_ICON, icon_size, icon_size, 0)
-            self._icon_bitmaps[name] = hicon_to_hbitmap(h_icon, icon_size)
-            user32.DestroyIcon(h_icon)
-
-        kernel32.FreeLibrary(h_lib)
+        self._hbitmap_folder = get_shell_icon_as_hbitmap(HMOD_SHELL32, 4, ico_size)  # for startmenu
 
         self._clock_width = CLOCK_WIDTH * self._scale
         self._clock_height = CLOCK_HEIGHT * self._scale
-
-        self.desktop = Desktop(self, self._taskbar_height) if LOAD_DESKTOP else None
 
         self.create_rebar()
         self.create_clock()
@@ -169,46 +154,201 @@ class Main(MainWin):
         if not DEBUG_CONSOLE:
             user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
         self._hmenu_quick = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_QUICK)), 0)
+        self._hmenu_start_item = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START_MENU_ITEM)), 0)
 
         # Add "show desktop" static in bottom right corner
         if SHOW_DESKTOP_CORNER_WIDTH:
-            self.show_desktop = Static(
+            self.static_show_desktop = Static(
                 self,
-                style = WS_CHILD | WS_VISIBLE | SS_NOTIFY,
+                style = WS_CHILD | WS_VISIBLE | SS_NOTIFY   | SS_ICON | SS_CENTERIMAGE,
                 ex_style = WS_EX_TRANSPARENT,
                 left = self._rc_desktop.right - SHOW_DESKTOP_CORNER_WIDTH,
                 width = SHOW_DESKTOP_CORNER_WIDTH,
                 height = self._taskbar_height
             )
+            hicon_show_desktop = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(35), IMAGE_ICON, self._tray_icon_size, self._tray_icon_size, 0)
+            user32.SendMessageW(self.static_show_desktop.hwnd, STM_SETICON, hicon_show_desktop, 0)
+            self.tooltip_show_desktop = Tooltips()
+            if IS_DARK:
+                self.tooltip_show_desktop.apply_theme(True)
+            ti = TOOLINFOW()
+            ti.uFlags = TTF_IDISHWND | TTF_SUBCLASS
+            ti.hwnd = self.hwnd
+            ti.uId = self.static_show_desktop.hwnd
+            ti.lpszText = 'Show Desktop'
+            user32.SendMessageW(self.tooltip_show_desktop.hwnd, TTM_ADDTOOLW, 0, byref(ti))
 
         self.load_menu()
 
-        self.register_message_callback(WM_EXITMENULOOP, self.on_WM_EXITMENULOOP)
-        self.register_message_callback(WM_CTLCOLORSTATIC, self.on_WM_CTLCOLORSTATIC)
-        self.register_message_callback(WM_COMMAND, self.on_WM_COMMAND)
-        self.register_message_callback(WM_NOTIFY, self.on_WM_NOTIFY)
-        self.register_message_callback(WM_MENUSELECT, self.on_WM_MENUSELECT)
+        ########################################
+        #
+        ########################################
+        def _on_WM_EXITMENULOOP(hwnd, wparam, lparam):
+            self._last_menu_close = kernel32.GetTickCount()
 
-        Window.apply_theme(self, True)
-        uxtheme.SetPreferredAppMode(PreferredAppMode.ForceDark)
+        self.register_message_callback(WM_EXITMENULOOP, _on_WM_EXITMENULOOP)
+
+        ########################################
+        #
+        ########################################
+        def _on_WM_MENUSELECT(hwnd, wparam, lparam):
+            if lparam in (self._hmenu_quick, self._hmenu_start_item):
+                return
+            self._current_menu_item_id = LOWORD(wparam)
+
+        self.register_message_callback(WM_MENUSELECT, _on_WM_MENUSELECT)
+
+        ########################################
+        #
+        ########################################
+        def _on_WM_RBUTTONUP(hwnd, wparam, lparam):
+            x, y = lparam & 0xFFFF, (lparam >> 16) & 0xFFFF
+            if y >= self._taskbar_height:
+                if self._current_menu_item_id in self.menu_item_paths:
+                    path = self.menu_item_paths[self._current_menu_item_id]
+                    idm = self._show_popupmenu(self._hmenu_start_item, x, y, TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
+                    user32.EndMenu()
+                    if idm == IDM_OPEN_LOCATION:
+                        shell32.ShellExecuteW(None, None, EXPLORER, path, None, SW_SHOWNORMAL)
+                    elif idm == IDM_OPEN_CMD:
+                        shell32.ShellExecuteW(None, None, 'cmd.exe', None, path, SW_SHOWNORMAL)
+                    elif idm == IDM_OPEN_POWERSHELL:
+                        shell32.ShellExecuteW(None, None, 'pwsh.exe', None, path, SW_SHOWNORMAL)
+
+            return FALSE
+
+        self.register_message_callback(WM_RBUTTONUP, _on_WM_RBUTTONUP)
+
+        ########################################
+        #
+        ########################################
+        def _on_WM_CTLCOLORSTATIC(hwnd, wparam, lparam):
+
+            if lparam == self.clock.hwnd:
+                gdi32.SetTextColor(wparam, DARK_TASKBAR_TEXT_COLOR)
+                gdi32.SetBkMode(wparam, TRANSPARENT)
+                return DARK_TASKBAR_BG_BRUSH
+
+            elif SHOW_DESKTOP_CORNER_WIDTH and lparam == self.static_show_desktop.hwnd:
+                gdi32.SetBkMode(wparam, TRANSPARENT)
+                return DARK_TASKBAR_BG_BRUSH
+
+        if IS_DARK:
+            self.register_message_callback(WM_CTLCOLORSTATIC, _on_WM_CTLCOLORSTATIC)
+
+        ########################################
+        #
+        ########################################
+        def _on_WM_COMMAND(hwnd, wparam, lparam):
+
+            cmd_id = LOWORD(wparam)
+
+            if lparam == 0:  # menu
+                if cmd_id in self.COMMAND_MESSAGE_MAP:
+                    self.COMMAND_MESSAGE_MAP[cmd_id]()
+
+            else:
+                if cmd_id in self._quickbar_commands:
+                    exe = self._quickbar_commands[cmd_id]
+                    shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), SW_SHOWNORMAL)
+
+                elif cmd_id in self._taskbar_windows_by_command:
+                    hwnd = self._taskbar_windows_by_command[cmd_id].hwnd
+                    hwnd_top = self.get_foreground_window()
+
+                    if user32.IsIconic(hwnd):
+                        user32.ShowWindow(hwnd, SW_RESTORE)
+
+                    elif hwnd == hwnd_top:
+                        user32.ShowWindow(hwnd, SW_MINIMIZE)
+                        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, cmd_id, 0)
+
+                    else:
+                        if user32.IsIconic(hwnd):
+                            user32.ShowWindow(hwnd, SW_RESTORE)
+                        user32.SetForegroundWindow(hwnd)
+
+                elif cmd_id == CMD_ID_NETWORK:
+                    shell32.ShellExecuteW(None, None, os.path.join(PROGS_DIR, 'PENetwork', 'PENetwork.exe'), None, None, SW_SHOWNORMAL)
+
+                elif cmd_id == CMD_ID_USB:
+                    self.show_usb_disks()
+
+                elif wparam == STN_CLICKED:
+                    if SHOW_DESKTOP_CORNER_WIDTH and lparam == self.static_show_desktop.hwnd:
+                        self.minimize_toplevel_windows()
+
+        self.register_message_callback(WM_COMMAND, _on_WM_COMMAND)
+
+        ########################################
+        #
+        ########################################
+        def _on_WM_NOTIFY(hwnd, wparam, lparam):
+            mh = cast(lparam, LPNMHDR).contents
+            msg = mh.code
+
+            if mh.hwndFrom == self.toolbar_start.hwnd:
+                if msg == NM_LDOWN:
+                    self.show_startmenu()
+
+                elif msg == NM_RCLICK:
+                    user32.EndMenu()
+                    self.create_timer(self.show_popupmenu_start, 10, True)
+
+            # Clock tooltip
+            elif self.tooltip_clock and mh.hwndFrom == self.tooltip_clock.hwnd:
+                if msg == TTN_GETDISPINFOW:
+                    lpnmtdi = cast(lparam, LPNMTTDISPINFOW)
+                    lpnmtdi.contents.szText = time.strftime("%A, %d. %B %Y")
+
+                elif msg == TTN_SHOW:
+                    rc = self.tooltip_clock.get_window_rect()
+                    self.tooltip_clock.set_window_pos(
+                        x = self._rc_desktop.right - (rc.right - rc.left),
+                        y = self._rc_desktop.bottom - self._taskbar_height - (rc.bottom - rc.top),
+                        flags = SWP_NOSIZE
+                    )
+                    return 1
+
+            elif self.tooltip_show_desktop and mh.hwndFrom == self.tooltip_show_desktop.hwnd:
+                if msg == TTN_SHOW:
+                    rc = self.tooltip_show_desktop.get_window_rect()
+                    self.tooltip_show_desktop.set_window_pos(
+                        x = self._rc_desktop.right - (rc.right - rc.left),
+                        y = self._rc_desktop.bottom - self._taskbar_height - (rc.bottom - rc.top),
+                        flags = SWP_NOSIZE
+                    )
+                    return 1
+
+            elif self.tooltip_start and mh.hwndFrom == self.tooltip_start.hwnd:
+                if msg == TTN_SHOW:
+                    rc = self.tooltip_start.get_window_rect()
+                    self.tooltip_start.set_window_pos(
+                        x = 0,
+                        y = self._rc_desktop.bottom - self._taskbar_height - (rc.bottom - rc.top),
+                        flags = SWP_NOSIZE
+                    )
+                    return 1
+
+        self.register_message_callback(WM_NOTIFY, _on_WM_NOTIFY)
+
+        if IS_DARK:
+            Window.apply_theme(self, True)
+            uxtheme.SetPreferredAppMode(PreferredAppMode.ForceDark)
 
         self.show()
+
+        if HWND_TRAY:
+            user32.ShowWindow(HWND_TRAY, SW_HIDE)
+
+        self._register_win_notifications()
+
+        self._update_workarea(self._taskbar_height)
 
         self.set_foreground_window()
         self.set_stayontop()
 
-        if LOAD_TASKBAR:
-            self._register_win_notifications()
-            self._update_workarea(self._taskbar_height)
-
-        try:
-            with open(os.path.join(APPDATA_DIR, 'startup.pson')) as f:
-                startup_exes = eval(f.read())
-                for row in startup_exes:
-                    exe = os.path.expandvars(row)
-                    shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), SW_SHOW)
-        except:
-            pass
+        self.minimize_toplevel_windows()
 
     ########################################
     # Create rebar and toolbars
@@ -229,7 +369,7 @@ class Main(MainWin):
             ex_style = TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS,
             width = rebar_width,
             height = self._taskbar_height,
-            bg_color_dark = TASKBAR_BG_COLOR
+            bg_color_dark = DARK_TASKBAR_BG_COLOR
         )
 
         # Disable visual styles
@@ -240,7 +380,13 @@ class Main(MainWin):
         self.h_imagelist_tray = comctl32.ImageList_Create(self._tray_icon_size, self._tray_icon_size, ILC_COLOR32, 3, 0)
 
         # Create start toolbar
-        h_icon = user32.LoadImageW(HMOD_RESOURCES, MAKEINTRESOURCEW(IDI_START), IMAGE_ICON, START_ICON_SIZE * self._scale, START_ICON_SIZE * self._scale, 0)
+        h_icon = user32.LoadImageW(
+            HMOD_RESOURCES,
+            MAKEINTRESOURCEW(IDI_START_DARK if IS_DARK else IDI_START_LIGHT),
+            IMAGE_ICON,
+            START_ICON_SIZE * self._scale, START_ICON_SIZE * self._scale,
+            0
+        )
         comctl32.ImageList_ReplaceIcon(self.h_imagelist_start, -1, h_icon)
         user32.DestroyIcon(h_icon)
         self.toolbar_start = ToolBar(
@@ -249,7 +395,7 @@ class Main(MainWin):
             icon_size = START_ICON_SIZE * self._scale,
             style = (
                 WS_CHILDWINDOW | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
-                | TBSTYLE_TRANSPARENT | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS  # | TBSTYLE_ALTDRAG | TBSTYLE_WRAPABLE
+                | TBSTYLE_TRANSPARENT | TBSTYLE_FLAT #| TBSTYLE_TOOLTIPS  # | TBSTYLE_ALTDRAG | TBSTYLE_WRAPABLE
                 | CCS_NODIVIDER
                 | CCS_ADJUSTABLE
                 | CCS_NOPARENTALIGN
@@ -257,17 +403,30 @@ class Main(MainWin):
                 | CCS_TOP
             ),
             hide_text = True,
-            bg_brush_dark = TASKBAR_BG_BRUSH
+            bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
         user32.SendMessageW(self.toolbar_start.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_start)
+
         user32.SendMessageW(self.toolbar_start.hwnd, TB_SETPADDING, 0, MAKELONG(
             (START_WIDTH - START_ICON_SIZE) * self._scale,
             (TASKBAR_HEIGHT - START_ICON_SIZE) * self._scale
         ))
 
+        # Create tooltips manually, so we can position it nicely
+        self.tooltip_start = Tooltips()
+        if IS_DARK:
+            self.tooltip_start.apply_theme(True)
+
+        ti = TOOLINFOW()
+        ti.uFlags = TTF_IDISHWND | TTF_SUBCLASS
+        ti.hwnd = self.hwnd
+        ti.uId = self.toolbar_start.hwnd
+        ti.lpszText = 'Start'
+        user32.SendMessageW(self.tooltip_start.hwnd, TTM_ADDTOOLW, 0, byref(ti))
+
         tb_button = TBBUTTON(
             0,
-            0,  #command_id_counter,
+            0,
             TBSTATE_ENABLED,
             BTNS_BUTTON,
             (BYTE * TBBUTTON_RESERVED_SIZE)(),
@@ -283,7 +442,7 @@ class Main(MainWin):
             icon_size = self._quick_icon_size,
             style = (
                 WS_CHILDWINDOW | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
-                | TBSTYLE_TRANSPARENT | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS  # | TBSTYLE_ALTDRAG | TBSTYLE_WRAPABLE
+                | TBSTYLE_TRANSPARENT | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS  # | TBSTYLE_ALTDRAG
                 | CCS_NODIVIDER
                 | CCS_ADJUSTABLE
                 | CCS_NOPARENTALIGN
@@ -291,9 +450,10 @@ class Main(MainWin):
                 | CCS_TOP
             ),
             hide_text = True,
-            bg_brush_dark = TASKBAR_BG_BRUSH
+            bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
-        user32.SetWindowLongPtrA(user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
+
+        user32.SetWindowLongA(user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         # Create tasks toolbar
         self.toolbar_tasks = ToolBar(
@@ -302,7 +462,7 @@ class Main(MainWin):
             icon_size = self._task_icon_size,
             style = (
                 WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN    | WS_CLIPSIBLINGS
-                | TBSTYLE_TRANSPARENT | TBSTYLE_LIST | TBSTYLE_FLAT # | TBSTYLE_ALTDRAG  # | TBSTYLE_TOOLTIPS
+                | TBSTYLE_TRANSPARENT | TBSTYLE_LIST | TBSTYLE_FLAT # | TBSTYLE_TOOLTIPS # | TBSTYLE_ALTDRAG
                 | CCS_NODIVIDER
                 | CCS_NOPARENTALIGN
                 | CCS_ADJUSTABLE
@@ -310,8 +470,10 @@ class Main(MainWin):
                 | CCS_TOP
             ),
             hide_text = False,
-            bg_brush_dark = TASKBAR_BG_BRUSH
+            bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
+
+        # user32.SetWindowLongA(user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         uxtheme.SetWindowTheme(self.toolbar_tasks.hwnd, "", "")
         self.toolbar_tasks.set_font("Segoe UI", 9, FW_MEDIUM)
@@ -339,7 +501,7 @@ class Main(MainWin):
                 kernel32.CloseHandle(h_proc)
                 if res:
                     dropped_items = self.get_dropped_items(wparam)
-                    shell32.ShellExecuteW(0, None, buf.value, '"' + ('" "'.join(dropped_items)) + '"', None, SW_SHOW)
+                    shell32.ShellExecuteW(0, None, buf.value, '"' + ('" "'.join(dropped_items)) + '"', None, SW_SHOWNORMAL)
 
         shell32.DragAcceptFiles(self.toolbar_tasks.hwnd, True)
         self.toolbar_tasks.register_message_callback(WM_DROPFILES, _on_WM_DROPFILES)
@@ -358,10 +520,10 @@ class Main(MainWin):
                 | CCS_TOP
             ),
             hide_text = True,
-            bg_brush_dark = TASKBAR_BG_BRUSH
+            bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
 
-        user32.SetWindowLongPtrA(user32.SendMessageW(self.toolbar_tray.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
+        user32.SetWindowLongA(user32.SendMessageW(self.toolbar_tray.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         dy = 14 * self._scale
         quick_padding = 6 * self._scale
@@ -489,116 +651,6 @@ class Main(MainWin):
         self.clock_timer_id = self.create_timer(_update_clock, CLOCK_UPDATE_PERIOD_MS)
 
     ########################################
-    #
-    ########################################
-    def on_WM_EXITMENULOOP(self, hwnd, wparam, lparam):
-        self._last_menu_close = kernel32.GetTickCount()
-        self._start_menu_open = False
-
-    ########################################
-    #
-    ########################################
-    def on_WM_MENUSELECT(self, hwnd, wparam, lparam):
-        if self._start_menu_open:
-            self._current_menu_item_id = LOWORD(wparam)
-            if LOWORD(wparam) < STARTMENU_FIRST_ITEM_ID:  # a menu, i.e. a folder
-                mii = MENUITEMINFOW()
-                mii.fMask = MIIM_ID
-                user32.GetMenuItemInfoW(lparam, LOWORD(wparam), TRUE, byref(mii))
-                item_id = mii.wID
-            else:  # a menuitem, i.e. a file
-                item_id = LOWORD(wparam)
-            self._current_menu_item_id = item_id
-        else:
-            self._current_menu_item_id = None
-
-    ########################################
-    #
-    ########################################
-    def on_WM_CTLCOLORSTATIC(self, hwnd, wparam, lparam):
-
-        if lparam == self.clock.hwnd:
-            gdi32.SetTextColor(wparam, COLORREF(TASKBAR_TEXT_COLOR))
-            gdi32.SetBkMode(wparam, TRANSPARENT)
-            return TASKBAR_BG_BRUSH
-
-        elif SHOW_DESKTOP_CORNER_WIDTH and lparam == self.show_desktop.hwnd:
-            gdi32.SetBkMode(wparam, TRANSPARENT)
-            return TASKBAR_BG_BRUSH
-
-    ########################################
-    #
-    ########################################
-    def on_WM_COMMAND(self, hwnd, wparam, lparam):
-
-        cmd_id = LOWORD(wparam)
-
-        if lparam == 0:  # menu
-            if cmd_id in self.COMMAND_MESSAGE_MAP:
-                self.COMMAND_MESSAGE_MAP[cmd_id]()
-
-        else:
-            if cmd_id in self._quickbar_commands:
-                exe = self._quickbar_commands[cmd_id]
-                shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), SW_SHOW)
-
-            elif cmd_id in self._taskbar_windows_by_command:
-                hwnd = self._taskbar_windows_by_command[cmd_id].hwnd
-                hwnd_top = self.get_foreground_window()
-
-                if user32.IsIconic(hwnd):
-                    user32.ShowWindow(hwnd, SW_RESTORE)
-
-                elif hwnd == hwnd_top:
-                    user32.ShowWindow(hwnd, SW_MINIMIZE)
-                    user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, wparam, 0)
-
-                else:
-                    if user32.IsIconic(hwnd):
-                        user32.ShowWindow(hwnd, SW_RESTORE)
-                    user32.SetForegroundWindow(hwnd)
-
-            elif cmd_id == CMD_ID_NETWORK:
-                shell32.ShellExecuteW(None, None, os.path.join(PROGS_DIR, 'PENetwork', 'PENetwork.exe'), None, None, SW_SHOW)
-
-            elif cmd_id == CMD_ID_USB:
-                self.show_usb_disks()
-
-            elif wparam == STN_CLICKED:
-                if SHOW_DESKTOP_CORNER_WIDTH and lparam == self.show_desktop.hwnd:
-                    self.minimize_toplevel_windows()
-
-    ########################################
-    #
-    ########################################
-    def on_WM_NOTIFY(self, hwnd, wparam, lparam):
-        mh = cast(lparam, LPNMHDR).contents
-        msg = mh.code
-
-        if mh.hwndFrom == self.toolbar_start.hwnd:
-            if msg == NM_LDOWN:
-                self.show_startmenu()
-
-            elif msg == NM_RCLICK:
-                user32.EndMenu()
-                self.create_timer(self.show_popupmenu_start, 10, True)
-
-        # Clock tooltip
-        elif self.tooltip_clock and mh.hwndFrom == self.tooltip_clock.hwnd:
-            if msg == TTN_GETDISPINFOW:
-                lpnmtdi = cast(lparam, LPNMTTDISPINFOW)
-                lpnmtdi.contents.szText = time.strftime("%A, %d. %B %Y")
-
-            elif msg == TTN_SHOW:
-                rc = self.tooltip_clock.get_window_rect()
-                self.tooltip_clock.set_window_pos(
-                    x=self._rc_desktop.right - (rc.right - rc.left),
-                    y=self._rc_desktop.bottom - self._taskbar_height - (rc.bottom - rc.top),
-                    flags=SWP_NOSIZE
-                )
-                return 1
-
-    ########################################
     # Register win notifications
     ########################################
     def _register_win_notifications(self):
@@ -615,6 +667,7 @@ class Main(MainWin):
             if num_buttons:
                 button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
                 tb_buttons = (TBBUTTON * num_buttons)()
+                rc = RECT()
                 for i in range(num_buttons):
                     w = windows_new[i]
 
@@ -638,6 +691,10 @@ class Main(MainWin):
 
                     self._taskbar_command_counter += 1
 
+                    # Fix for Explorer++ which insist of opening a window minimized if previous window was minimized
+                    if user32.IsIconic(w.hwnd):
+                        user32.ShowWindow(w.hwnd, SW_SHOWNORMAL)
+
                 user32.SendMessageW(self.toolbar_tasks.hwnd, TB_ADDBUTTONS, num_buttons, tb_buttons)
 
                 self.update_taskbutton_width()
@@ -652,13 +709,16 @@ class Main(MainWin):
                 rc = RECT()
                 user32.GetWindowRect(hwnd, byref(rc))
                 #if rc.left < OFFSET_ICONIC:
-                user32.SetWindowPos(hwnd, 0, rc.left + OFFSET_ICONIC, rc.top, 0, 0, SWP_NOSIZE)
+                user32.SetWindowPos(hwnd, 0, rc.left + OFFSET_ICONIC, rc.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)
+
+                if hwnd in self._taskbar_windows_by_hwnd:
+                    user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd].command_id, FALSE)
 
             elif event == EVENT_SYSTEM_MINIMIZEEND:
                 rc = RECT()
                 user32.GetWindowRect(hwnd, byref(rc))
                 if rc.left >= OFFSET_ICONIC:
-                    user32.SetWindowPos(hwnd, 0, rc.left - OFFSET_ICONIC, rc.top, 0, 0, SWP_NOSIZE)
+                    user32.SetWindowPos(hwnd, 0, rc.left - OFFSET_ICONIC, rc.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)
                 self._toggle_windows = None
 
             elif event == EVENT_OBJECT_CREATE:
@@ -719,8 +779,6 @@ class Main(MainWin):
     #
     ########################################
     def get_toplevel_windows(self):
-        GCLP_HICON = -14
-
         windows = []
         buf_file = create_unicode_buffer(MAX_PATH)
 
@@ -733,7 +791,7 @@ class Main(MainWin):
                     return 1
 
                 # ignore if WS_EX_TOOLWINDOW
-                if user32.GetWindowLongPtrA(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW:
+                if user32.GetWindowLongA(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW:
                     return 1
 
                 user32.GetWindowTextW(hwnd, buf_file, MAX_PATH)
@@ -748,7 +806,7 @@ class Main(MainWin):
                         else:
                             h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_BIG, 0)
                             if h_icon == 0:
-                                h_icon = user32.GetClassLongPtrW(hwnd, GCLP_HICON)
+                                h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
                         if h_icon:
                             windows.append(TaskWindow(hwnd, h_icon, win_text, is_iconic))
 
@@ -775,6 +833,7 @@ class Main(MainWin):
         if os.path.isfile(cache_bmp):
             h_bitmap = user32.LoadImageW(None, cache_bmp, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION)
         else:
+
             data_size = num_buttons * 4 * ico_size ** 2 + 2
 
             hdc = user32.GetDC(None)
@@ -859,7 +918,7 @@ class Main(MainWin):
 
         if num_buttons:
             button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
-            tb_buttons = (TBBUTTON * (num_buttons + 0))()
+            tb_buttons = (TBBUTTON * num_buttons)()
 
             for i in range(num_buttons):
                 command_id = self._taskbar_command_counter
@@ -893,6 +952,7 @@ class Main(MainWin):
         self._startmenu_command_counter = STARTMENU_FIRST_ITEM_ID
 
         ico_size = 16 * self._scale
+#        ico_size = 16 * min(self._scale, 2)
 
         self._hmenu_main = user32.CreatePopupMenu()
         self.hmenu_progs = None
@@ -900,10 +960,10 @@ class Main(MainWin):
         mii = MENUITEMINFOW()
         mii.fMask = MIIM_BITMAP
 
-        def add_menu_item(_hmenu, id, caption, hbitmap = None):
+        def add_menu_item(_hmenu, id, caption, h_bitmap = None):
             user32.AppendMenuW(_hmenu, MF_STRING, id, caption)
-            if hbitmap:
-                mii.hbmpItem = hbitmap
+            if h_bitmap:
+                mii.hbmpItem = h_bitmap
                 user32.SetMenuItemInfoW(_hmenu, id, FALSE, byref(mii))
 
         with open(os.path.join(APPDATA_DIR, 'start_menu.pson'), 'r', encoding='utf-8') as f:
@@ -936,28 +996,56 @@ class Main(MainWin):
 
         def parse_list(l, hmenu):
             for row in l:
-                k, v = row
+                if row == '-':
+                    user32.AppendMenuW(hmenu, MF_SEPARATOR, -1, '')
+                    continue
+                if len(row) == 3:
+                    k, v, ico = row
+                else:
+                    k, v = row
+                    ico = None
                 if type(v) == list:
-                    if hmenu == self._hmenu_main and k.lower() == 'programs':
-                        hmenu_child = user32.CreateMenu()
-                        self.hmenu_progs = hmenu_child
+                    if ico:
+                        if type(ico) == int:
+                            h_icon = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(ico), IMAGE_ICON, ico_size, ico_size, 0)
+                            h_bitmap = hicon_to_hbitmap(h_icon, ico_size)
+                            user32.DestroyIcon(h_icon)
+                        else:
+                            h_bitmap = get_file_hbitmap(os.path.join(APPDATA_DIR, 'custom_icons', ico), ico_size)
                     else:
-                        mid = self._get_id()
-                        hmenu_child = user32.CreateMenu()
-                        user32.AppendMenuW(hmenu, MF_POPUP, hmenu_child, k)
-                        info = MENUITEMINFOW()
-                        info.fMask = MIIM_ID | MIIM_BITMAP
-                        info.wID = mid
-                        info.hbmpItem = self._icon_bitmaps['folder']
-                        user32.SetMenuItemInfoW(hmenu, hmenu_child, FALSE, byref(info))
+                        h_bitmap = self._hbitmap_folder
+
+                    mid = self._get_id()
+                    hmenu_child = user32.CreateMenu()
+                    user32.AppendMenuW(hmenu, MF_POPUP, hmenu_child, k)
+                    info = MENUITEMINFOW()
+                    info.fMask = MIIM_ID | MIIM_BITMAP
+                    info.wID = mid
+                    info.hbmpItem = h_bitmap
+                    user32.SetMenuItemInfoW(hmenu, hmenu_child, FALSE, byref(info))
+
                     parse_list(v, hmenu_child)
                 else:
                     exe = os.path.expandvars(v)
-                    mid = self._get_id(lambda exe=exe: shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), 1))
+                    if ',' in v:
+                        exe, args = exe.split(',', 1)
+                    else:
+                        args = None
+
+                    mid = self._get_id(lambda exe=exe, args=args: shell32.ShellExecuteW(None, 'open', exe, args, os.path.dirname(exe), 1))
+                    self.menu_item_paths[mid] = os.path.dirname(exe)
                     if use_cache:
                         h_bitmap = bytes_to_hbitmap(data, ctx.idx, ico_size)
                     else:
-                        h_bitmap = get_file_hbitmap(exe, ico_size)
+                        if ico:
+                            if type(ico) == int:
+                                h_icon = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(ico), IMAGE_ICON, ico_size, ico_size, 0)
+                                h_bitmap = hicon_to_hbitmap(h_icon, ico_size)
+                                user32.DestroyIcon(h_icon)
+                            else:
+                                h_bitmap = get_file_hbitmap(os.path.join(APPDATA_DIR, 'custom_icons', ico), ico_size)
+                        else:
+                            h_bitmap = get_file_hbitmap(exe, ico_size)
                         gdi32.SelectObject(dc, h_bitmap)
                         gdi32.GetDIBits(dc, h_bitmap, 0, ico_size, bits, byref(bmi), DIB_RGB_COLORS)
                         ctx.bits_total += bits
@@ -970,6 +1058,7 @@ class Main(MainWin):
         if not use_cache:
             gdi32.DeleteDC(dc)
             ctx.bits_total += b'\0\0'
+
             with open(cache_bmp, 'wb') as f:
                 bmh = BMPHEADER()
                 bmh.size = sizeof(BMPHEADER) + sizeof(BITMAPINFO) + len(ctx.bits_total)
@@ -979,21 +1068,11 @@ class Main(MainWin):
                 f.write(bytes(bmi))
                 f.write(ctx.bits_total)
 
-        if user32.GetMenuItemCount(self._hmenu_main):
-            user32.AppendMenuW(self._hmenu_main, MF_SEPARATOR, 0, '-')
-
-        if self.hmenu_progs:
-            user32.AppendMenuW(self._hmenu_main, MF_POPUP, self.hmenu_progs, 'Programs')
-            info = MENUITEMINFOW()
-            info.fMask = MIIM_BITMAP
-            info.hbmpItem = self._icon_bitmaps['progs']
-            user32.SetMenuItemInfoW(self._hmenu_main, self.hmenu_progs, FALSE, byref(info))
-
         add_menu_item(
             self._hmenu_main,
             self._get_id(lambda: shell32.RunFileDlg(self.hwnd, 0, None, None, None, 0)),
             'Run...',
-            self._icon_bitmaps['run']
+            get_shell_icon_as_hbitmap(HMOD_SHELL32, 25, ico_size)
         )
 
         user32.AppendMenuW(self._hmenu_main, MF_SEPARATOR, 0, '-')
@@ -1002,14 +1081,14 @@ class Main(MainWin):
             self._hmenu_main,
             self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/r /t 0', BIN_DIR, 0)),
             'Reboot',
-            self._icon_bitmaps['reboot']
+            get_shell_icon_as_hbitmap(HMOD_SHELL32, 290, ico_size)
         )
 
         add_menu_item(
             self._hmenu_main,
             self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/s /t 0', BIN_DIR, 0)),
             'Shutdown',
-            self._icon_bitmaps['shutdown']
+            get_shell_icon_as_hbitmap(HMOD_SHELL32, 28, ico_size)
         )
 
     ########################################
@@ -1059,15 +1138,19 @@ class Main(MainWin):
     def show_startmenu(self):
         dt = kernel32.GetTickCount() - self._last_menu_close
         if dt > 50:
-            self._start_menu_open = True
             self._show_popupmenu(self._hmenu_main, self._rc_start.left, self._rc_start.top)
 
     ########################################
     #
     ########################################
     def minimize_toplevel_windows(self):
-        for win in self.get_toplevel_windows():
-            user32.ShowWindow(win.hwnd, SW_MINIMIZE)
+        def _enumerate_windows(hwnd, lparam):
+            if not user32.GetWindowLongA(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW and user32.IsWindowVisible(hwnd) and not user32.IsIconic(hwnd):
+                user32.ShowWindow(hwnd, SW_HIDE)  # Prevent animation
+                user32.ShowWindow(hwnd, SW_MINIMIZE)
+            return 1
+
+        user32.EnumWindows(WNDENUMPROC(_enumerate_windows), 0)
 
     ########################################
     #
@@ -1114,7 +1197,7 @@ class Main(MainWin):
             if kernel32.AttachConsole(pid):
                 break
 
-        kernel32.SetConsoleTitleW("Debug Console")
+        kernel32.SetConsoleTitleW('Debug Console')
         self._hwnd_console = kernel32.GetConsoleWindow()
 
         if IS_FROZEN:
@@ -1129,14 +1212,14 @@ class Main(MainWin):
     	# Redirect unbuffered STDOUT to the console
         lStdOutHandle = kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
         hConHandle = msvcrt.open_osfhandle(lStdOutHandle, os.O_TEXT)
-        sys.stdout = io.TextIOWrapper(os.fdopen(hConHandle, 'wb', 0), write_through=True)
+        sys.stdout = io.TextIOWrapper(os.fdopen(hConHandle, 'wb', 0), write_through = True)
 
         # Redirect unbuffered STDERR to the console
         lStdErrHandle = kernel32.GetStdHandle(STD_ERROR_HANDLE)
         hConHandle = msvcrt.open_osfhandle(lStdErrHandle, os.O_TEXT)
-        sys.stderr = io.TextIOWrapper(os.fdopen(hConHandle, 'wb', 0), write_through=True)
+        sys.stderr = io.TextIOWrapper(os.fdopen(hConHandle, 'wb', 0), write_through = True)
 
-        print()
+        print('\r# PyShell Debug Console\n')
 
     ########################################
     #
@@ -1146,7 +1229,7 @@ class Main(MainWin):
             user32.ShowWindow(self._hwnd_console, SW_HIDE)
             user32.CheckMenuItem(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND | MF_UNCHECKED)
         else:
-            user32.ShowWindow(self._hwnd_console, SW_SHOW)
+            user32.ShowWindow(self._hwnd_console, SW_SHOWNORMAL)
             user32.CheckMenuItem(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND | MF_CHECKED)
 
     ########################################
@@ -1162,6 +1245,9 @@ class Main(MainWin):
             kernel32.TerminateProcess(self._hproc_console, 0)
 
         super().quit()
+
+        if HWND_TRAY:
+            user32.ShowWindow(HWND_TRAY, SW_SHOW)
 
         if HWND_START:
             rc = RECT()

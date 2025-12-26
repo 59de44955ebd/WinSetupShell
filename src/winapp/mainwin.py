@@ -8,7 +8,7 @@ from .dlls import user32
 #from .menu import *
 from .themes import *
 from .window import *
-from .wintypes_extended import *
+from .types import *
 
 
 class MainWin(Window):
@@ -105,7 +105,7 @@ class MainWin(Window):
 
     def run(self):
         msg = MSG()
-        while user32.GetMessageW(byref(msg), 0, 0, 0) > 0:
+        while user32.GetMessageW(byref(msg), None, 0, 0) > 0:
             user32.TranslateMessage(byref(msg))
             user32.DispatchMessageW(byref(msg))
         user32.DestroyWindow(self.hwnd)

@@ -3,23 +3,23 @@ from ctypes.wintypes import *
 
 from .const import *
 from .dlls import gdi32, shell32, user32, comctl32
-from .wintypes_extended import MAKEINTRESOURCEW
+from .window import MAKEINTRESOURCEW
 #from .shellapi import SHFILEINFOW
 
 # Bitmap Functions
 # https://learn.microsoft.com/en-us/windows/win32/gdi/bitmap-functions
 
 # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmap
-#class BITMAP(Structure):
-#    _fields_ = [
-#        ("bmType", LONG),
-#        ("bmWidth", LONG),
-#        ("bmHeight", LONG),
-#        ("bmWidthBytes", LONG),
-#        ("bmPlanes", WORD),
-#        ("bmBitsPixel", WORD),
-#        ("bmBits", LPVOID),
-#    ]
+class BITMAP(Structure):
+    _fields_ = [
+        ("bmType", LONG),
+        ("bmWidth", LONG),
+        ("bmHeight", LONG),
+        ("bmWidthBytes", LONG),
+        ("bmPlanes", WORD),
+        ("bmBitsPixel", WORD),
+        ("bmBits", LPVOID),
+    ]
 
 # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
 class BITMAPINFOHEADER(Structure):
@@ -115,21 +115,10 @@ def bytes_to_hbitmap(data, idx, ico_size):
 ########################################
 #
 ########################################
-def get_file_hicon(filename, ico_size):
+def get_file_hicon(filename, ico_size=16):
     sfi = SHFILEINFOW()
     shell32.SHGetFileInfoW(filename, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | (SHGFI_LARGEICON if ico_size > 16 else SHGFI_SMALLICON))
     return sfi.hIcon
-
-########################################
-# This returns 32-bit alpha hbitmap that can't be processed using gdi functions
-########################################
-def get_file_hbitmap(filename, bitmap_size):
-    icon_info = ICONINFO()
-    user32.GetIconInfo(get_file_hicon(filename, bitmap_size), byref(icon_info))
-    h_bitmap = user32.CopyImage(icon_info.hbmColor, IMAGE_BITMAP, bitmap_size, bitmap_size, LR_CREATEDIBSECTION)
-    gdi32.DeleteObject(icon_info.hbmColor)
-    gdi32.DeleteObject(icon_info.hbmMask)
-    return h_bitmap
 
 ########################################
 #
@@ -146,3 +135,51 @@ def hicon_to_hbitmap(h_icon, bitmap_size=16):
     user32.ReleaseDC(None, hdc)
     gdi32.DeleteObject(h_bitmap)
     return h_bitmap_copy
+
+########################################
+#
+########################################
+def get_file_hbitmap(filename, bitmap_size):
+    h_icon = get_file_hicon(filename, bitmap_size)
+    h_bitmap = hicon_to_hbitmap(h_icon, bitmap_size)
+    user32.DestroyIcon(h_icon)
+    return h_bitmap
+
+########################################
+#
+########################################
+def get_shell_icon_as_hbitmap(hlib_shell, icon_id, ico_size):
+    h_icon = user32.LoadImageW(hlib_shell, MAKEINTRESOURCEW(icon_id), IMAGE_ICON, ico_size, ico_size, 0)
+    h_bitmap = hicon_to_hbitmap(h_icon, ico_size)
+    user32.DestroyIcon(h_icon)
+    return h_bitmap
+
+########################################
+#
+########################################
+def resize_hbitmap(h_bitmap, width_new, height_new):
+
+    bm = BITMAP()
+    gdi32.GetObjectW(h_bitmap, sizeof(BITMAP), byref(bm))
+
+    h_bitmap_scaled = gdi32.CreateBitmap(width_new, height_new, 1, 32, 0)
+    hdc_src = gdi32.CreateCompatibleDC(0)
+
+    gdi32.SelectObject(hdc_src, h_bitmap)
+    hdc_dst = gdi32.CreateCompatibleDC(0)
+
+    gdi32.SelectObject(hdc_dst, h_bitmap_scaled)
+
+    gdi32.SetStretchBltMode(hdc_dst, HALFTONE)
+
+    gdi32.StretchBlt(
+        # Dest
+        hdc_dst, 0, 0, width_new, height_new,
+        # Src
+        hdc_src, 0, 0, bm.bmWidth, bm.bmHeight,
+        SRCCOPY
+    )
+    gdi32.DeleteDC(hdc_src)
+    gdi32.DeleteDC(hdc_dst)
+    gdi32.DeleteObject(h_bitmap)
+    return h_bitmap_scaled

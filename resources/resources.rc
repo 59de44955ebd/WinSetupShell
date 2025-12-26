@@ -2,13 +2,19 @@
 #include "resources.h"
 
 IDI_APP ICON "app.ico"
-IDI_START ICON "start.ico"
-IDI_NETWORK ICON "icon-network.ico"
-IDI_USB ICON "icon-usb.ico"
+
+IDI_START_DARK ICON "start-dark.ico"
+IDI_START_LIGHT ICON "start-light.ico"
+
+IDI_NETWORK_DARK ICON "icon-network-dark.ico"
+IDI_NETWORK_LIGHT ICON "icon-network-light.ico"
+
+IDI_USB_DARK ICON "icon-usb-dark.ico"
+IDI_USB_LIGHT ICON "icon-usb-light.ico"
 
 1 VERSIONINFO
-FILEVERSION 0,1,0,0
-PRODUCTVERSION 0,1,0,0
+FILEVERSION 0,9,0,0
+PRODUCTVERSION 0,9,0,0
 FILEOS 0x40004
 FILETYPE 0x1
 {
@@ -18,11 +24,11 @@ BLOCK "StringFileInfo"
 	{
 		VALUE "CompanyName", "59de44955ebd"
 		VALUE "FileDescription", "PyShell"
-		VALUE "FileVersion", "0.1.0.0)"
+		VALUE "FileVersion", "0.9.0.0)"
 		VALUE "InternalName", "PyShell"
 		VALUE "OriginalFilename", "shell.exe"
 		VALUE "ProductName", "PyShell"
-		VALUE "ProductVersion", "0,1,0,0"
+		VALUE "ProductVersion", "0,9,0,0"
 	}
 }
 
@@ -40,5 +46,15 @@ BEGIN
     MENUITEM "Debug Console",IDM_DEBUG_TOGGLE_CONSOLE
     MENUITEM SEPARATOR
     MENUITEM "Quit",IDM_QUIT
+  END
+END
+
+POPUP_MENU_START_MENU_ITEM MENU
+BEGIN
+  POPUP "Popup"
+  BEGIN
+    MENUITEM "Open Explorer++ here",IDM_OPEN_LOCATION
+    MENUITEM "Open CMD here",IDM_OPEN_CMD
+    MENUITEM "Open PowerShell here",IDM_OPEN_POWERSHELL
   END
 END

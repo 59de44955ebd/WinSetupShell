@@ -344,9 +344,11 @@ TPM_VCENTERALIGN = 16
 TPM_BOTTOMALIGN = 32
 TPM_HORIZONTAL = 0
 TPM_VERTICAL = 64
-TPM_NONOTIFY = 128
-TPM_RETURNCMD = 256
 TPM_RECURSE = 1
+TPM_NONOTIFY        =0x0080
+TPM_RETURNCMD       =0x0100
+TPM_NOANIMATION     =0x4000
+
 DOF_EXECUTABLE = 32769
 DOF_DOCUMENT = 32770
 DOF_DIRECTORY = 32771
@@ -4561,8 +4563,18 @@ SF_TEXT = 1
 SF_RTF = 2
 SF_RTFNOOBJS = 3
 SF_TEXTIZED = 4
-SFF_SELECTION = 32768
-SFF_PLAINRTF = 16384
+SF_UNICODE =0x0010
+SF_USECODEPAGE =0x0020
+#SF_NCRFORNONASCII 0x40
+
+#SFF_WRITEXTRAPAR 0x80
+SFF_SELECTION =0x8000
+SFF_PLAINRTF =0x4000
+#SFF_PERSISTVIEWSCALE 0x2000
+#SFF_KEEPDOCINFO 0x1000
+#SFF_PWD 0x0800
+#SF_RTFVAL 0x0700
+
 MAX_TAB_STOPS = 32
 lDefaultTab = 720
 
@@ -4878,6 +4890,8 @@ ES_CONTINUOUS = 0x80000000
 ES_DISPLAY_REQUIRED = 0x00000002
 ES_SYSTEM_REQUIRED = 0x00000001
 
+SPI_GETWORKAREA = 0x0030
+
 GCLP_HBRBACKGROUND = -10
 GCLP_HICON = -14
 
@@ -4888,14 +4902,20 @@ SVGIO_CHECKED = 3
 SVGIO_FLAG_VIEWORDER = 0x80000000
 
 #https://learn.microsoft.com/de-de/windows/win32/shell/sfgao
-SFGAO_CANLINK = 0x00000004
-SFGAO_FOLDER = 0x20000000
-SFGAO_LINK = 0x00010000
+SFGAO_CANLINK   = 0x00000004
+SFGAO_FOLDER    = 0x20000000
+SFGAO_LINK      = 0x00010000
+SFGAO_STREAM    = 0x00400000
+SFGAO_GHOSTED   = 0x00008000
+SFGAO_HIDDEN    = 0x00080000
+SFGAO_FILESYSANCESTOR = 0x10000000
+SFGAO_REMOVABLE = 0x02000000
+SFGAO_FILESYSTEM = 0x40000000
+SFGAO_HASSUBFOLDER = 0x80000000
 
 SVSI_POSITIONITEM	= 0x80
 STRRET_WSTR = 0
 SFVM_REFRESH = 17
-
 
 ########################################
 # Common
@@ -5019,6 +5039,23 @@ NM_TVSTATEIMAGECHANGING =(NM_FIRST-24)   # uses NMTVSTATEIMAGECHANGING struct, d
 #ICC_STANDARD_CLASSES   =0x00004000
 #ICC_LINK_CLASS         =0x00008000
 
+########################################
+# Animate
+########################################
+WC_ANIMATE = 'SysAnimate32'
+
+ACM_OPEN                =(WM_USER+103)
+ACM_PLAY                =(WM_USER+101)
+ACM_STOP                =(WM_USER+102)
+ACM_ISPLAYING           =(WM_USER+104)
+
+ACN_START               =1
+ACN_STOP                =2
+
+ACS_CENTER              =0x0001
+ACS_TRANSPARENT         =0x0002
+ACS_AUTOPLAY            =0x0004
+ACS_TIMER               =0x0008  # don't use threads... use timers
 
 ########################################
 # Button
@@ -5243,6 +5280,30 @@ CBENF_ESCAPE            =3
 CBENF_DROPDOWN          =4
 
 ########################################
+# DateTimePick
+########################################
+WC_DATETIMEPICK = 'SysDateTimePick32'
+
+DTS_UPDOWN          =0x0001 # use UPDOWN instead of MONTHCAL
+DTS_SHOWNONE        =0x0002 # allow a NONE selection
+DTS_SHORTDATEFORMAT =0x0000 # use the short date format (app must forward WM_WININICHANGE messages)
+DTS_LONGDATEFORMAT  =0x0004 # use the long date format (app must forward WM_WININICHANGE messages)
+DTS_SHORTDATECENTURYFORMAT =0x000C # short date format with century (app must forward WM_WININICHANGE messages)
+DTS_TIMEFORMAT      =0x0009 # use the time format (app must forward WM_WININICHANGE messages)
+DTS_APPCANPARSE     =0x0010 # allow user entered strings (app MUST respond to DTN_USERSTRING)
+DTS_RIGHTALIGN      =0x0020 # right-align popup instead of left-align it
+
+DTM_FIRST           =0x1000
+DTM_SETMCCOLOR      =(DTM_FIRST+6)
+
+MCSC_BACKGROUND =0
+MCSC_TEXT =1
+MCSC_TITLEBK =2
+MCSC_TITLETEXT =3
+MCSC_MONTHBK =4
+MCSC_TRAILINGTEXT =5
+
+########################################
 # Edit
 ########################################
 WC_EDIT = 'EDIT'
@@ -5339,6 +5400,83 @@ EM_GETIMESTATUS         =0x00D9
 WB_LEFT            =0
 WB_RIGHT           =1
 WB_ISDELIMITER     =2
+
+########################################
+# Header
+########################################
+WC_HEADER = 'SysHeader32'
+
+HDS_HORZ                =0x0000
+HDS_BUTTONS             =0x0002
+HDS_HOTTRACK            =0x0004
+HDS_HIDDEN              =0x0008
+HDS_DRAGDROP            =0x0040
+HDS_FULLDRAG            =0x0080
+HDS_FILTERBAR           =0x0100
+HDS_FLAT                =0x0200
+HDS_CHECKBOXES          =0x0400
+HDS_NOSIZING            =0x0800
+HDS_OVERFLOW            =0x1000
+
+#ifdef UNICODE
+#define HDITEM HDITEMW
+#define LPHDITEM LPHDITEMW
+#define HDITEM_V1_SIZE HDITEMW_V1_SIZE
+#else
+#define HDITEM HDITEMA
+#define LPHDITEM LPHDITEMA
+#define HDITEM_V1_SIZE HDITEMA_V1_SIZE
+#endif
+
+HDI_WIDTH               =0x0001
+HDI_HEIGHT              =HDI_WIDTH
+HDI_TEXT                =0x0002
+HDI_FORMAT              =0x0004
+HDI_LPARAM              =0x0008
+HDI_BITMAP              =0x0010
+HDI_IMAGE               =0x0020
+HDI_DI_SETITEM          =0x0040
+HDI_ORDER               =0x0080
+HDI_FILTER              =0x0100
+HDI_STATE               =0x0200
+
+# HDF_ flags are shared with the listview control (LVCFMT_ flags)
+
+HDF_LEFT                =0x0000
+HDF_RIGHT               =0x0001
+HDF_CENTER              =0x0002
+HDF_JUSTIFYMASK         =0x0003
+HDF_RTLREADING          =0x0004
+HDF_BITMAP              =0x2000
+HDF_STRING              =0x4000
+HDF_OWNERDRAW           =0x8000
+HDF_IMAGE               =0x0800
+HDF_BITMAP_ON_RIGHT     =0x1000
+HDF_SORTUP              =0x0400
+HDF_SORTDOWN            =0x0200
+HDF_CHECKBOX            =0x0040
+HDF_CHECKED             =0x0080
+HDF_FIXEDWIDTH          =0x0100
+HDF_SPLITBUTTON         =0x1000000
+
+#define HDIS_FOCUSED            0x00000001
+
+HDM_FIRST               =0x1200
+HDM_INSERTITEMW         =(HDM_FIRST + 10)
+HDM_DELETEITEM          =(HDM_FIRST + 2)
+HDM_SETITEMW            =(HDM_FIRST + 12)
+
+#define HD_LAYOUT  HDLAYOUT
+
+########################################
+# HotKey
+########################################
+WC_HOTKEY = 'msctls_hotkey32'
+
+########################################
+# IpAddress
+########################################
+WC_IPADDRESS = 'SysIPAddress32'
 
 ########################################
 # ListBox
@@ -5968,6 +6106,507 @@ LVN_LINKCLICK           =(LVN_FIRST-84)
 LVN_GETEMPTYMARKUP      =(LVN_FIRST-87)
 
 ########################################
+# MonthCal
+########################################
+WC_MONTHCAL = 'SysMonthCal32'
+
+MCM_FIRST = 0x1000
+MCM_SETCOLOR            =(MCM_FIRST + 10)
+MCM_GETCOLOR            =(MCM_FIRST + 11)
+MCM_GETCALENDARGRIDINFO =(MCM_FIRST + 24)
+#define MCM_GETCALID (MCM_FIRST + 27)
+#define MCM_SETCALID (MCM_FIRST + 28)
+# Returns the min rect that will fit the max number of calendars for the passed in rect.
+#define MCM_SIZERECTTOMIN (MCM_FIRST + 29)
+#define MCM_SETCALENDARBORDER (MCM_FIRST + 30)
+#define MCM_GETCALENDARBORDER (MCM_FIRST + 31)
+#define MCM_SETCURRENTVIEW (MCM_FIRST + 32)
+
+MCSC_BACKGROUND   =0   # the background color (between months)
+MCSC_TEXT         =1   # the dates
+MCSC_TITLEBK      =2   # background of the title
+MCSC_TITLETEXT    =3
+MCSC_MONTHBK      =4   # background within the month cal
+MCSC_TRAILINGTEXT =5   # the text color of header & trailing days
+
+# Part
+MCGIP_CALENDARCONTROL      =0
+MCGIP_NEXT                 =1
+MCGIP_PREV                 =2
+MCGIP_FOOTER               =3
+MCGIP_CALENDAR             =4
+MCGIP_CALENDARHEADER       =5
+MCGIP_CALENDARBODY         =6
+MCGIP_CALENDARROW          =7
+MCGIP_CALENDARCELL         =8
+
+MCGIF_DATE                 =0x00000001
+MCGIF_RECT                 =0x00000002
+MCGIF_NAME                 =0x00000004
+
+########################################
+# Pager
+########################################
+WC_PAGER = 'SysPager'
+
+# Pager Control Styles
+PGS_VERT                =0x00000000
+PGS_HORZ                =0x00000001
+PGS_AUTOSCROLL          =0x00000002
+PGS_DRAGNDROP           =0x00000004
+
+# Pager Button State
+
+# The scroll can be in one of the following control State
+#define  PGF_INVISIBLE   0      // Scroll button is not visible
+#define  PGF_NORMAL      1      // Scroll button is in normal state
+#define  PGF_GRAYED      2      // Scroll button is in grayed state
+#define  PGF_DEPRESSED   4      // Scroll button is in depressed state
+#define  PGF_HOT         8      // Scroll button is in hot state
+
+# The following identifiers specifies the button control
+#define PGB_TOPORLEFT       0
+#define PGB_BOTTOMORRIGHT   1
+
+# Pager Control  Messages
+PGM_FIRST = 0x1400
+PGM_SETCHILD            =(PGM_FIRST + 1)
+PGM_RECALCSIZE          =(PGM_FIRST + 2)
+#define PGM_FORWARDMOUSE        (PGM_FIRST + 3)
+PGM_SETBKCOLOR          =(PGM_FIRST + 4)
+#define PGM_GETBKCOLOR          (PGM_FIRST + 5)
+PGM_SETBORDER          =(PGM_FIRST + 6)
+#define PGM_GETBORDER          (PGM_FIRST + 7)
+#define PGM_SETPOS              (PGM_FIRST + 8)
+#define PGM_GETPOS              (PGM_FIRST + 9)
+
+PGM_SETBUTTONSIZE       =(PGM_FIRST + 10)
+#define PGM_GETBUTTONSIZE       (PGM_FIRST + 11)
+#define PGM_GETBUTTONSTATE      (PGM_FIRST + 12)
+#define PGM_GETDROPTARGET       CCM_GETDROPTARGET
+#define PGM_SETSCROLLINFO      (PGM_FIRST + 13)
+
+# Pager Control Notification Messages
+PGN_FIRST = -900
+#define PGN_SCROLL          =(PGN_FIRST-1)
+PGF_SCROLLUP        =1
+PGF_SCROLLDOWN      =2
+PGF_SCROLLLEFT      =4
+PGF_SCROLLRIGHT     =8
+
+# Keys down
+PGK_SHIFT           =1
+PGK_CONTROL         =2
+PGK_MENU            =4
+
+PGN_CALCSIZE        =(PGN_FIRST-2)
+PGF_CALCWIDTH      =1
+PGF_CALCHEIGHT     =2
+
+PGN_HOTITEMCHANGE   =(PGN_FIRST-3)
+
+########################################
+# Progress
+########################################
+WC_PROGRESS = 'msctls_progress32'
+
+PBS_SMOOTH              =0x01
+PBS_VERTICAL            =0x04
+
+PBM_SETRANGE            =(WM_USER+1)
+PBM_SETPOS              =(WM_USER+2)
+PBM_DELTAPOS            =(WM_USER+3)
+PBM_SETSTEP             =(WM_USER+4)
+PBM_STEPIT              =(WM_USER+5)
+PBM_SETRANGE32          =(WM_USER+6)
+
+PBM_GETRANGE            =(WM_USER+7)
+PBM_GETPOS              =(WM_USER+8)
+PBM_SETBARCOLOR         =(WM_USER+9)
+#define PBM_SETBKCOLOR          CCM_SETBKCOLOR  // lParam = bkColor
+
+PBS_MARQUEE             =0x08
+PBM_SETMARQUEE          =(WM_USER+10)
+PBS_SMOOTHREVERSE       =0x10
+
+PBM_GETSTEP             =(WM_USER+13)
+PBM_GETBKCOLOR          =(WM_USER+14)
+PBM_GETBARCOLOR         =(WM_USER+15)
+PBM_SETSTATE            =(WM_USER+16) # wParam = PBST_[State] (NORMAL, ERROR, PAUSED)
+PBM_GETSTATE            =(WM_USER+17)
+
+PBST_NORMAL             =0x0001
+PBST_ERROR              =0x0002
+PBST_PAUSED             =0x0003
+
+########################################
+# ReBar
+########################################
+
+WC_REBAR = 'ReBarWindow32'
+
+RBS_TOOLTIPS                  =0x00000100
+RBS_VARHEIGHT                 =0x00000200
+RBS_BANDBORDERS               =0x00000400
+RBS_FIXEDORDER                =0x00000800
+RBS_REGISTERDROP              =0x00001000
+RBS_AUTOSIZE                  =0x00002000
+RBS_VERTICALGRIPPER           =0x00004000
+RBS_DBLCLKTOGGLE              =0x00008000
+
+#RB_INSERTBANDA  =(WM_USER +  1)
+RB_DELETEBAND   =(WM_USER +  2)
+RB_GETBARINFO   =(WM_USER +  3)
+RB_SETBARINFO   =(WM_USER +  4)
+#RB_SETBANDINFOA =(WM_USER +  6)
+RB_SETPARENT    =(WM_USER +  7)
+RB_HITTEST      =(WM_USER +  8)
+RB_GETRECT      =(WM_USER +  9)
+RB_INSERTBANDW  =(WM_USER +  10)
+RB_SETBANDINFOW =(WM_USER +  11)
+RB_GETBANDCOUNT =(WM_USER +  12)
+RB_GETROWCOUNT  =(WM_USER +  13)
+RB_GETROWHEIGHT =(WM_USER +  14)
+RB_IDTOINDEX    =(WM_USER +  16)
+RB_GETTOOLTIPS  =(WM_USER +  17)
+RB_SETTOOLTIPS  =(WM_USER +  18)
+RB_SETBKCOLOR   =(WM_USER +  19)
+RB_GETBKCOLOR   =(WM_USER +  20)
+RB_SETTEXTCOLOR =(WM_USER +  21)
+RB_GETTEXTCOLOR =(WM_USER +  22)
+
+#define RBSTR_CHANGERECT            0x0001   // flags for RB_SIZETORECT
+
+RB_SIZETORECT   =(WM_USER +  23) # resize the rebar/break bands and such to this rect (lparam)
+RB_SETCOLORSCHEME   =CCM_SETCOLORSCHEME  # lParam is color scheme
+RB_GETCOLORSCHEME   =CCM_GETCOLORSCHEME  # fills in COLORSCHEME pointed to by lParam
+
+
+#// for manual drag control
+#// lparam == cursor pos
+#        // -1 means do it yourself.
+#        // -2 means use what you had saved before
+#define RB_BEGINDRAG    (WM_USER + 24)
+#define RB_ENDDRAG      (WM_USER + 25)
+#define RB_DRAGMOVE     (WM_USER + 26)
+#define RB_GETBARHEIGHT (WM_USER + 27)
+#define RB_GETBANDINFOW (WM_USER + 28)
+#define RB_GETBANDINFOA (WM_USER + 29)
+
+#ifdef UNICODE
+#define RB_GETBANDINFO   RB_GETBANDINFOW
+#else
+#define RB_GETBANDINFO   RB_GETBANDINFOA
+#endif
+RB_MINIMIZEBAND =(WM_USER + 30)
+RB_MAXIMIZEBAND =(WM_USER + 31)
+#define RB_GETDROPTARGET (CCM_GETDROPTARGET)
+#define RB_GETBANDBORDERS (WM_USER + 34)  // returns in lparam = lprc the amount of edges added to band wparam
+RB_SHOWBAND     =(WM_USER + 35)
+RB_SETPALETTE   =(WM_USER + 37)
+RB_GETPALETTE   =(WM_USER + 38)
+#define RB_MOVEBAND     (WM_USER + 39)
+#define RB_SETUNICODEFORMAT     CCM_SETUNICODEFORMAT
+#define RB_GETUNICODEFORMAT     CCM_GETUNICODEFORMAT
+#define RB_GETBANDMARGINS   (WM_USER + 40)
+RB_SETWINDOWTHEME       =CCM_SETWINDOWTHEME
+#define RB_SETEXTENDEDSTYLE (WM_USER + 41)
+#define RB_GETEXTENDEDSTYLE (WM_USER + 42)
+#define RB_PUSHCHEVRON      (WM_USER + 43)
+RB_SETBANDWIDTH =(WM_USER + 44)
+
+RBN_FIRST = -831
+RBN_HEIGHTCHANGE    =(RBN_FIRST - 0)
+#define RBN_GETOBJECT       (RBN_FIRST - 1)
+#define RBN_LAYOUTCHANGED   (RBN_FIRST - 2)
+#define RBN_AUTOSIZE        (RBN_FIRST - 3)
+#define RBN_BEGINDRAG       (RBN_FIRST - 4)
+#define RBN_ENDDRAG         (RBN_FIRST - 5)
+#define RBN_DELETINGBAND    (RBN_FIRST - 6)     // Uses NMREBAR
+#define RBN_DELETEDBAND     (RBN_FIRST - 7)     // Uses NMREBAR
+#define RBN_CHILDSIZE       (RBN_FIRST - 8)
+RBN_CHEVRONPUSHED   =(RBN_FIRST - 10)
+#define RBN_SPLITTERDRAG    (RBN_FIRST - 11)
+#define RBN_MINMAX          (RBN_FIRST - 21)
+#define RBN_AUTOBREAK       (RBN_FIRST - 22)
+
+RBBS_BREAK          =0x00000001  # break to new line
+RBBS_FIXEDSIZE      =0x00000002  # band can't be sized
+RBBS_CHILDEDGE      =0x00000004  # edge around top & bottom of child window
+RBBS_HIDDEN         =0x00000008  # don't show
+RBBS_NOVERT         =0x00000010  # don't show when vertical
+RBBS_FIXEDBMP       =0x00000020  # bitmap doesn't move during band resize
+RBBS_VARIABLEHEIGHT =0x00000040  # allow autosizing of this child vertically
+RBBS_GRIPPERALWAYS  =0x00000080  # always show the gripper
+RBBS_NOGRIPPER      =0x00000100  # never show the gripper
+RBBS_USECHEVRON     =0x00000200  # display drop-down button for this band if it's sized smaller than ideal width
+RBBS_HIDETITLE      =0x00000400  # keep band title hidden
+RBBS_TOPALIGN       =0x00000800  # keep band in top row
+
+RBBIM_STYLE           =0x00000001
+RBBIM_COLORS          =0x00000002
+RBBIM_TEXT            =0x00000004
+RBBIM_IMAGE           =0x00000008
+RBBIM_CHILD           =0x00000010
+RBBIM_CHILDSIZE       =0x00000020
+RBBIM_SIZE            =0x00000040
+RBBIM_BACKGROUND      =0x00000080
+RBBIM_ID              =0x00000100
+RBBIM_IDEALSIZE       =0x00000200
+RBBIM_LPARAM          =0x00000400
+RBBIM_HEADERSIZE      =0x00000800
+RBBIM_CHEVRONLOCATION =0x00001000
+RBBIM_CHEVRONSTATE    =0x00002000
+
+########################################
+# RichEdit
+########################################
+
+MSFTEDIT_CLASS = "RICHEDIT50W"
+
+# RichEdit messages
+
+#define WM_CONTEXTMENU			0x007B
+#define WM_UNICHAR				0x0109
+#define WM_PRINTCLIENT			0x0318
+#define EM_GETLIMITTEXT 		(WM_USER + 37)
+#ifndef EM_POSFROMCHAR
+#define EM_POSFROMCHAR			(WM_USER + 38)
+#define EM_CHARFROMPOS			(WM_USER + 39)
+#define EM_SCROLLCARET			(WM_USER + 49)
+EM_CANPASTE 			=(WM_USER + 50)
+#define EM_DISPLAYBAND			(WM_USER + 51)
+EM_EXGETSEL 			=(WM_USER + 52)
+#define EM_EXLIMITTEXT			(WM_USER + 53)
+#define EM_EXLINEFROMCHAR		(WM_USER + 54)
+#define EM_EXSETSEL 			(WM_USER + 55)
+#define EM_FINDTEXT 			(WM_USER + 56)
+EM_FORMATRANGE			=(WM_USER + 57)
+EM_GETCHARFORMAT		=(WM_USER + 58)
+#define EM_GETEVENTMASK 		(WM_USER + 59)
+#define EM_GETOLEINTERFACE		(WM_USER + 60)
+EM_GETPARAFORMAT		=(WM_USER + 61)
+EM_GETSELTEXT			=(WM_USER + 62)
+#define EM_HIDESELECTION		(WM_USER + 63)
+#define EM_PASTESPECIAL 		(WM_USER + 64)
+#define EM_REQUESTRESIZE		(WM_USER + 65)
+#define EM_SELECTIONTYPE		(WM_USER + 66)
+EM_SETBKGNDCOLOR		=(WM_USER + 67)
+EM_SETCHARFORMAT		=(WM_USER + 68)
+EM_SETEVENTMASK 		=(WM_USER + 69)
+#define EM_SETOLECALLBACK		(WM_USER + 70)
+EM_SETPARAFORMAT		=(WM_USER + 71)
+EM_SETTARGETDEVICE		=(WM_USER + 72)
+EM_STREAMIN 			=(WM_USER + 73)
+EM_STREAMOUT			=(WM_USER + 74)
+#define EM_GETTEXTRANGE 		(WM_USER + 75)
+#define EM_FINDWORDBREAK		(WM_USER + 76)
+#define EM_SETOPTIONS			(WM_USER + 77)
+#define EM_GETOPTIONS			(WM_USER + 78)
+#define EM_FINDTEXTEX			(WM_USER + 79)
+#define EM_GETWORDBREAKPROCEX	(WM_USER + 80)
+#define EM_SETWORDBREAKPROCEX	(WM_USER + 81)
+EM_SETUNDOLIMIT =(WM_USER + 82)
+EM_REDO =(WM_USER + 84)
+#define EM_CANREDO (WM_USER + 85)
+#define EM_GETUNDONAME (WM_USER + 86)
+#define EM_GETREDONAME (WM_USER + 87)
+#define EM_STOPGROUPTYPING (WM_USER + 88)
+EM_SETTEXTMODE =(WM_USER + 89)
+#define EM_GETTEXTMODE (WM_USER + 90)
+
+#define EM_GETAUTOURLDETECT 	(WM_USER + 92)
+#define EM_SETPALETTE			(WM_USER + 93)
+EM_GETTEXTEX			=(WM_USER + 94)
+EM_GETTEXTLENGTHEX		=(WM_USER + 95)
+#define EM_SHOWSCROLLBAR		(WM_USER + 96)
+EM_SETTEXTEX			=(WM_USER + 97)
+
+#define EM_SETPUNCTUATION (WM_USER + 100)
+#define EM_GETPUNCTUATION (WM_USER + 101)
+EM_SETWORDWRAPMODE =(WM_USER + 102)
+#define EM_GETWORDWRAPMODE (WM_USER + 103)
+#define EM_SETIMECOLOR (WM_USER + 104)
+#define EM_GETIMECOLOR (WM_USER + 105)
+#define EM_SETIMEOPTIONS (WM_USER + 106)
+#define EM_GETIMEOPTIONS (WM_USER + 107)
+#define EM_CONVPOSITION (WM_USER + 108)
+#define EM_SETLANGOPTIONS (WM_USER + 120)
+#define EM_GETLANGOPTIONS (WM_USER + 121)
+#define EM_GETIMECOMPMODE (WM_USER + 122)
+EM_FINDTEXTW =(WM_USER + 123)
+#define EM_FINDTEXTEXW (WM_USER + 124)
+#define EM_RECONVERSION (WM_USER + 125)
+#define EM_SETIMEMODEBIAS (WM_USER + 126)
+#define EM_GETIMEMODEBIAS (WM_USER + 127)
+#define EM_SETBIDIOPTIONS (WM_USER + 200)
+#define EM_GETBIDIOPTIONS (WM_USER + 201)
+#define EM_SETTYPOGRAPHYOPTIONS (WM_USER + 202)
+#define EM_GETTYPOGRAPHYOPTIONS (WM_USER + 203)
+EM_SETEDITSTYLE =(WM_USER + 204)
+#define EM_GETEDITSTYLE (WM_USER + 205)
+
+#define EM_OUTLINE (WM_USER + 220)
+#define EM_GETSCROLLPOS (WM_USER + 221)
+#define EM_SETSCROLLPOS (WM_USER + 222)
+EM_SETFONTSIZE =(WM_USER + 223)
+#define EM_GETZOOM (WM_USER + 224)
+EM_SETZOOM =(WM_USER + 225)
+#define EM_GETVIEWKIND (WM_USER + 226)
+#define EM_SETVIEWKIND (WM_USER + 227)
+#define EM_GETPAGE (WM_USER + 228)
+#define EM_SETPAGE (WM_USER + 229)
+#define EM_GETHYPHENATEINFO (WM_USER + 230)
+#define EM_SETHYPHENATEINFO (WM_USER + 231)
+#define EM_GETPAGEROTATE (WM_USER + 235)
+#define EM_SETPAGEROTATE (WM_USER + 236)
+#define EM_GETCTFMODEBIAS (WM_USER + 237)
+#define EM_SETCTFMODEBIAS (WM_USER + 238)
+#define EM_GETCTFOPENSTATUS (WM_USER + 240)
+#define EM_SETCTFOPENSTATUS (WM_USER + 241)
+#define EM_GETIMECOMPTEXT (WM_USER + 242)
+#define EM_ISIME (WM_USER + 243)
+#define EM_GETIMEPROPERTY (WM_USER + 244)
+#define EM_GETQUERYRTFOBJ (WM_USER + 269)
+#define EM_SETQUERYRTFOBJ (WM_USER + 270)
+
+#define EM_GETTABLEPARMS (WM_USER + 265)
+#define EM_SETEDITSTYLEEX (WM_USER + 275)
+#define EM_GETEDITSTYLEEX (WM_USER + 276)
+
+#define EM_GETSTORYTYPE (WM_USER + 290)
+#define EM_SETSTORYTYPE (WM_USER + 291)
+#define EM_GETELLIPSISMODE (WM_USER + 305)
+#define EM_SETELLIPSISMODE (WM_USER + 306)
+#define ELLIPSIS_MASK 0x00000003
+#define ELLIPSIS_NONE 0x00000000
+#define ELLIPSIS_END 0x00000001
+#define ELLIPSIS_WORD 0x00000003
+#define EM_SETTABLEPARMS (WM_USER + 307)
+#define EM_GETTOUCHOPTIONS (WM_USER + 310)
+#define EM_SETTOUCHOPTIONS (WM_USER + 311)
+EM_INSERTIMAGE =(WM_USER + 314)
+#define EM_SETUIANAME (WM_USER + 320)
+#define EM_GETELLIPSISSTATE (WM_USER + 322)
+
+# from edit
+EM_SETTABSTOPS          =0x00CB
+EM_SETMARGINS           =0x00D3
+EM_GETMARGINS           =0x00D4
+
+# Edit control EM_SETMARGIN parameters
+EC_LEFTMARGIN       =0x0001
+EC_RIGHTMARGIN      =0x0002
+EC_USEFONTINFO      =0xffff
+
+#define ES_SAVESEL 0x00008000
+#define ES_SUNKEN 0x00004000
+#define ES_DISABLENOSCROLL 0x00002000
+#define ES_SELECTIONBAR 0x01000000
+ES_NOOLEDRAGDROP =0x00000008
+#define ES_EX_NOCALLOLEINIT 0x00000000
+#define ES_VERTICAL 0x00400000
+#define ES_NOIME 0x00080000
+#define ES_SELFIME 0x00040000
+
+#define ES_EX_ALLOWEOL_CR             0x0001
+#define ES_EX_ALLOWEOL_LF             0x0002
+#define ES_EX_ALLOWEOL_ALL            (ES_EX_ALLOWEOL_CR | ES_EX_ALLOWEOL_LF)
+#define ES_EX_CONVERT_EOL_ON_PASTE    0x0004
+ES_EX_ZOOMABLE                =0x0010
+
+TM_PLAINTEXT = 1
+TM_RICHTEXT = 2
+TM_SINGLELEVELUNDO = 4
+TM_MULTILEVELUNDO = 8
+TM_SINGLECODEPAGE = 16
+TM_MULTICODEPAGE = 32
+
+#define SES_USECRLF 32
+#define SES_USEAIMM 64
+#define SES_NOIME 128
+#define SES_ALLOWBEEPS 256
+#define SES_UPPERCASE 512
+#define SES_LOWERCASE 1024
+#define SES_NOINPUTSEQUENCECHK 2048
+#define SES_BIDI 4096
+#define SES_SCROLLONKILLFOCUS 8192
+#define SES_XLTCRCRLFTOCR 16384
+#define SES_DRAFTMODE 32768
+#define SES_USECTF 0x00010000
+#define SES_HIDEGRIDLINES 0x00020000
+#define SES_USEATFONT 0x00040000
+#define SES_CUSTOMLOOK 0x00080000
+#define SES_LBSCROLLNOTIFY 0x00100000
+SES_CTFALLOWEMBED =0x00200000
+#define SES_CTFALLOWSMARTTAG 0x00400000
+#define SES_CTFALLOWPROOFING 0x00800000
+#if _RICHEDIT_VER >= 0x0500
+#define SES_LOGICALCARET 0x01000000
+#define SES_WORDDRAGDROP 0x02000000
+#define SES_SMARTDRAGDROP 0x04000000
+#define SES_MULTISELECT 0x08000000
+#define SES_CTFNOLOCK 0x10000000
+#define SES_NOEALINEHEIGHTADJUST 0x20000000
+#define SES_MAX 0x20000000
+
+ST_DEFAULT = 0x00
+ST_KEEPUNDO = 0x01
+ST_SELECTION = 0x02
+ST_NEWCHARS = 0x04
+ST_UNICODE = 0x08
+ST_PLACEHOLDERTEXT = 0x10
+ST_PLAINTEXTONLY = 0x20
+
+GT_DEFAULT = 0
+GT_USECRLF = 1
+GT_SELECTION = 2
+GT_RAWTEXT = 4
+GT_NOHIDDENTEXT = 8
+
+GTL_DEFAULT = 0
+GTL_USECRLF = 1
+GTL_PRECISE = 2
+GTL_CLOSE = 4
+GTL_NUMCHARS = 8
+GTL_NUMBYTES = 16
+
+########################################
+# ScrollBar
+########################################
+WC_SCROLLBAR = 'SCROLLBAR'
+
+#  Styles
+SBS_HORZ                    =0x0000
+SBS_VERT                    =0x0001
+SBS_TOPALIGN                =0x0002
+SBS_LEFTALIGN               =0x0002
+SBS_BOTTOMALIGN             =0x0004
+SBS_RIGHTALIGN              =0x0004
+SBS_SIZEBOXTOPLEFTALIGN     =0x0002
+SBS_SIZEBOXBOTTOMRIGHTALIGN =0x0004
+SBS_SIZEBOX                 =0x0008
+SBS_SIZEGRIP                =0x0010
+
+# Messages
+SBM_SETPOS                  =0x00E0
+SBM_GETPOS                  =0x00E1
+SBM_SETRANGE                =0x00E2
+SBM_SETRANGEREDRAW          =0x00E6
+SBM_GETRANGE                =0x00E3
+SBM_ENABLE_ARROWS           =0x00E4
+SBM_SETSCROLLINFO           =0x00E9
+SBM_GETSCROLLINFO           =0x00EA
+SBM_GETSCROLLBARINFO        =0x00EB
+
+SIF_RANGE           =0x0001
+SIF_PAGE            =0x0002
+SIF_POS             =0x0004
+SIF_DISABLENOSCROLL =0x0008
+SIF_TRACKPOS        =0x0010
+SIF_ALL             =(SIF_RANGE | SIF_PAGE | SIF_POS | SIF_TRACKPOS)
+
+########################################
 # Static
 ########################################
 WC_STATIC = 'Static'
@@ -6057,122 +6696,9 @@ SBT_RTLREADING           =0x0400
 SBT_NOTABPARSING         =0x0800
 
 ########################################
-# ReBar
+# SysLink
 ########################################
-WC_REBAR = 'ReBarWindow32'
-
-RBS_TOOLTIPS                  =0x00000100
-RBS_VARHEIGHT                 =0x00000200
-RBS_BANDBORDERS               =0x00000400
-RBS_FIXEDORDER                =0x00000800
-RBS_REGISTERDROP              =0x00001000
-RBS_AUTOSIZE                  =0x00002000
-RBS_VERTICALGRIPPER           =0x00004000
-RBS_DBLCLKTOGGLE              =0x00008000
-
-#RB_INSERTBANDA  =(WM_USER +  1)
-RB_DELETEBAND   =(WM_USER +  2)
-RB_GETBARINFO   =(WM_USER +  3)
-RB_SETBARINFO   =(WM_USER +  4)
-#RB_SETBANDINFOA =(WM_USER +  6)
-RB_SETPARENT    =(WM_USER +  7)
-RB_HITTEST      =(WM_USER +  8)
-RB_GETRECT      =(WM_USER +  9)
-RB_INSERTBANDW  =(WM_USER +  10)
-RB_SETBANDINFOW =(WM_USER +  11)
-RB_GETBANDCOUNT =(WM_USER +  12)
-RB_GETROWCOUNT  =(WM_USER +  13)
-RB_GETROWHEIGHT =(WM_USER +  14)
-RB_IDTOINDEX    =(WM_USER +  16)
-RB_GETTOOLTIPS  =(WM_USER +  17)
-RB_SETTOOLTIPS  =(WM_USER +  18)
-RB_SETBKCOLOR   =(WM_USER +  19)
-RB_GETBKCOLOR   =(WM_USER +  20)
-RB_SETTEXTCOLOR =(WM_USER +  21)
-RB_GETTEXTCOLOR =(WM_USER +  22)
-
-#define RBSTR_CHANGERECT            0x0001   // flags for RB_SIZETORECT
-
-RB_SIZETORECT   =(WM_USER +  23) # resize the rebar/break bands and such to this rect (lparam)
-RB_SETCOLORSCHEME   =CCM_SETCOLORSCHEME  # lParam is color scheme
-RB_GETCOLORSCHEME   =CCM_GETCOLORSCHEME  # fills in COLORSCHEME pointed to by lParam
-
-
-#// for manual drag control
-#// lparam == cursor pos
-#        // -1 means do it yourself.
-#        // -2 means use what you had saved before
-#define RB_BEGINDRAG    (WM_USER + 24)
-#define RB_ENDDRAG      (WM_USER + 25)
-#define RB_DRAGMOVE     (WM_USER + 26)
-#define RB_GETBARHEIGHT (WM_USER + 27)
-RB_GETBANDINFOW =(WM_USER + 28)
-#define RB_GETBANDINFOA (WM_USER + 29)
-
-#ifdef UNICODE
-#define RB_GETBANDINFO   RB_GETBANDINFOW
-#else
-#define RB_GETBANDINFO   RB_GETBANDINFOA
-#endif
-RB_MINIMIZEBAND =(WM_USER + 30)
-RB_MAXIMIZEBAND =(WM_USER + 31)
-#define RB_GETDROPTARGET (CCM_GETDROPTARGET)
-#define RB_GETBANDBORDERS (WM_USER + 34)  // returns in lparam = lprc the amount of edges added to band wparam
-RB_SHOWBAND     =(WM_USER + 35)
-RB_SETPALETTE   =(WM_USER + 37)
-RB_GETPALETTE   =(WM_USER + 38)
-#define RB_MOVEBAND     (WM_USER + 39)
-#define RB_SETUNICODEFORMAT     CCM_SETUNICODEFORMAT
-#define RB_GETUNICODEFORMAT     CCM_GETUNICODEFORMAT
-#define RB_GETBANDMARGINS   (WM_USER + 40)
-RB_SETWINDOWTHEME       =CCM_SETWINDOWTHEME
-#define RB_SETEXTENDEDSTYLE (WM_USER + 41)
-#define RB_GETEXTENDEDSTYLE (WM_USER + 42)
-#define RB_PUSHCHEVRON      (WM_USER + 43)
-RB_SETBANDWIDTH =(WM_USER + 44)
-
-RBN_FIRST = -831
-RBN_HEIGHTCHANGE    =(RBN_FIRST - 0)
-#define RBN_GETOBJECT       (RBN_FIRST - 1)
-#define RBN_LAYOUTCHANGED   (RBN_FIRST - 2)
-#define RBN_AUTOSIZE        (RBN_FIRST - 3)
-#define RBN_BEGINDRAG       (RBN_FIRST - 4)
-RBN_ENDDRAG         =(RBN_FIRST - 5)
-#define RBN_DELETINGBAND    (RBN_FIRST - 6)     // Uses NMREBAR
-#define RBN_DELETEDBAND     (RBN_FIRST - 7)     // Uses NMREBAR
-#define RBN_CHILDSIZE       (RBN_FIRST - 8)
-RBN_CHEVRONPUSHED   =(RBN_FIRST - 10)
-RBN_SPLITTERDRAG   =(RBN_FIRST - 11)
-#define RBN_MINMAX          (RBN_FIRST - 21)
-#define RBN_AUTOBREAK       (RBN_FIRST - 22)
-
-RBBS_BREAK          =0x00000001  # break to new line
-RBBS_FIXEDSIZE      =0x00000002  # band can't be sized
-RBBS_CHILDEDGE      =0x00000004  # edge around top & bottom of child window
-RBBS_HIDDEN         =0x00000008  # don't show
-RBBS_NOVERT         =0x00000010  # don't show when vertical
-RBBS_FIXEDBMP       =0x00000020  # bitmap doesn't move during band resize
-RBBS_VARIABLEHEIGHT =0x00000040  # allow autosizing of this child vertically
-RBBS_GRIPPERALWAYS  =0x00000080  # always show the gripper
-RBBS_NOGRIPPER      =0x00000100  # never show the gripper
-RBBS_USECHEVRON     =0x00000200  # display drop-down button for this band if it's sized smaller than ideal width
-RBBS_HIDETITLE      =0x00000400  # keep band title hidden
-RBBS_TOPALIGN       =0x00000800  # keep band in top row
-
-RBBIM_STYLE           =0x00000001
-RBBIM_COLORS          =0x00000002
-RBBIM_TEXT            =0x00000004
-RBBIM_IMAGE           =0x00000008
-RBBIM_CHILD           =0x00000010
-RBBIM_CHILDSIZE       =0x00000020
-RBBIM_SIZE            =0x00000040
-RBBIM_BACKGROUND      =0x00000080
-RBBIM_ID              =0x00000100
-RBBIM_IDEALSIZE       =0x00000200
-RBBIM_LPARAM          =0x00000400
-RBBIM_HEADERSIZE      =0x00000800
-RBBIM_CHEVRONLOCATION =0x00001000
-RBBIM_CHEVRONSTATE    =0x00002000
+WC_SYSLINK = 'SysLink'
 
 ########################################
 # TabControl
@@ -6638,6 +7164,188 @@ TBS_TRANSPARENTBKGND    = 0x1000
 #TRBN_THUMBPOSCHANGING = TRBN_FIRST - 1
 
 ########################################
+# TreeView
+########################################
+WC_TREEVIEW = 'SysTreeView32'
+
+TVIF_TEXT               =0x0001
+TVIF_IMAGE              =0x0002
+TVIF_PARAM              =0x0004
+TVIF_STATE              =0x0008
+TVIF_HANDLE             =0x0010
+TVIF_SELECTEDIMAGE      =0x0020
+TVIF_CHILDREN           =0x0040
+TVIF_INTEGRAL           =0x0080
+TVIF_STATEEX            =0x0100
+TVIF_EXPANDEDIMAGE      =0x0200
+
+TVIS_SELECTED           =0x0002
+TVIS_CUT                =0x0004
+TVIS_DROPHILITED        =0x0008
+TVIS_BOLD               =0x0010
+TVIS_EXPANDED           =0x0020
+TVIS_EXPANDEDONCE       =0x0040
+TVIS_EXPANDPARTIAL      =0x0080
+TVIS_OVERLAYMASK        =0x0F00
+TVIS_STATEIMAGEMASK     =0xF000
+TVIS_USERMASK           =0xF000
+
+TVS_HASBUTTONS          =0x0001
+TVS_HASLINES            =0x0002
+TVS_LINESATROOT         =0x0004
+TVS_EDITLABELS          =0x0008
+TVS_DISABLEDRAGDROP     =0x0010
+TVS_SHOWSELALWAYS       =0x0020
+TVS_RTLREADING          =0x0040
+TVS_NOTOOLTIPS          =0x0080
+TVS_CHECKBOXES          =0x0100
+TVS_TRACKSELECT         =0x0200
+TVS_SINGLEEXPAND        =0x0400
+TVS_INFOTIP             =0x0800
+TVS_FULLROWSELECT       =0x1000
+TVS_NOSCROLL            =0x2000
+TVS_NONEVENHEIGHT       =0x4000
+TVS_NOHSCROLL           =0x8000  # TVS_NOSCROLL overrides this
+TVS_EX_NOSINGLECOLLAPSE =0x0001
+
+TVS_EX_MULTISELECT          =0x0002
+TVS_EX_DOUBLEBUFFER         =0x0004
+TVS_EX_NOINDENTSTATE        =0x0008
+TVS_EX_RICHTOOLTIP          =0x0010
+TVS_EX_AUTOHSCROLL          =0x0020
+TVS_EX_FADEINOUTEXPANDOS    =0x0040
+TVS_EX_PARTIALCHECKBOXES    =0x0080
+TVS_EX_EXCLUSIONCHECKBOXES  =0x0100
+TVS_EX_DIMMEDCHECKBOXES     =0x0200
+TVS_EX_DRAWIMAGEASYNC       =0x0400
+
+TV_FIRST = 0x1100
+
+TVM_DELETEITEM          =(TV_FIRST + 1)
+TVM_EXPAND              =(TV_FIRST + 2)
+TVM_GETITEMRECT         =(TV_FIRST + 4)
+TVM_GETCOUNT            =(TV_FIRST + 5)
+TVM_GETINDENT           =(TV_FIRST + 6)
+TVM_SETINDENT           =(TV_FIRST + 7)
+TVM_GETIMAGELIST        =(TV_FIRST + 8)
+TVM_SETIMAGELIST        =(TV_FIRST + 9)
+TVM_GETNEXTITEM         =(TV_FIRST + 10)
+TVM_SELECTITEM          =(TV_FIRST + 11)
+TVM_GETEDITCONTROL      =(TV_FIRST + 15)
+TVM_GETVISIBLECOUNT     =(TV_FIRST + 16)
+TVM_HITTEST             =(TV_FIRST + 17)
+TVM_CREATEDRAGIMAGE     =(TV_FIRST + 18)
+TVM_SORTCHILDREN        =(TV_FIRST + 19)
+TVM_ENSUREVISIBLE       =(TV_FIRST + 20)
+TVM_SORTCHILDRENCB      =(TV_FIRST + 21)
+TVM_ENDEDITLABELNOW     =(TV_FIRST + 22)
+TVM_SETTOOLTIPS         =(TV_FIRST + 24)
+TVM_GETTOOLTIPS         =(TV_FIRST + 25)
+TVM_SETINSERTMARK       =(TV_FIRST + 26)
+TVM_SETITEMHEIGHT       =(TV_FIRST + 27)
+TVM_SETBKCOLOR          =(TV_FIRST + 29)
+TVM_SETTEXTCOLOR        =(TV_FIRST + 30)
+TVM_GETBKCOLOR          =(TV_FIRST + 31)
+TVM_GETTEXTCOLOR        =(TV_FIRST + 32)
+TVM_SETSCROLLTIME       =(TV_FIRST + 33)
+TVM_GETSCROLLTIME       =(TV_FIRST + 34)
+TVM_SETBORDER           =(TV_FIRST + 35)
+TVM_SETINSERTMARKCOLOR  =(TV_FIRST + 37)
+TVM_GETINSERTMARKCOLOR  =(TV_FIRST + 38)
+TVM_GETITEMSTATE        =(TV_FIRST + 39)
+TVM_SETLINECOLOR        =(TV_FIRST + 40)
+TVM_GETLINECOLOR        =(TV_FIRST + 41)
+TVM_MAPACCIDTOHTREEITEM =(TV_FIRST + 42)
+TVM_MAPHTREEITEMTOACCID =(TV_FIRST + 43)
+TVM_SETEXTENDEDSTYLE    =(TV_FIRST + 44)
+TVM_GETEXTENDEDSTYLE    =(TV_FIRST + 45)
+TVM_INSERTITEMW         =(TV_FIRST + 50)
+TVM_SETHOT              =(TV_FIRST + 58)
+TVM_SETAUTOSCROLLINFO   =(TV_FIRST + 59)
+TVM_GETITEMW            =(TV_FIRST + 62)
+TVM_SETITEMW            =(TV_FIRST + 63)
+TVM_GETISEARCHSTRINGW   =(TV_FIRST + 64)
+TVM_EDITLABELW          =(TV_FIRST + 65)
+TVM_GETSELECTEDCOUNT    =(TV_FIRST + 70)
+TVM_SHOWINFOTIP         =(TV_FIRST + 71)
+TVM_SETUNICODEFORMAT    =0x2005
+
+TVN_FIRST = (-400)
+TVN_KEYDOWN             =(TVN_FIRST-12)
+TVN_GETINFOTIPW         =(TVN_FIRST-14)
+TVN_SINGLEEXPAND        =(TVN_FIRST-15)
+TVN_ITEMCHANGINGW       =(TVN_FIRST-17)
+TVN_ITEMCHANGEDW        =(TVN_FIRST-19)
+TVN_ASYNCDRAW           =(TVN_FIRST-20)
+TVN_SELCHANGINGW        =(TVN_FIRST-50)
+TVN_SELCHANGEDW         =(TVN_FIRST-51)
+TVN_GETDISPINFOW        =(TVN_FIRST-52)
+TVN_SETDISPINFOW        =(TVN_FIRST-53)
+TVN_ITEMEXPANDINGW      =(TVN_FIRST-54)
+TVN_ITEMEXPANDEDW       =(TVN_FIRST-55)
+TVN_BEGINDRAGW          =(TVN_FIRST-56)
+TVN_BEGINRDRAGW         =(TVN_FIRST-57)
+TVN_DELETEITEMW         =(TVN_FIRST-58)
+TVN_BEGINLABELEDITW     =(TVN_FIRST-59)
+TVN_ENDLABELEDITW       =(TVN_FIRST-60)
+
+TVE_COLLAPSE            =0x0001
+TVE_EXPAND              =0x0002
+TVE_TOGGLE              =0x0003
+TVE_EXPANDPARTIAL       =0x4000
+TVE_COLLAPSERESET       =0x8000
+
+TVC_UNKNOWN =0x0
+TVC_BYMOUSE =0x1
+TVC_BYKEYBOARD =0x2
+
+TVI_ROOT   = (-0x10000)
+TVI_FIRST  = (-0x0FFFF)
+TVI_LAST   = (-0x0FFFE)
+TVI_SORT   = (-0x0FFFD)
+
+#define TVE_COLLAPSE            0x0001
+#define TVE_EXPAND              0x0002
+#define TVE_TOGGLE              0x0003
+#define TVE_EXPANDPARTIAL       0x4000
+#define TVE_COLLAPSERESET       0x8000
+
+TVSIL_NORMAL            =0
+TVSIL_STATE             =2
+
+TVGN_ROOT               =0x0000
+TVGN_NEXT               =0x0001
+TVGN_PREVIOUS           =0x0002
+TVGN_PARENT             =0x0003
+TVGN_CHILD              =0x0004
+TVGN_FIRSTVISIBLE       =0x0005
+TVGN_NEXTVISIBLE        =0x0006
+TVGN_PREVIOUSVISIBLE    =0x0007
+TVGN_DROPHILITE         =0x0008
+TVGN_CARET              =0x0009
+TVGN_LASTVISIBLE        =0x000A
+TVGN_NEXTSELECTED       =0x000B
+
+TVSI_NOSINGLEEXPAND    =0x8000
+
+#define TVHT_NOWHERE            0x0001
+#define TVHT_ONITEMICON         0x0002
+#define TVHT_ONITEMLABEL        0x0004
+#define TVHT_ONITEM             (TVHT_ONITEMICON | TVHT_ONITEMLABEL | TVHT_ONITEMSTATEICON)
+#define TVHT_ONITEMINDENT       0x0008
+#define TVHT_ONITEMBUTTON       0x0010
+#define TVHT_ONITEMRIGHT        0x0020
+#define TVHT_ONITEMSTATEICON    0x0040
+
+#define TVHT_ABOVE              0x0100
+#define TVHT_BELOW              0x0200
+#define TVHT_TORIGHT            0x0400
+#define TVHT_TOLEFT             0x0800
+
+TVSBF_XBORDER   =0x00000001
+TVSBF_YBORDER   =0x00000002
+
+########################################
 # UpDown
 ########################################
 WC_UPDOWN = 'msctls_updown32'
@@ -6678,45 +7386,37 @@ UDN_DELTAPOS = (UDN_FIRST - 1)
 
 SVUIA_ACTIVATE_FOCUS = 2
 
-
-
 S_OK = 0
 S_FALSE = 1
 E_FAIL = 0x80004005
 E_NOTIMPL = 0x80004001
 E_NOINTERFACE = 0x80004002
 
-# https://learn.microsoft.com/en-us/windows/win32/shell/csidl
-# C:\Program Files (x86)\Windows Kits\8.1\Include\um\ShlObj.h
-
-CSIDL_BITBUCKET = 0x000a
-
 # https://mywindowshub.com/complete-list-of-clsid-key-guid-shortcuts-in-windows-10/
 # C:\Program Files (x86)\Windows Kits\8.1\Include\um\ShlGuid.h
 
-CLSID_Start = '{F874310E-B6B7-47DC-BC84-B9E6B38F5903}'
-CLSID_ThisPC = '{20D04FE0-3AEA-1069-A2D8-08002B30309D}'
-CLSID_Network = '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}'
-CLSID_RecycleBin = '{645FF040-5081-101B-9F08-00AA002F954E}'
-
-CLSID_Desktop = '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}'  # without shell items
-
-#CLSID_MyDocuments = '{450D8FBA-AD25-11D0-98A8-0800361B1103}'
-
-CLSID_Documents = '{A8CDFF1C-4878-43be-B5FD-F8091C1C60D0}'  # or {d3162b92-9365-467a-956b-92703aca08af}
-CLSID_Downloads = '{374DE290-123F-4565-9164-39C4925E467B}'
-CLSID_Music = '{1CF1260C-4DD0-4ebb-811F-33C572699FDE}'
-CLSID_Videos = '{A0953C92-50DC-43bf-BE83-3742FED03C9C}'
-
-CLSID_Libraries = '{031E4825-7B94-4dc3-B131-E946B44C8DD5}'
-
-CLSID_UserProfile = '{59031a47-3f72-44a7-89c5-5595fe6b30ee}'
-
-CLSID_Linux = '{B2B4A4D1-2754-4140-A2EB-9A76D9D7CDC6}'
-CLSID_Linux2 = '{7737F939-CC1E-4215-86EB-6BE84C6D9F09}'
-
 CLSID_ControlPanel = '{26EE0668-A00A-44D7-9371-BEB064C98683}'
 CLSID_ControlPanelAll = '{21EC2020-3AEA-1069-A2DD-08002B30309D}'
+CLSID_Desktop = '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}'
+CLSID_Documents = '{A8CDFF1C-4878-43be-B5FD-F8091C1C60D0}'
+CLSID_Downloads = '{374DE290-123F-4565-9164-39C4925E467B}'
+CLSID_Libraries = '{031E4825-7B94-4dc3-B131-E946B44C8DD5}'
+CLSID_Linux = '{B2B4A4D1-2754-4140-A2EB-9A76D9D7CDC6}'
+CLSID_Linux2 = '{7737F939-CC1E-4215-86EB-6BE84C6D9F09}'
+CLSID_Music = '{1CF1260C-4DD0-4ebb-811F-33C572699FDE}'
+CLSID_MyDocuments = '{450D8FBA-AD25-11D0-98A8-0800361B1103}'
+CLSID_Network = '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}'
+CLSID_RecycleBin = '{645FF040-5081-101B-9F08-00AA002F954E}'
+CLSID_Start = '{F874310E-B6B7-47DC-BC84-B9E6B38F5903}'
+CLSID_ThisPC = '{20D04FE0-3AEA-1069-A2D8-08002B30309D}'
+CLSID_UserProfile = '{59031a47-3f72-44a7-89c5-5595fe6b30ee}'
+CLSID_Videos = '{A0953C92-50DC-43bf-BE83-3742FED03C9C}'
+
+# https://mywindowshub.com/complete-list-of-clsid-key-guid-shortcuts-in-windows-10/
+# C:\Program Files (x86)\Windows Kits\8.1\Include\um\ShlGuid.h
+CLSID_MenuDeskBar = '{ECD4FC4F-521C-11D0-B792-00A0C90312E1}'
+CLSID_MenuBand = "{5B4DAE26-B807-11D0-9815-00C04FD91972}"
+CLSID_MenuBandSite = '{E13EF4E4-D2F2-11d0-9816-00C04FD91972}'
 
 #CLSID_ShellDesktop = '{00021400-0000-0000-C000-000000000046}'
 #CLSID_Run = '{2559A1F3-21D7-11D4-BDAF-00C04F60B9F0}'
@@ -6727,11 +7427,22 @@ CLSID_NetworkConnections = '{7007ACC7-3202-11D1-AAD2-00805FC1270E}'  # or #{992C
 #CLSID_FolderOptions = '{6DFD7C5C-2451-11d3-A299-00C04F8EF6AF}'
 #CLSID_DownloadsFolder = '{088e3905-0323-4b02-9826-5d99428e115f}'  # or {374DE290-123F-4565-9164-39C4925E467B}
 
-#CLSID_ShowDesktop = '{3080F90D-D7AD-11D9-BD98-0000947B0257}'
-
-
 CLSID_SearchFolderItemFactory = '{14010e02-bbbd-41f0-88e3-eda371216584}'
 CLSID_QueryParserManager = '{5088B39A-29B4-4d9d-8245-4EE289222F66}'
+
+#CLSID_ShellDesktop = '{00021400-0000-0000-C000-000000000046}'
+#CLSID_Run = '{2559A1F3-21D7-11D4-BDAF-00C04F60B9F0}'
+#CLSID_NetworkAndSharingCenter = '{8E908FC9-BECC-40f6-915B-F4CA0E70D03D}'
+#CLSID_NetworkConnections = '{7007ACC7-3202-11D1-AAD2-00805FC1270E}'  # or #{992CFFA0-F557-101A-88EC-00DD010CCC48}
+#CLSID_NetworkWorkGroup = '{208D2C60-3AEA-1069-A2D7-08002B30309D}'
+#CLSID_FileExplorerOptions = '{6DFD7C5C-2451-11d3-A299-00C04F8EF6AF}'
+#CLSID_FolderOptions = '{6DFD7C5C-2451-11d3-A299-00C04F8EF6AF}'
+#CLSID_DownloadsFolder = '{088e3905-0323-4b02-9826-5d99428e115f}'  # or {374DE290-123F-4565-9164-39C4925E467B}
+#CLSID_Downloads = '{374DE290-123F-4565-9164-39C4925E467B}'
+#CLSID_ShowDesktop = '{3080F90D-D7AD-11D9-BD98-0000947B0257}'
+
+# https://learn.microsoft.com/en-us/windows/win32/shell/csidl
+# C:\Program Files (x86)\Windows Kits\8.1\Include\um\ShlObj.h
 
 CSIDL_DESKTOP                   =0x0000        # <desktop>
 CSIDL_INTERNET                  =0x0001        # Internet Explorer (icon on desktop)
@@ -6834,6 +7545,7 @@ SHCNE_RENAMEFOLDER        =0x00020000
 SHCNE_FREESPACE           =0x00040000
 
 SHCNE_ALLEVENTS           =0x7FFFFFFF
+SHCNE_INTERRUPT           =0x80000000
 
 SHCNF_ACCEPT_INTERRUPTS =0x0001
 SHCNF_ACCEPT_NON_INTERRUPTS =0x0002
@@ -6868,7 +7580,6 @@ SBSP_TRUSTEDFORACTIVEX    =0x10000000
 SBSP_FEEDNAVIGATION       =0x20000000
 SBSP_REDIRECT             =0x40000000
 
-
 SVSI_DESELECT = 0x00000000  # Deselect the item.
 SVSI_SELECT = 0x00000001  # Select the item.
 SVSI_EDIT = 0x00000003  # Put the name of the item into rename mode.
@@ -6884,19 +7595,20 @@ SVSI_KEYBOARDSELECT = 0x00000401  # Selects the item and marks it as selected by
 SVSI_NOTAKEFOCUS = 0x40000000  # An operation to select or focus an item should not also set focus on the view itself.
 SVSI_NOSTATECHANGE = 0x80000000
 
-CMF_NORMAL =0x00000000
-CMF_EXPLORE =0x00000004
-CMF_ITEMMENU =0x00000080
-CMF_EXTENDEDVERBS =0x00000100
-CMF_DISABLEDVERBS =0x00000200
-CMF_ASYNCVERBSTATE =0x00000400
-CMF_SYNCCASCADEMENU =0x00001000
+CMF_NORMAL            = 0x00000000
+CMF_DEFAULTONLY       = 0x00000001
+CMF_VERBSONLY         = 0x00000002
+CMF_EXPLORE           = 0x00000004
+CMF_NOVERBS           = 0x00000008
+CMF_CANRENAME         = 0x00000010
+CMF_NODEFAULT         = 0x00000020
+CMF_ITEMMENU          = 0x00000080
+CMF_EXTENDEDVERBS     = 0x00000100
+CMF_DISABLEDVERBS     = 0x00000200
+CMF_ASYNCVERBSTATE    = 0x00000400
 CMF_OPTIMIZEFORINVOKE = 0x00000800
-CMF_RESERVED =0xffff0000
-
-TPM_NONOTIFY        =0x0080
-TPM_RETURNCMD       =0x0100
-TPM_NOANIMATION     =0x4000
+CMF_SYNCCASCADEMENU   = 0x00001000
+CMF_DONOTPICKDEFAULT  = 0x00002000
 
 #define SEE_MASK_DEFAULT           0x00000000
 #define SEE_MASK_CLASSNAME         0x00000001   // SHELLEXECUTEINFO.lpClass is valid
@@ -6929,48 +7641,6 @@ CMIC_MASK_CONTROL_DOWN  =0x40000000
 CMIC_MASK_FLAG_LOG_USAGE =0x04000000
 CMIC_MASK_NOZONECHECKS  =0x00800000
 CMIC_MASK_PTINVOKE      =0x20000000
-
-SBSP_DEFBROWSER         =0x0000
-SBSP_SAMEBROWSER        =0x0001
-SBSP_NEWBROWSER         =0x0002
-SBSP_DEFMODE            =0x0000
-SBSP_OPENMODE           =0x0010
-SBSP_EXPLOREMODE        =0x0020
-SBSP_HELPMODE           =0x0040
-SBSP_NOTRANSFERHIST     =0x0080
-SBSP_ABSOLUTE           =0x0000
-SBSP_RELATIVE           =0x1000
-SBSP_PARENT             =0x2000
-SBSP_NAVIGATEBACK       =0x4000
-SBSP_NAVIGATEFORWARD    =0x8000
-#define SBSP_ALLOW_AUTONAVIGATE   0x00010000
-#if (NTDDI_VERSION >= NTDDI_VISTA)
-#define SBSP_KEEPSAMETEMPLATE     0x00020000
-#define SBSP_KEEPWORDWHEELTEXT    0x00040000
-#define SBSP_ACTIVATE_NOFOCUS     0x00080000
-#define SBSP_CREATENOHISTORY      0x00100000
-#define SBSP_PLAYNOSOUND          0x00200000
-#endif  // (NTDDI_VERSION >= NTDDI_VISTA)
-#if (_WIN32_IE >= _WIN32_IE_IE60SP2)
-#define SBSP_CALLERUNTRUSTED      0x00800000
-#define SBSP_TRUSTFIRSTDOWNLOAD   0x01000000
-#define SBSP_UNTRUSTEDFORDOWNLOAD 0x02000000
-#endif  // _WIN32_IE_IE60SP2
-#define SBSP_NOAUTOSELECT         0x04000000
-#define SBSP_WRITENOHISTORY       0x08000000
-#if (_WIN32_IE >= _WIN32_IE_IE60SP2)
-#define SBSP_TRUSTEDFORACTIVEX    0x10000000
-#endif  // _WIN32_IE_IE60SP2
-#if (_WIN32_IE >= _WIN32_IE_IE70)
-#define SBSP_FEEDNAVIGATION       0x20000000
-#endif  // _WIN32_IE_IE70
-#define SBSP_REDIRECT                     0x40000000
-#define SBSP_INITIATEDBYHLINKFRAME        0x80000000
-#define FCW_STATUS         0x0001
-#define FCW_TOOLBAR        0x0002
-#define FCW_TREE           0x0003
-#define FCW_INTERNETBAR    0x0006
-#define FCW_PROGRESS       0x0008
 
 #FOLDERVIEWMODE {
 FVM_AUTO = -1
@@ -7073,10 +7743,108 @@ CLSID_ExplorerBrowser = '{71F96385-DDD6-48D3-A0C1-AE06E8B055FB}'
 #CLSID_ShellLink = GUID('{00021401-0000-0000-C000-000000000046}')
 #SID_SExplorerBrowserFrame = GUID('{000214F1-0000-0000-C000-000000000046}')
 
+#SFVM_GETCOMMANDDIR      = 33
+#SFVM_FSNOTIFY           = 14
+#SFVM_LISTREFRESHED      = 17
+#SFVM_WINDOWFOCUSED      = 18
+#SFVM_BACKGROUNDENUMDONE = 48
+#SFVM_GETNOTIFY          = 49
+#SFVM_GETSORTDEFAULTS    = 53
 
+#define SFVM_MERGEMENU                 1    // -                  LPQCMINFO
+#define SFVM_INVOKECOMMAND             2    // idCmd              -
+#define SFVM_GETHELPTEXT               3    // idCmd,cchMax       pszText
+#define SFVM_GETTOOLTIPTEXT            4    // idCmd,cchMax       pszText
+#define SFVM_GETBUTTONINFO             5    // -                  LPTBINFO
+#define SFVM_GETBUTTONS                6    // idCmdFirst,cbtnMax LPTBBUTTON
+#define SFVM_INITMENUPOPUP             7    // idCmdFirst,nIndex  hmenu
+#define SFVM_SELECTIONCHANGED          8 /* undocumented */
+#define SFVM_DRAWMENUITEM              9 /* undocumented */
+#define SFVM_MEASUREMENUITEM          10 /* undocumented */
+#define SFVM_EXITMENULOOP             11 /* undocumented */
+#define SFVM_VIEWRELEASE              12 /* undocumented */
+#define SFVM_GETNAMELENGTH            13 /* undocumented */
+SFVM_FSNOTIFY                 =14    # LPCITEMIDLIST*     lEvent
+#define SFVM_WINDOWCREATED            15    // hwnd               -
+#define SFVM_WINDOWCLOSING            16 /* undocumented */
+SFVM_LISTREFRESHED            =17 # undocumented
+#define SFVM_WINDOWFOCUSED            18 /* undocumented */
+#define SFVM_REGISTERCOPYHOOK         20 /* undocumented */
+#define SFVM_COPYHOOKCALLBACK         21 /* undocumented */
+#define SFVM_GETDETAILSOF             23    // iColumn            DETAILSINFO*
+#define SFVM_COLUMNCLICK              24    // iColumn            -
+SFVM_QUERYFSNOTIFY            =25    # -                  SHChangeNotifyEntry
+#define SFVM_DEFITEMCOUNT             26    // -                  UINT*
+#define SFVM_DEFVIEWMODE              27    // -                  FOLDERVIEWMODE*
+#define SFVM_UNMERGEMENU              28    // -                  hmenu
+#define SFVM_ADDINGOBJECT             29 /* undocumented */
+#define SFVM_REMOVINGOBJECT           30 /* undocumented */
+#define SFVM_UPDATESTATUSBAR          31    // fInitialize        -
+#define SFVM_BACKGROUNDENUM           32    // -                  -
+#define SFVM_GETCOMMANDDIR            33 /* undocumented */
+#define SFVM_GETCOLUMNSTREAM          34 /* undocumented */
+#define SFVM_CANSELECTALL             35 /* undocumented */
+SFVM_DIDDRAGDROP              =36    # dwEffect           IDataObject *
+#define SFVM_ISSTRICTREFRESH          37 /* undocumented */
+#define SFVM_ISCHILDOBJECT            38 /* undocumented */
+#define SFVM_SETISFV                  39    // -                  IShellFolderView*
+#define SFVM_GETEXTVIEWS              40 /* undocumented */
+#define SFVM_THISIDLIST               41    // -                  LPITMIDLIST*
+#define SFVM_ADDPROPERTYPAGES         47    // -                  SFVM_PROPPAGE_DATA *
+#define SFVM_BACKGROUNDENUMDONE       48    // -                  -
+SFVM_GETNOTIFY                =49    # LPITEMIDLIST*      LONG*
+#define SFVM_GETSORTDEFAULTS          53    // iDirection         iParamSort
+#define SFVM_SIZE                     57    // -                  -
+#define SFVM_GETZONE                  58    // -                  DWORD*
+#define SFVM_GETPANE                  59    // Pane ID            DWORD*
+#define SFVM_GETHELPTOPIC             63    // -                  SFVM_HELPTOPIC_DATA *
+#define SFVM_GETANIMATION             68    // HINSTANCE *        WCHAR *
+#define SFVM_GET_CUSTOMVIEWINFO       77 /* undocumented */
+#define SFVM_ENUMERATEDITEMS          79 /* undocumented */
+#define SFVM_GET_VIEW_DATA            80 /* undocumented */
+#define SFVM_GET_WEBVIEW_LAYOUT       82 /* undocumented */
+#define SFVM_GET_WEBVIEW_CONTENT      83 /* undocumented */
+#define SFVM_GET_WEBVIEW_TASKS        84 /* undocumented */
+#define SFVM_GET_WEBVIEW_THEME        86 /* undocumented */
+#define SFVM_GETDEFERREDVIEWSETTINGS  92 /* undocumented */
 
+SHCNRF_ShellLevel = 0x0002
 
+FO_MOVE     =0x0001
+FO_COPY     =0x0002
+FO_DELETE   =0x0003
+FO_RENAME   =0x0004
+FO_UNDO     =0x0005  # Custom!
 
+FOF_MULTIDESTFILES         = 0x0001
+FOF_CONFIRMMOUSE           = 0x0002
+FOF_SILENT                 = 0x0004
+FOF_RENAMEONCOLLISION      = 0x0008
+FOF_NOCONFIRMATION         = 0x0010
+FOF_WANTMAPPINGHANDLE      = 0x0020
+FOF_ALLOWUNDO              = 0x0040
+FOF_FILESONLY              = 0x0080
+FOF_SIMPLEPROGRESS         = 0x0100
+FOF_NOCONFIRMMKDIR         = 0x0200
+FOF_NOERRORUI              = 0x0400
+FOF_NOCOPYSECURITYATTRIBS  = 0x0800
+FOF_NORECURSION            = 0x1000  # don't do recursion into directories
+FOF_NO_CONNECTED_ELEMENTS  = 0x2000  # don't do connected files
+FOF_WANTNUKEWARNING        = 0x4000  # during delete operation, warn if delete instead of recycling (even if FOF_NOCONFIRMATION)
+FOF_NORECURSEREPARSE       = 0x8000  # don't do recursion into reparse points
+FOF_NO_UI                  = (FOF_SILENT | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_NOCONFIRMMKDIR)
 
-#SPIF_SENDCHANGE = 0x1
-#SPIF_SENDWININICHANGE = 0x2
+GCS_VERBW = 0x00000004
+
+DROPEFFECT_NONE	= 0
+DROPEFFECT_COPY	= 1
+DROPEFFECT_MOVE	= 2
+DROPEFFECT_LINK	= 4
+DROPEFFECT_SCROLL = 0x80000000
+
+DRAGDROP_S_CANCEL = 0x00040101
+DRAGDROP_S_DROP = 0x00040100
+DRAGDROP_S_USEDEFAULTCURSORS = 0x00040102
+
+TYMED_HGLOBAL = 1
+DVASPECT_CONTENT = 1

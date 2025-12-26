@@ -1,9 +1,9 @@
 # https://learn.microsoft.com/en-us/windows/win32/controls/toolbar-control-reference
 
-from ctypes import Structure, c_wchar_p, sizeof, byref, cast
+from ctypes import Structure, c_wchar_p, sizeof, byref, cast, c_char_p
 from ctypes.wintypes import *
 
-from ..wintypes_extended import DWORD_PTR, UINT_PTR, MAKELONG
+from ..types import *
 from ..const import *
 from ..window import *
 from ..dlls import user32
@@ -21,7 +21,7 @@ class TBBUTTON(Structure):
         ("fsStyle", BYTE),
         ("bReserved", BYTE * TBBUTTON_RESERVED_SIZE),
         ("dwData", DWORD_PTR),
-        ("iString", c_wchar_p)
+        ("iString", INT_PTR),  #c_wchar_p
     ]
 
 class TBADDBITMAP(Structure):
@@ -127,8 +127,6 @@ class ToolBar(Window):
             window_title=window_title
         )
 
-#        uxtheme.SetWindowTheme(self.hwnd, '', '')
-
         self._bg_brush_dark = bg_brush_dark
 
         if window_title:
@@ -151,18 +149,21 @@ class ToolBar(Window):
 
         if toolbar_buttons:
             if toolbar_bmp:
-                self.__h_bitmap = user32.LoadImageW(0, toolbar_bmp, IMAGE_BITMAP, 0, 0,
-                        LR_LOADFROMFILE | LR_LOADTRANSPARENT | LR_LOADMAP3DCOLORS, #LR_CREATEDIBSECTION
-                        )
+                self.__h_bitmap = user32.LoadImageW(
+                    None,
+                    toolbar_bmp, IMAGE_BITMAP, 0, 0,
+                    LR_LOADFROMFILE | LR_LOADTRANSPARENT | LR_LOADMAP3DCOLORS, #LR_CREATEDIBSECTION
+                )
                 tb = TBADDBITMAP()
                 tb.hInst = 0
                 tb.nID = self.__h_bitmap
                 image_list_id = user32.SendMessageW(self.hwnd, TB_ADDBITMAP, self.__num_buttons, byref(tb))
 
                 if toolbar_bmp_dark:
-                    self.__h_bitmap_dark = user32.LoadImageW(0, toolbar_bmp_dark, IMAGE_BITMAP, 0, 0,
-                            LR_LOADFROMFILE | LR_LOADTRANSPARENT | LR_LOADMAP3DCOLORS
-                            )
+                    self.__h_bitmap_dark = user32.LoadImageW(
+                        None, toolbar_bmp_dark, IMAGE_BITMAP, 0, 0,
+                        LR_LOADFROMFILE | LR_LOADTRANSPARENT | LR_LOADMAP3DCOLORS
+                    )
             else:
                 image_list_id = 0
 

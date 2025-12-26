@@ -1,6 +1,7 @@
 from ctypes import Structure, POINTER, sizeof, c_wchar_p
 from ctypes.wintypes import HWND, INT, UINT, POINT, LPARAM, DWORD, COLORREF, HDC, RECT, HBRUSH, HPEN, BOOL, BYTE, LONG, WCHAR, HICON, LPWSTR, HINSTANCE
-from ..wintypes_extended import UINT_PTR, ULONG_PTR, DWORD_PTR
+
+from ..types import UINT_PTR, ULONG_PTR, DWORD_PTR
 from ..const import MAX_PATH
 
 class NMHDR(Structure):
@@ -11,16 +12,6 @@ class NMHDR(Structure):
         ("code", INT),
     ]
 LPNMHDR = POINTER(NMHDR)
-
-#typedef struct tagNMCUSTOMDRAWINFO {
-#  NMHDR     hdr;
-#  DWORD     dwDrawStage;
-#  HDC       hdc;
-#  RECT      rc;
-#  DWORD_PTR dwItemSpec;
-#  UINT      uItemState;
-#  LPARAM    lItemlParam;
-#} NMCUSTOMDRAW, *LPNMCUSTOMDRAW;
 
 class NMCUSTOMDRAW(Structure):
     _fields_ = [
@@ -34,14 +25,6 @@ class NMCUSTOMDRAW(Structure):
     ]
 LPNMCUSTOMDRAW = POINTER(NMCUSTOMDRAW)
 
-#typedef struct tagNMMOUSE {
-#  NMHDR     hdr;
-#  DWORD_PTR dwItemSpec;
-#  DWORD_PTR dwItemData;
-#  POINT     pt;
-#  LPARAM    dwHitInfo;
-#} NMMOUSE, *LPNMMOUSE;
-
 class NMMOUSE(Structure):
     _fields_ = [
         ("hdr", NMHDR),
@@ -52,12 +35,6 @@ class NMMOUSE(Structure):
     ]
 LPNMMOUSE = POINTER(NMMOUSE)
 
-#typedef struct tagCOLORSCHEME {
-#   DWORD            dwSize;
-#   COLORREF         clrBtnHighlight;       // highlight color
-#   COLORREF         clrBtnShadow;          // shadow color
-#} COLORSCHEME, *LPCOLORSCHEME;
-
 class COLORSCHEME(Structure):
     def __init__(self, *args, **kwargs):
         super(COLORSCHEME, self).__init__(*args, **kwargs)
@@ -67,15 +44,6 @@ class COLORSCHEME(Structure):
         ("clrBtnHighlight",       COLORREF),
         ("clrBtnShadow",          COLORREF),
     ]
-
-#typedef struct tagPAINTSTRUCT {
-#  HDC  hdc;
-#  BOOL fErase;
-#  RECT rcPaint;
-#  BOOL fRestore;
-#  BOOL fIncUpdate;
-#  BYTE rgbReserved[32];
-#} PAINTSTRUCT
 
 class PAINTSTRUCT(Structure):
     _fields_ = [

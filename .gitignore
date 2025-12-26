@@ -4,7 +4,5 @@ releases/
 stuff/
 *.spec
 _backup.rar
-app_data/*
-programs/*
-shell.exe
-shell_data
+programs/
+userprofile/

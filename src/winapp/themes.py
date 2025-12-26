@@ -2,7 +2,7 @@
 from ctypes.wintypes import INT, DWORD, BOOL, HWND, UINT, WPARAM, LPARAM, HMENU, HDC, HKEY, BYTE
 
 from .controls.common import DRAWITEMSTRUCT, MEASUREITEMSTRUCT
-from .wintypes_extended import LONG_PTR
+from .types import LONG_PTR
 from .dlls import advapi32, gdi32
 from .const import HKEY_CURRENT_USER, ERROR_SUCCESS, PS_INSIDEFRAME
 

@@ -1,6 +1,6 @@
 from ctypes import Structure, sizeof, POINTER
 from ctypes.wintypes import DWORD, UINT, HBRUSH, HMENU, HBITMAP, LPWSTR, HANDLE, RECT, HWND, BOOL
-from .wintypes_extended import ULONG_PTR
+from .types import ULONG_PTR
 
 class MENUINFO(Structure):
     def __init__(self, *args, **kwargs):

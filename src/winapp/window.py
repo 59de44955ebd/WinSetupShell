@@ -1,8 +1,8 @@
-from ctypes import windll, Structure, sizeof, c_int, c_uint, byref, c_voidp, create_unicode_buffer
-from ctypes.wintypes import LPCWSTR, HANDLE, RECT, POINT, HINSTANCE, DWORD, INT, HWND, HMENU, LPVOID
+from ctypes import *
+from ctypes.wintypes import *
 
 from .const import *
-from .wintypes_extended import WNDPROC, WNDENUMPROC, MAKELONG, MAKELPARAM
+from .types import WNDPROC, WNDENUMPROC
 from .dlls import gdi32, kernel32, user32, uxtheme
 from .controls.common import *
 from .themes import *
@@ -11,6 +11,30 @@ hdc = user32.GetDC(None)
 DPI_Y = gdi32.GetDeviceCaps(hdc, LOGPIXELSY)
 user32.ReleaseDC(None, hdc)
 
+# Macros
+def MAKELONG(wLow, wHigh):
+    return LONG(wLow | wHigh << 16).value
+
+def MAKELPARAM(l, h):
+    return LPARAM(MAKELONG(l, h)).value
+
+def LOWORD(l):
+    return WORD(l & 0xFFFF).value
+
+def HIWORD(l):
+    return WORD((l >> 16) & 0xFFFF).value
+
+def MAKEINTRESOURCEA(x):
+    return LPSTR(x)
+
+def MAKEINTRESOURCEW(x):
+    return LPCWSTR(x)
+
+def GET_X_LPARAM(l):
+    return SHORT(l & 0xFFFF).value
+
+def GET_Y_LPARAM(l):
+    return SHORT((l >> 16) & 0xFFFF).value
 
 class WNDCLASSEXW(Structure):
     def __init__(self, *args, **kwargs):
@@ -38,6 +62,26 @@ class MINMAXINFO(Structure):
         ("ptMaxPosition", POINT),
         ("ptMinTrackSize", POINT),
         ("ptMaxTrackSize", POINT),
+    ]
+
+class LOGFONTW(Structure):
+    def __repr__(self):
+        return "<LOGFONTW '%s' %d>" % (self.lfFaceName, self.lfHeight)
+    _fields_ = [
+        ('lfHeight', LONG),
+        ('lfWidth', LONG),
+        ('lfEscapement', LONG),
+        ('lfOrientation', LONG),
+        ('lfWeight', LONG),
+        ('lfItalic', BYTE),
+        ('lfUnderline', BYTE),
+        ('lfStrikeOut', BYTE),
+        ('lfCharSet', BYTE),
+        ('lfOutPrecision', BYTE),
+        ('lfClipPrecision', BYTE),
+        ('lfQuality', BYTE),
+        ('lfPitchAndFamily', BYTE),
+        ('lfFaceName', WCHAR * LF_FACESIZE),
     ]
 
 

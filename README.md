@@ -8,8 +8,8 @@ The original Windows setup stuff isn't altered in any way, so the USB drive rema
 
 WinSetupShell is a simple and easily installed alternative for applications like [WinBuilder](https://en.wikipedia.org/wiki/WinBuilder), [Win10XPE](https://theoven.org/), [PEBakery](https://github.com/pebakery/pebakery) etc., which are way too complicate for me ;-)
 
-*WinSetupShell desktop - loaded from enhanced Win11 25H2 USB setup media - with various applications running*  
-![](screenshots/desktop.png)
+*WinSetupShell desktop, loaded from enhanced Win11 25H2 USB setup media*  
+![](screenshots/desktop.jpg)
 
 ## Requirements
 
@@ -46,10 +46,12 @@ WinSetupShell can also be used with a multi-boot USB drive created with [Ventoy]
 
 ## Network
 
-Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `PENetwork` from the start menu, both do the same thing, they start `PENetwork`. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
+Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `Network` from the start menu, both do the same thing, they start `PENetwork`. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
 
-If you want to start network by default, add line `"%programs%\\PENetwork\\PENetwork.exe"` to JSON-like config file  
-`shell_data\app_data\startup.pson`.
+If you want to start network by default, add line  
+`start "" "%programs%\PENetwork\PENetwork.exe"`   
+to the end of file  
+`shell_data\userprofile\AppData\autoexec.bat`.
 
 ## Included applications (Freeware/Shareware/Trialware)
 - [7-Zip](https://www.7-zip.org/)
@@ -76,6 +78,8 @@ If you want to start network by default, add line `"%programs%\\PENetwork\\PENet
 - [PENetwork](https://www.penetworkmanager.de/)
 - [PortableGit](https://git-scm.com/install/windows) (Git Bash, Git CMD)
 - [PowerShell 7](https://github.com/PowerShell/PowerShell)
+- [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/)
+- [Python 3.12.10](https://python.org)
 - [Recuva](https://www.ccleaner.com/recuva)
 - [Rufus](https://rufus.ie/en/)
 - [Speccy](https://www.ccleaner.com/speccy)
@@ -84,18 +88,22 @@ If you want to start network by default, add line `"%programs%\\PENetwork\\PENet
 - [Sysinternals Suite](https://learn.microsoft.com/en-us/sysinternals/downloads/sysinternals-suite)
 - [TestDisk & PhotoRec](https://www.cgsecurity.org/wiki/TestDisk)
 - [Total Commander](https://www.ghisler.com/index.htm) (with plugin [DiskInternals Reader](https://www.diskinternals.com/reader-for-tc/), which allows to explore Linux and Mac partitions and disk images)
+- [UltraSearch](https://www.jam-software.com/ultrasearch)
 - [VeraCrypt](https://veracrypt.io/en/Home.html) (TrueCrypt fork and successor)
 - [VhdManager](https://www.sordum.org/8705/simple-vhd-manager-v1-5/)
 - [Windows Login Unlocker](https://archive.org/details/windows.-login.-unlocker.-wlu.v-2.1.-pe-10.x-64_202408)
+- [WordPad](https://en.wikipedia.org/wiki/WordPad) (classic)
 
 ## Notes
+- Windows PE doesn't provide shell notications for file system changes. That's why in Explorer++ you have to explicitely refresh the current view (with F5) after deleting or moving files etc. WinSetupShell tries to circumvent this issue for its desktop as effectively as possible, but there are still some occasions where you have to refresh manually to update the view.
+
 - WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Quit" from the popup menu.
 
 - The shell itself, which only uses a couple of words like "Start", "Shutdown" and "Quit", is english only, no localisation (since I don't care). But time and date formats in the clock are localized, and various applications, either by Microsoft or 3rd party, are as well.
 
 - You can of course save files either on the USB drive or preexisting volumes on the local PC, but there is no persistance concerning registry changes etc. Which is actually a good thing, "boot.wim" is never altered, so you can't mess up the actual installation media (unless you alter it manually e.g. by using included 7-zip, which can load and save .wim files)
 
-- There is no UAC, you are always user `Administrator` with elevated access.
+- There is no UAC, you are always user `SYSTEM` with elevated access.
 
 - No sound/video/multimedia (IMHO pointless for a system repair live system)
 
@@ -110,11 +118,24 @@ If you want to start network by default, add line `"%programs%\\PENetwork\\PENet
 ## Customization
 
 Additional compatible (64-bit, portable and WinAPI only) applications can be added to folder `programs` on the USB drive. Links to them can then be added to the start menu by adding them to JSON-like text file  
-`shell_data\app_data\start_menu.pson`  
-using an arbitrary text editor. The format should be self-explanatory. Like in JSON (or JS or C...), backslashes in pathes have to be doubled. It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\\...` or `%windir%\\...`, which will then be evaluated at runtime.  
+`shell_data\userprofile\AppData\start_menu.pson`  
+using an arbitrary text editor. The format should be self-explanatory, here some hints: 
+- Like in JSON (or JS or C...), backslashes in pathes have to be doubled. 
+- It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\\...` or `%windir%\\...`, which will then be evaluated at runtime. 
+- Menu separators are represented by a "-".
+- Instead of using an exe's default icon - or for commands based on CMD or PowerShell scripts, so without their own icon - you can append an system icon index to the menu item list, the icon will then be loaded from shell32.dll using the specified icon index.
+- If you want to pass parameters to an executable, separate the full command line from the executable by a single comma.  
+  Here an example:  
+  `["CMD", "%windir%\\System32\\cmd.exe,/k dir"]`  
+  And here the same as above, but this time using the globe icon from shell32.dll:  
+  `["CMD", "%windir%\\System32\\cmd.exe,/k dir", 14]`  
 
-To add or remove applications to/from the quick launch toolbar, edit text file  
-`shell_data\app_data\quick_launch.pson`  
+To add or remove applications to/from the quick launch toolbar, edit file  
+`shell_data\userprofile\AppData\quick_launch.pson`  
 accordingly.
 
-Since the Windows PE system doesn't provide persistant icon caching, WinSetupShell uses custom caching to speed up application start. Therefor, whenever you changed something in the start menu or quick launch toolbar, you have to delete the folder `shell_data\app_data\icon_cache` or its contents on the USB drive. The cache will then be rebuilt when the shell is started for the next time.
+Since the Windows PE system doesn't provide persistant icon caching, WinSetupShell uses custom caching to speed up application start. Therefor, whenever you changed something in the start menu or quick launch toolbar, you have to delete the folder `shell_data\userprofile\AppData\icon_cache` or its contents on the USB drive. The cache will then be rebuilt when the shell is started for the next time (which will take a couple of seconds).
+
+You can change the wallpaper by replacing file `shell_data\userprofile\AppData\wallpaper.jpg` with a different .jpg file with this file name. The wallpaper is always scaled to the current desktop dimensions, but never distorted, but instead cropped as needed.
+
+If you prefer a plain desktop background color, simply remove/rename `wallpaper.jpg`. The background color defaults to some warmish dark blue, but can be changed by editing file `shell_data\userprofile\AppData\config.pson`. This config file also allows to change various other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).
