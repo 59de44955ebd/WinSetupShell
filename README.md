@@ -120,15 +120,28 @@ to the end of file
 Additional compatible (64-bit, portable and WinAPI only) applications can be added to folder `programs` on the USB drive. Links to them can then be added to the start menu by adding them to JSON-like text file  
 `shell_data\userprofile\AppData\start_menu.pson`  
 using an arbitrary text editor. The format should be self-explanatory, here some hints: 
-- Like in JSON (or JS or C...), backslashes in pathes have to be doubled. 
-- It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\\...` or `%windir%\\...`, which will then be evaluated at runtime. 
+
+- Like in JSON (or JS or C...), backslashes in pathes have to be doubled.
+
+- It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\\...` or `%windir%\\...`, which will then be evaluated at runtime.
+
 - Menu separators are represented by a "-".
-- Instead of using an exe's default icon - or for commands based on CMD or PowerShell scripts, so without their own icon - you can append an system icon index to the menu item list, the icon will then be loaded from shell32.dll using the specified icon index.
-- If you want to pass parameters to an executable, separate the full command line from the executable by a single comma.  
-  Here an example:  
-  `["CMD", "%windir%\\System32\\cmd.exe,/k dir"]`  
-  And here the same as above, but this time using the globe icon from shell32.dll:  
-  `["CMD", "%windir%\\System32\\cmd.exe,/k dir", 14]`  
+
+- Instead of using an exe's default icon - or for start menu commands based on CMD or PowerShell scripts, so without their own icon - you can either append a system icon index to the menu item's list, the icon will then be loaded from shell32.dll using the specified icon index. Or put your own .ico file into folder `shell_data\userprofile\AppData\custom_icons` and append its filename to the menu item's list.
+
+- If you want to pass parameters to an executable, separate the full command line from the executable by a single comma.
+
+Examples:
+
+ - Start menu item with parameters:  
+  `["CMD", "%windir%\\System32\\cmd.exe,/k dir"]`
+
+- Same as above, but this time using the globe icon from shell32.dll:  
+  `["CMD", "%windir%\\System32\\cmd.exe,/k dir", 14]`
+
+- Same as above, but his time using a custom icon loaded from a .ico file in `custom_icons`:  
+  `["CMD", "%windir%\\System32\\cmd.exe,/k dir", "my-fancy-icon.ico"]`
+
 
 To add or remove applications to/from the quick launch toolbar, edit file  
 `shell_data\userprofile\AppData\quick_launch.pson`  
