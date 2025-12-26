@@ -72,7 +72,6 @@ shell32.RunFileDlg = shell32[61]
 shell32.RunFileDlg.argtypes = (HWND, HANDLE, LPWSTR, LPWSTR, LPWSTR, UINT)
 shell32.ShellExecuteW.argtypes = (HWND, LPCWSTR, LPCWSTR, LPCWSTR, LPCWSTR, INT)
 shell32.ShellExecuteW.restype = HINSTANCE
-shell32.SHChangeNotify.argtypes = (LONG, UINT, LPVOID, LPVOID)
 shell32.SHGetFileInfoW.argtypes = (LPVOID, DWORD, LPVOID, UINT, UINT)
 shell32.SHGetFileInfoW.restype = DWORD_PTR
 user32.AppendMenuW.argtypes = (HWND, UINT, UINT_PTR, LPCWSTR)
