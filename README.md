@@ -113,7 +113,7 @@ to the end of file
 
 - There might be issues with some HiDPI displays.
 
-- WinSetupShell can also be used with Windows 10 22H2 setup media instead of Windows 11, but not all provided prgrams will work. In particular PortableGit and TestDisk fail in the Windows 10 PE.
+- WinSetupShell can also be used with Windows 10 22H2 setup media instead of Windows 11, but not all provided programs will work. In particular PortableGit and TestDisk fail in the Windows 10 setup PE.
 
 ## Customization
 
@@ -126,6 +126,8 @@ using an arbitrary text editor. The format should be self-explanatory, here some
 - It's important that .exe paths in this file are never absolute (since the drive letter at runtime is not fixed), but instead either start with `%programs%\\...` or `%windir%\\...`, which will then be evaluated at runtime.
 
 - Menu separators are represented by a "-".
+
+- The "Search" item at the root of the start menu by default starts `SwiftSearch`, but feel free to edit its item to point to one of the other two provided search apps instead, `AgentRansack` or `UltraSearch`.
 
 - Instead of using an exe's default icon - or for start menu commands based on CMD or PowerShell scripts, so without their own icon - you can either append a system icon index to the menu item's list, the icon will then be loaded from shell32.dll using the specified icon index. Or put your own .ico file into folder `shell_data\userprofile\AppData\custom_icons` and append its filename to the menu item's list.
 
@@ -147,8 +149,10 @@ To add or remove applications to/from the quick launch toolbar, edit file
 `shell_data\userprofile\AppData\quick_launch.pson`  
 accordingly.
 
-Since the Windows PE system doesn't provide persistant icon caching, WinSetupShell uses custom caching to speed up application start. Therefor, whenever you changed something in the start menu or quick launch toolbar, you have to delete the folder `shell_data\userprofile\AppData\icon_cache` or its contents on the USB drive. The cache will then be rebuilt when the shell is started for the next time (which will take a couple of seconds).
+Since the Windows PE system doesn't provide persistant icon caching, WinSetupShell uses custom caching to speed up its start. Therefor, whenever you changed something in the start menu or quick launch toolbar, you have to delete the folder `shell_data\userprofile\AppData\icon_cache` or its contents on the USB drive. The cache will then be rebuilt when the shell is started for the next time (which will take a couple of seconds).
 
-You can change the wallpaper by replacing file `shell_data\userprofile\AppData\wallpaper.jpg` with a different .jpg file with this file name. The wallpaper is always scaled to the current desktop dimensions, but never distorted, but instead cropped as needed.
+You can change the wallpaper by replacing file `shell_data\userprofile\AppData\wallpaper.jpg` with a different .jpg file with this file name. The wallpaper is always scaled to the current desktop dimensions, but never distorted, so it might be cropped if needed.
 
 If you prefer a plain desktop background color, simply remove/rename `wallpaper.jpg`. The background color defaults to some warmish dark blue, but can be changed by editing file `shell_data\userprofile\AppData\config.pson`. This config file also allows to change various other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).
+
+
