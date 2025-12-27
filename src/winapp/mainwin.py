@@ -20,12 +20,14 @@ class MainWin(Window):
         left = CW_USEDEFAULT, top = CW_USEDEFAULT, width = CW_USEDEFAULT, height = CW_USEDEFAULT,
         style = WS_OVERLAPPEDWINDOW,
         ex_style = 0,
-        hbrush = COLOR_WINDOW + 1,
-        hicon = None,
+        h_brush = COLOR_WINDOW + 1,
+        h_icon = None,
+        h_accel = None,
         cursor_id = None
     ):
-
-        self.hicon = hicon
+        self.h_icon = h_icon
+#        self.h_menu = h_menu
+        self.h_accel = h_accel
 
         self.__window_title = window_title
         self.__timers = {}
@@ -60,9 +62,9 @@ class MainWin(Window):
         newclass.lpfnWndProc = self.windowproc
         newclass.style = CS_VREDRAW | CS_HREDRAW
         newclass.lpszClassName = window_class
-        newclass.hBrush = hbrush
+        newclass.hBrush = h_brush
         newclass.hCursor = user32.LoadCursorW(None, cursor_id if cursor_id else IDC_ARROW)
-        newclass.hIcon = self.hicon
+        newclass.hIcon = self.h_icon
         user32.RegisterClassExW(byref(newclass))
 
         super().__init__(
@@ -106,11 +108,13 @@ class MainWin(Window):
     def run(self):
         msg = MSG()
         while user32.GetMessageW(byref(msg), None, 0, 0) > 0:
+            if self.h_accel and user32.TranslateAcceleratorW(self.hwnd, self.h_accel, byref(msg)):
+                continue
             user32.TranslateMessage(byref(msg))
             user32.DispatchMessageW(byref(msg))
         user32.DestroyWindow(self.hwnd)
-        if self.hicon:
-            user32.DestroyIcon(self.hicon)
+        if self.h_icon:
+            user32.DestroyIcon(self.h_icon)
         return 0
 
     def quit(self, *args):

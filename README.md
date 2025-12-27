@@ -4,11 +4,11 @@ WinSetupShell is a simple [desktop shell](https://en.wikipedia.org/wiki/Windows_
 
 WinSetupShell uses the original unaltered Windows PE that comes with the Windows setup, there is no "baking" involved. Windows PE is a reduced Windows OS that provides the basic WinAPI, but no Explorer file manager, and no Explorer-based desktop, therefor such a custom shell/desktop is needed. As file manager a customized version of [Explorer++](https://github.com/derceg/explorerplusplus) is used.
 
-The original Windows setup stuff isn't altered in any way, so the USB drive remains a perfectly valid Windows setup media.
+**The original Windows setup stuff isn't altered in any way, so the USB drive remains a perfectly valid Windows setup media**.
 
-WinSetupShell is a simple and easily installed alternative for applications like [WinBuilder](https://en.wikipedia.org/wiki/WinBuilder), [Win10XPE](https://theoven.org/), [PEBakery](https://github.com/pebakery/pebakery) etc., which are way too complicate for me ;-)
+WinSetupShell is a simple and easily installed alternative for applications like [WinBuilder](https://en.wikipedia.org/wiki/WinBuilder), [Win10XPE](https://theoven.org/), [PEBakery](https://github.com/pebakery/pebakery) etc., which are way too complicate for me.
 
-As far as I know WinSetupShell is the only [alternative shell for Windows](https://en.wikipedia.org/wiki/List_of_alternative_shells_for_Windows) that was ever written in Python. But, why not?
+As far as I know it's the only [alternative shell for Windows](https://en.wikipedia.org/wiki/List_of_alternative_shells_for_Windows) that was ever written in Python. But, why not?
 
 *WinSetupShell desktop, loaded from enhanced Win11 25H2 USB setup media*  
 ![](screenshots/desktop.jpg)

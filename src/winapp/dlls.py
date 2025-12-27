@@ -248,6 +248,7 @@ user32.FindWindowExW.restype = HWND
 user32.FindWindowW.argtypes = (LPCWSTR, LPCWSTR)
 user32.FindWindowW.restype = HWND
 user32.FrameRect.argtypes = (HDC, LPRECT, HBRUSH)
+user32.GetAsyncKeyState.restype = SHORT
 user32.GetCapture.restype = HWND
 user32.GetCaretPos.argtypes = (LPPOINT,)
 user32.GetClassNameW.argtypes = (HWND, LPWSTR, INT)
@@ -315,6 +316,7 @@ user32.PostThreadMessageW.argtypes = (DWORD, UINT, WPARAM, LPARAM)
 user32.PrintWindow.argtypes = (HWND, HDC, UINT)
 #POINTER(HICON)
 user32.PrivateExtractIconsW.argtypes = (LPCWSTR, INT, INT, INT, LPVOID, LPUINT, UINT, UINT)
+user32.RegisterHotKey.argtypes = (HWND, INT, UINT, UINT)
 user32.RegisterShellHookWindow.argtypes = (HWND,)
 
 user32.RegisterWindowMessageW.argtypes = (LPCWSTR,)
@@ -357,6 +359,7 @@ user32.TranslateMessage.argtypes = (LPMSG,)
 user32.UnhookWindowsHookEx.argtypes = (LPVOID,)
 # LRESULT
 user32.UnhookWindowsHookEx.restype = LPARAM
+user32.UnregisterHotKey.argtypes = (HWND, INT)
 user32.WindowFromPoint.argtypes = (POINT,)
 user32.WindowFromPoint.restype = HWND
 

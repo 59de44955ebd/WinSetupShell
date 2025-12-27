@@ -37,7 +37,7 @@ os.environ['USERPROFILE'] = USERPROFILE
 os.environ['APPDATA'] = os.path.join(APPDATA_DIR, 'Roaming')
 os.environ['LOCALAPPDATA'] = os.path.join(APPDATA_DIR, 'Local')
 os.environ['PROGRAMS'] = PROGS_DIR
-os.environ['PATH'] = f'{PROGS_DIR}\\PowerShell;{PROGS_DIR}\\Python;' + os.environ['PATH']
+os.environ['PATH'] = f'{BIN_DIR};{PROGS_DIR}\\PowerShell;{PROGS_DIR}\\Python;' + os.environ['PATH']
 os.environ['HOMEDRIVE'], HOMEPATH = USERPROFILE.split('\\', 1)
 os.environ['HOMEPATH'] = '\\' + HOMEPATH
 

@@ -44,6 +44,9 @@ echo ****************************************
 xcopy /e userprofile "dist\%APP_NAME%\shell_data\userprofile\" >nul
 xcopy /e bin "dist\%APP_NAME%\shell_data\bin\" >nul
 
+rmdir /s /q "dist\%APP_NAME%\shell_data\userprofile\AppData\Local" 2>nul
+rmdir /s /q "dist\%APP_NAME%\shell_data\userprofile\AppData\Roaming\IDMComp" 2>nul
+
 echo.
 echo ****************************************
 echo Optimizing dist folder...

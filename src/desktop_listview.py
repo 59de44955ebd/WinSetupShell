@@ -201,7 +201,7 @@ class Desktop(MainWin, COMObject):
             width = rc_desktop.right, height = rc_desktop.bottom - taskbar_height,
             style = WS_POPUP | WS_CHILD,
             ex_style = WS_EX_TOOLWINDOW,
-            hbrush = gdi32.CreateSolidBrush(DESKTOP_BG_COLOR)
+            h_brush = gdi32.CreateSolidBrush(DESKTOP_BG_COLOR)
         )
 
         self.ishellfolder_desktop = (POINTER(IShellFolder))()
@@ -324,6 +324,8 @@ class Desktop(MainWin, COMObject):
 
             elif msg == NM_DBLCLK:
                 mi = cast(lparam, LPNMITEMACTIVATE).contents
+                if mi.iItem < 0:
+                    return
                 item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, mi.iItem, 0)
                 desktop_item = self.desktop_item_map[item_id]
                 if desktop_item.item_type == ITEM_TYPE_SHELL:

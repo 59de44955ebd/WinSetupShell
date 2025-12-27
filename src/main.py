@@ -61,7 +61,6 @@ TRAY_COMMANDS = (
 
 DARK_TASKBAR_BG_BRUSH = gdi32.CreateSolidBrush(DARK_TASKBAR_BG_COLOR)
 
-
 class Main(MainWin):
 
     ########################################
@@ -100,6 +99,7 @@ class Main(MainWin):
 
         self._toggle_windows = None
         self._last_menu_close = 0
+        self._timer_id_check_up = 5000
 
         self._rc_desktop = RECT()
         user32.GetWindowRect(user32.GetDesktopWindow(), byref(self._rc_desktop))
@@ -113,7 +113,7 @@ class Main(MainWin):
             window_class = APP_CLASS,
             style = WS_POPUP,
             ex_style = WS_EX_TOOLWINDOW,
-            hbrush = DARK_TASKBAR_BG_BRUSH if IS_DARK else COLOR_3DFACE + 1
+            h_brush = DARK_TASKBAR_BG_BRUSH if IS_DARK else COLOR_3DFACE + 1,
         )
 
         self._scale = max(1, min(3, user32.GetDpiForWindow(self.hwnd) // 96))
@@ -144,39 +144,27 @@ class Main(MainWin):
 
         self.create_rebar()
         self.create_clock()
+        # Add "show desktop" static in bottom right corner
+        if SHOW_DESKTOP_CORNER_WIDTH:
+            self.create_show_desktop_static()
 
         self.COMMAND_MESSAGE_MAP = {
-            IDM_QUIT:                       lambda: self.quit(),
-            IDM_DEBUG_TOGGLE_CONSOLE:       self.toggle_console,
+            IDM_QUIT:                   lambda: self.quit(),
+            IDM_DEBUG_TOGGLE_CONSOLE:   self.toggle_console,
+
+            # hotkeys
+            IDM_OPEN_STARTMENU:         self.handle_win_key,
+            IDM_SHOW_RUN_DIALOG:        self.show_run_dialog,
+            IDM_RUN_EXPLORER:           lambda: shell32.ShellExecuteW(self.hwnd, 'open', EXPLORER, None, None, SW_SHOWNORMAL),
+            IDM_RUN_SEARCH:             lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars('%programs%\\SwiftSearch\\SwiftSearch64.exe'), None, None, SW_SHOWNORMAL),
+            IDM_TOGGLE_DESKTOP:         self.toggle_toplevel_windows,
         }
 
         self._hmenu_start = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START)), 0)
-        if not DEBUG_CONSOLE:
-            user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
+#        if not DEBUG_CONSOLE:
+#            user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
         self._hmenu_quick = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_QUICK)), 0)
         self._hmenu_start_item = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START_MENU_ITEM)), 0)
-
-        # Add "show desktop" static in bottom right corner
-        if SHOW_DESKTOP_CORNER_WIDTH:
-            self.static_show_desktop = Static(
-                self,
-                style = WS_CHILD | WS_VISIBLE | SS_NOTIFY   | SS_ICON | SS_CENTERIMAGE,
-                ex_style = WS_EX_TRANSPARENT,
-                left = self._rc_desktop.right - SHOW_DESKTOP_CORNER_WIDTH,
-                width = SHOW_DESKTOP_CORNER_WIDTH,
-                height = self._taskbar_height
-            )
-            hicon_show_desktop = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(35), IMAGE_ICON, self._tray_icon_size, self._tray_icon_size, 0)
-            user32.SendMessageW(self.static_show_desktop.hwnd, STM_SETICON, hicon_show_desktop, 0)
-            self.tooltip_show_desktop = Tooltips()
-            if IS_DARK:
-                self.tooltip_show_desktop.apply_theme(True)
-            ti = TOOLINFOW()
-            ti.uFlags = TTF_IDISHWND | TTF_SUBCLASS
-            ti.hwnd = self.hwnd
-            ti.uId = self.static_show_desktop.hwnd
-            ti.lpszText = 'Show Desktop'
-            user32.SendMessageW(self.tooltip_show_desktop.hwnd, TTM_ADDTOOLW, 0, byref(ti))
 
         self.load_menu()
 
@@ -206,7 +194,7 @@ class Main(MainWin):
             if y >= self._taskbar_height:
                 if self._current_menu_item_id in self.menu_item_paths:
                     path = self.menu_item_paths[self._current_menu_item_id]
-                    idm = self._show_popupmenu(self._hmenu_start_item, x, y, TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
+                    idm = self._show_popupmenu(self._hmenu_start_item, POINT(x, y), TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
                     user32.EndMenu()
                     if idm == IDM_OPEN_LOCATION:
                         shell32.ShellExecuteW(None, None, EXPLORER, path, None, SW_SHOWNORMAL)
@@ -276,7 +264,8 @@ class Main(MainWin):
 
                 elif wparam == STN_CLICKED:
                     if SHOW_DESKTOP_CORNER_WIDTH and lparam == self.static_show_desktop.hwnd:
-                        self.minimize_toplevel_windows()
+#                        self.minimize_toplevel_windows()
+                        self.toggle_toplevel_windows()
 
         self.register_message_callback(WM_COMMAND, _on_WM_COMMAND)
 
@@ -332,6 +321,10 @@ class Main(MainWin):
 
         self.register_message_callback(WM_NOTIFY, _on_WM_NOTIFY)
 
+        # This only works in PE, in standard Windows the windows key is reserved
+        if not HAS_EXPLORER:
+            self._register_hotkeys()
+
         if IS_DARK:
             Window.apply_theme(self, True)
             uxtheme.SetPreferredAppMode(PreferredAppMode.ForceDark)
@@ -349,6 +342,43 @@ class Main(MainWin):
         self.set_stayontop()
 
         self.minimize_toplevel_windows()
+
+    ########################################
+    #
+    ########################################
+    def _register_hotkeys(self):
+        ########################################
+        #
+        ########################################
+        def _on_WM_HOTKEY(hwnd, wparam, lparam):
+            if wparam in self.COMMAND_MESSAGE_MAP:
+                self.kill_timer(self._timer_id_check_up)
+                self.COMMAND_MESSAGE_MAP[wparam]()
+
+        self.register_message_callback(WM_HOTKEY, _on_WM_HOTKEY)
+
+        user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_LWIN)
+        user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_RWIN)
+
+        user32.RegisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP, MOD_WIN | MOD_NOREPEAT, ord('D'))
+        user32.RegisterHotKey(self.hwnd, IDM_RUN_EXPLORER, MOD_WIN | MOD_NOREPEAT, ord('E'))
+        user32.RegisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG, MOD_WIN | MOD_NOREPEAT, ord('R'))
+        user32.RegisterHotKey(self.hwnd, IDM_RUN_SEARCH, MOD_WIN | MOD_NOREPEAT, ord('S'))
+
+        if DEBUG_CONSOLE:
+            user32.RegisterHotKey(self.hwnd, IDM_DEBUG_TOGGLE_CONSOLE, MOD_NOREPEAT, VK_F11)
+
+    ########################################
+    #
+    ########################################
+    def _unregister_hotkeys(self):
+        user32.UnregisterHotKey(self.hwnd, IDM_OPEN_STARTMENU)
+        user32.UnregisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG)
+        user32.UnregisterHotKey(self.hwnd, IDM_RUN_EXPLORER)
+        user32.UnregisterHotKey(self.hwnd, IDM_RUN_SEARCH)
+        user32.UnregisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP)
+        if DEBUG_CONSOLE:
+            user32.UnregisterHotKey(self.hwnd, IDM_DEBUG_TOGGLE_CONSOLE)
 
     ########################################
     # Create rebar and toolbars
@@ -501,7 +531,7 @@ class Main(MainWin):
                 kernel32.CloseHandle(h_proc)
                 if res:
                     dropped_items = self.get_dropped_items(wparam)
-                    shell32.ShellExecuteW(0, None, buf.value, '"' + ('" "'.join(dropped_items)) + '"', None, SW_SHOWNORMAL)
+                    shell32.ShellExecuteW(None, None, buf.value, '"' + ('" "'.join(dropped_items)) + '"', None, SW_SHOWNORMAL)
 
         shell32.DragAcceptFiles(self.toolbar_tasks.hwnd, True)
         self.toolbar_tasks.register_message_callback(WM_DROPFILES, _on_WM_DROPFILES)
@@ -649,6 +679,30 @@ class Main(MainWin):
         def _update_clock():
             user32.SetWindowTextW(self.clock.hwnd, datetime.now().strftime(CLOCK_FORMAT))
         self.clock_timer_id = self.create_timer(_update_clock, CLOCK_UPDATE_PERIOD_MS)
+
+    ########################################
+    #
+    ########################################
+    def create_show_desktop_static(self):
+        self.static_show_desktop = Static(
+            self,
+            style = WS_CHILD | WS_VISIBLE | SS_NOTIFY   | SS_ICON | SS_CENTERIMAGE,
+            ex_style = WS_EX_TRANSPARENT,
+            left = self._rc_desktop.right - SHOW_DESKTOP_CORNER_WIDTH,
+            width = SHOW_DESKTOP_CORNER_WIDTH,
+            height = self._taskbar_height
+        )
+        hicon_show_desktop = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(35), IMAGE_ICON, self._tray_icon_size, self._tray_icon_size, 0)
+        user32.SendMessageW(self.static_show_desktop.hwnd, STM_SETICON, hicon_show_desktop, 0)
+        self.tooltip_show_desktop = Tooltips()
+        if IS_DARK:
+            self.tooltip_show_desktop.apply_theme(True)
+        ti = TOOLINFOW()
+        ti.uFlags = TTF_IDISHWND | TTF_SUBCLASS
+        ti.hwnd = self.hwnd
+        ti.uId = self.static_show_desktop.hwnd
+        ti.lpszText = 'Show Desktop'
+        user32.SendMessageW(self.tooltip_show_desktop.hwnd, TTM_ADDTOOLW, 0, byref(ti))
 
     ########################################
     # Register win notifications
@@ -952,7 +1006,6 @@ class Main(MainWin):
         self._startmenu_command_counter = STARTMENU_FIRST_ITEM_ID
 
         ico_size = 16 * self._scale
-#        ico_size = 16 * min(self._scale, 2)
 
         self._hmenu_main = user32.CreatePopupMenu()
         self.hmenu_progs = None
@@ -1026,14 +1079,19 @@ class Main(MainWin):
 
                     parse_list(v, hmenu_child)
                 else:
-                    exe = os.path.expandvars(v)
-                    if ',' in v:
-                        exe, args = exe.split(',', 1)
-                    else:
-                        args = None
 
-                    mid = self._get_id(lambda exe=exe, args=args: shell32.ShellExecuteW(None, 'open', exe, args, os.path.dirname(exe), 1))
-                    self.menu_item_paths[mid] = os.path.dirname(exe)
+                    if v.startswith('python:'):
+                        mid = self._get_id(lambda command=v[7:], env={'main': self}: exec(command, {}, env))
+
+                    else:
+                        exe = os.path.expandvars(v)
+                        if ',' in v:
+                            exe, args = exe.split(',', 1)
+                        else:
+                            args = None
+                        mid = self._get_id(lambda exe=exe, args=args: shell32.ShellExecuteW(None, 'open', exe, args, os.path.dirname(exe), 1))
+                        self.menu_item_paths[mid] = os.path.dirname(exe)
+
                     if use_cache:
                         h_bitmap = bytes_to_hbitmap(data, ctx.idx, ico_size)
                     else:
@@ -1068,29 +1126,6 @@ class Main(MainWin):
                 f.write(bytes(bmi))
                 f.write(ctx.bits_total)
 
-        add_menu_item(
-            self._hmenu_main,
-            self._get_id(lambda: shell32.RunFileDlg(self.hwnd, 0, None, None, None, 0)),
-            'Run...',
-            get_shell_icon_as_hbitmap(HMOD_SHELL32, 25, ico_size)
-        )
-
-        user32.AppendMenuW(self._hmenu_main, MF_SEPARATOR, 0, '-')
-
-        add_menu_item(
-            self._hmenu_main,
-            self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/r /t 0', BIN_DIR, 0)),
-            'Reboot',
-            get_shell_icon_as_hbitmap(HMOD_SHELL32, 290, ico_size)
-        )
-
-        add_menu_item(
-            self._hmenu_main,
-            self._get_id(lambda: shell32.ShellExecuteW(None, 'open', 'shutdown.exe', '/s /t 0', BIN_DIR, 0)),
-            'Shutdown',
-            get_shell_icon_as_hbitmap(HMOD_SHELL32, 28, ico_size)
-        )
-
     ########################################
     #
     ########################################
@@ -1104,19 +1139,14 @@ class Main(MainWin):
     ########################################
     #
     ########################################
-    def _show_popupmenu(self, hmenu, x=None, y=None, flags=TPM_LEFTBUTTON, hwnd=None):
+    def _show_popupmenu(self, hmenu, pt=None, flags=TPM_LEFTBUTTON, hwnd=None):
         uxtheme.FlushMenuThemes()
-        if x is None or y is None:
+        if pt is None:
             pt = POINT()
             user32.GetCursorPos(byref(pt))
-            if x is None:
-                x = pt.x
-            if y is None:
-                y = pt.y
-
         if hwnd is None:
             hwnd = self.hwnd
-        res = user32.TrackPopupMenuEx(hmenu, flags, x, y, hwnd, 0)
+        res = user32.TrackPopupMenuEx(hmenu, flags, pt.x, pt.y, hwnd, 0)
         user32.PostMessageW(hwnd, WM_NULL, 0, 0)
         return res
 
@@ -1136,9 +1166,38 @@ class Main(MainWin):
     #
     ########################################
     def show_startmenu(self):
+        hwnd = user32.FindWindowW('#32768', None)
+        if hwnd:
+            h_menu = user32.SendMessageW(hwnd, MN_GETHMENU, 0, 0)
+            if h_menu == self._hmenu_main:
+                user32.EndMenu(self._hmenu_main)
+                return
+
         dt = kernel32.GetTickCount() - self._last_menu_close
         if dt > 50:
-            self._show_popupmenu(self._hmenu_main, self._rc_start.left, self._rc_start.top)
+            self._show_popupmenu(self._hmenu_main, POINT(self._rc_start.left, self._rc_start.top))
+
+    ########################################
+    #
+    ########################################
+    def handle_win_key(self):
+
+        # wait for VK_LWIN key up
+        def _check_up():
+            # If the most significant bit is set, the key is down, and if the least
+            # significant bit is set, the key was pressed after the previous call
+            is_down = user32.GetAsyncKeyState(VK_LWIN)  & 0x10000000
+            if not is_down:
+                self.kill_timer(self._timer_id_check_up)
+                self.show_startmenu()
+
+        self.create_timer(_check_up, 100, timer_id=self._timer_id_check_up)
+
+    ########################################
+    #
+    ########################################
+    def show_run_dialog(self):
+        shell32.RunFileDlg(self.hwnd, 0, None, None, None, 0)
 
     ########################################
     #
@@ -1155,15 +1214,23 @@ class Main(MainWin):
     ########################################
     #
     ########################################
-    def toggle_windows(self):
+    def toggle_toplevel_windows(self):
         if self._toggle_windows:
-            for win in self._toggle_windows:
-                user32.ShowWindow(win.hwnd, SW_RESTORE)
+
+            for hwnd in self._toggle_windows:
+                user32.ShowWindow(hwnd, SW_RESTORE)
             self._toggle_windows = None
+
         else:
-            self._toggle_windows = [win for win in self.get_toplevel_windows() if not win.is_iconic]
-            for win in self._toggle_windows:
-                user32.ShowWindow(win.hwnd, SW_MINIMIZE)
+            self._toggle_windows = []
+            def _enumerate_windows(hwnd, lparam):
+                if not user32.GetWindowLongA(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW and user32.IsWindowVisible(hwnd) and not user32.IsIconic(hwnd):
+                    self._toggle_windows.append(hwnd)
+                    user32.ShowWindow(hwnd, SW_HIDE)  # Prevent animation
+                    user32.ShowWindow(hwnd, SW_MINIMIZE)
+                return 1
+
+            user32.EnumWindows(WNDENUMPROC(_enumerate_windows), 0)
 
     ########################################
     #
@@ -1219,7 +1286,7 @@ class Main(MainWin):
         hConHandle = msvcrt.open_osfhandle(lStdErrHandle, os.O_TEXT)
         sys.stderr = io.TextIOWrapper(os.fdopen(hConHandle, 'wb', 0), write_through = True)
 
-        print('\r# PyShell Debug Console\n')
+        print('\r########################################\n# PyShell Debug Console\n########################################\n')
 
     ########################################
     #
@@ -1236,6 +1303,8 @@ class Main(MainWin):
     #
     ########################################
     def quit(self, start_explorer=True):
+        if not HAS_EXPLORER:
+            self._unregister_hotkeys()
 
         if self.desktop:
             user32.DestroyWindow(self.desktop.hwnd)
