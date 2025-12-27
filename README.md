@@ -99,9 +99,9 @@ to the end of file
 ## Notes
 - Windows PE doesn't provide shell notications for file system changes. That's why in Explorer++ you have to explicitely refresh the current view (with F5) after deleting or moving files etc. WinSetupShell tries to circumvent this issue for its desktop as effectively as possible, but there are still some occasions where you have to refresh manually to update the view.
 
-- WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Quit" from the popup menu.
+- WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Exit" from the popup menu.
 
-- The shell itself, which only uses a couple of words like "Start", "Shutdown" and "Quit", is english only, no localisation (since I don't care). But time and date formats in the clock are localized, and various applications, either by Microsoft or 3rd party, are as well.
+- The shell itself, which only uses a few words like "Start", "Reboot", "Shutdown" and "Exit", is english only, no localisation (since I don't care). But shell items on the desktop and the time/date format in the clock are localized, and many of the provided applications are as well.
 
 - You can of course save files either on the USB drive or preexisting volumes on the local PC, but there is no persistance concerning registry changes etc. Which is actually a good thing, "boot.wim" is never altered, so you can't mess up the actual installation media (unless you alter it manually e.g. by using included 7-zip, which can load and save .wim files)
 
