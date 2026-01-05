@@ -207,8 +207,8 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 
 - `git clone https://github.com/59de44955ebd/WinSetupShell.git`
 
-- `cd WinSetupShell.git`
+- `cd WinSetupShell`
 
-- (Possibly open `src\main.py` with Notepad++ and make your own adjustments)
+- (Possibly open `src\main.py` with Notepad++ and make your own code adjustments)
 
 - Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
