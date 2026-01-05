@@ -35,13 +35,14 @@ if not os.path.isdir(DESKTOP_DIR):
 
 FONTS_DIR = os.path.join(USERPROFILE, 'Fonts')
 
-os.environ['USERPROFILE'] = USERPROFILE
 os.environ['APPDATA'] = os.path.join(APPDATA_DIR, 'Roaming')
-os.environ['LOCALAPPDATA'] = os.path.join(APPDATA_DIR, 'Local')
-os.environ['PROGRAMS'] = PROGS_DIR
-os.environ['PATH'] = f'{BIN_DIR};{PROGS_DIR}\\PowerShell;{PROGS_DIR}\\Python;' + os.environ['PATH']
 os.environ['HOMEDRIVE'], HOMEPATH = USERPROFILE.split('\\', 1)
 os.environ['HOMEPATH'] = '\\' + HOMEPATH
+os.environ['LOCALAPPDATA'] = os.path.join(APPDATA_DIR, 'Local')
+os.environ['PATH'] = f'{BIN_DIR};{PROGS_DIR}\\PowerShell;{PROGS_DIR}\\Python;{PROGS_DIR}\\Python\\Scripts;' + os.environ['PATH']
+os.environ['PROGRAMS'] = PROGS_DIR
+os.environ['PYTHONHOME'] = f'{PROGS_DIR}\\Python'
+os.environ['USERPROFILE'] = USERPROFILE
 
 DESKTOP_WIN_CLASS = 'Progman'
 DESKTOP_WIN_TEXT = 'Program Manager'
