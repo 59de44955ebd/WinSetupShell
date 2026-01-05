@@ -1,0 +1,159 @@
+# encoding=utf-8
+[
+	["Explorer++", "%programs%\\Explorer++\\Explorer++.exe"],
+	"-",
+	["Programs",
+		[
+			["Accessories",
+				[
+					["Calculator", "%programs%\\ClassicCalc\\calc1.exe"],
+					["Character Map", "%programs%\\Windows\\charmap.exe"],
+					["Magnifier", "%programs%\\Windows\\magnify.exe"],
+					["Notepad", "%windir%\\Notepad.exe"],
+					["On-Screen Keyboard", "%programs%\\Windows\\osk.exe"],
+					["WordPad", "%programs%\\WordPad\\wordpad.exe"],
+				]
+			],
+			["Boot",
+				[
+					["BOOTICE", "%programs%\\BootIce\\BOOTICEx64.exe"],
+					["EasyUEFI", "%programs%\\EasyUEFI\\bin\\EasyUEFI.exe"],
+				]
+			],
+			["Disk Tools",
+				[
+					["Data Recovery",
+						[
+							["Check Disk GUI", "%programs%\\ChkDskGUI\\chkdsk.exe"],
+							["DMDE", "%programs%\\DMDE\\dmde.exe"],
+							["PhotoRec", "%programs%\\TestDisk\\photorec_win.exe"],
+							["Recuva", "%programs%\\Recuva\\recuva64.exe"],
+						]
+					],
+					["Defrag",
+						[
+							["Defraggler", "%programs%\\Defraggler\\Defraggler64.exe"],
+						]
+					],
+					["Diagnostic",
+						[
+							["Crystal Disk Info", "%programs%\\Crystal Disk Info\\DiskInfo64.exe"],
+							["GSmartControl", "%programs%\\GSmartControl\\_gsmartcontrol.exe"],
+							["TestDisk", "%programs%\\TestDisk\\testdisk_win.exe"],
+						]
+					],
+					["Imaging",
+						[
+							["Disk2vhd", "%programs%\\SysinternalsSuite\\disk2vhd64.exe"],
+							["DiskReader", "%programs%\\DiskReader\\DiskReader.exe"],
+							["Drive Snapshot", "%programs%\\Snapshot\\snapshot.exe"],
+							["Fido", "%programs%\\Fido.ps1"],
+							["FidoArch", "%programs%\\FidoArch.ps1"],
+							["Macrium Reflect", "%programs%\\Macrium\\Reflect.exe"],
+							["PowerISO", "%programs%\\PowerISO\\PowerISO.exe"],
+							["Rufus", "%programs%\\Rufus\\rufus-4.11p.exe"],
+							["VeraCrypt", "%programs%\\VeraCrypt\\VeraCrypt-x64.exe"],
+							["VhdManager", "%programs%\\VhdManager\\VhdManager_x64.exe"],
+						]
+					],
+					["Partition Tools",
+						[
+							["DiskGenius", "%programs%\\DiskGenius\\DiskGenius.exe"],
+							["PartitionWizard", "%programs%\\MiniTool Partition Wizard\\PartitionWizard.exe"],
+						]
+					],
+				]
+			],
+			["Hardware Specs",
+				[
+					["CPU-Z", "%programs%\\CPU-Z\\cpuz.exe"],
+					["HWiNFO", "%programs%\\HWiNFO\\HWiNFO64.exe"],
+					["Speccy", "%programs%\\Speccy\\Speccy64.exe"],
+				]
+			],
+			["Network Tools",
+				[
+					["FileZilla", "%programs%\\FileZilla\\filezilla.exe"],
+					["Firefox", "%programs%\\Firefox\\firefox-portable.exe"],
+					["PortableGit",
+						[
+							["Git Bash", "%programs%\\PortableGit\\git-bash.exe"],
+							["Git CMD", "%programs%\\PortableGit\\git-cmd.exe"],
+						]
+					],
+					["PuTTY", "%programs%\\PuTTY\\putty.exe"],
+					["TightVNC",
+						[
+							["TightVNC Server - Configure", "%programs%\\TightVNC\\tvnserver.exe,-configservice"],
+							["TightVNC Server - Start", "%programs%\\TightVNC\\tvnserver.exe,-start"],
+							["TightVNC Server - Stop", "%programs%\\TightVNC\\tvnserver.exe,-stop"],
+							["TightVNC Viewer", "%programs%\\TightVNC\\tvnviewer.exe"],
+						]
+					],
+				]
+			],
+			["Other Tools",
+				[
+					["7-Zip File Manager", "%programs%\\7-Zip\\7zFM.exe"],
+					["HxD", "%programs%\\HxD\\HxD64.exe"],
+					["IrfanView", "%programs%\\IrfanView\\i_view64.exe"],
+					["Notepad++", "%programs%\\Notepad++\\notepad++.exe"],
+					["Python", "%programs%\\Python\\python.exe"],
+					["SumatraPDF", "%programs%\\SumatraPDF\\SumatraPDF.exe"],
+					["Total Commander", "%programs%\\totalcmd\\totalcmd-portable.exe"],
+				]
+			],
+			["Search Tools",
+				[
+					["AgentRansack", "%programs%\\AgentRansack\\AgentRansack.exe"],
+					["SearchMyFiles", "%programs%\\NirSoft\\searchmyfiles.exe"],
+					["SwiftSearch", "%programs%\\SwiftSearch\\SwiftSearch64.exe"],
+					["UltraSearch", "%programs%\\UltraSearch\\UltraSearch.exe"],
+				]
+			],
+			["Security",
+				[
+					["CredentialsFileView", "%programs%\\NirSoft\\credentialsfileview.exe"],
+					["NTPWedit", "%programs%\\NTPWedit\\ntpwedit64.exe"],
+					["ProduKey", "%programs%\\NirSoft\\produkey.exe"],
+					["Windows Login Unlocker", "%programs%\\WLU\\WLU_x64.exe"],
+					["WirelessKeyView", "%programs%\\NirSoft\\wirelesskeyview.exe"],
+				]
+			],
+			["System Tools",
+				[
+					["CMD", "%windir%\\System32\\cmd.exe"],
+					["Driver Verifier Manager", "%windir%\\System32\\verifiergui.exe"],
+					["Microsoft® Windows Repair Disc", "%windir%\\System32\\recdisc.exe"],
+					["Microsoft® Windows System Restore", "%windir%\\System32\\rstrui.exe"],
+					["PowerShell7", "%programs%\\PowerShell\\pwsh.exe"],
+					["RegEdit", "%windir%\\regedit.exe"],
+					["Services and Drivers", "%programs%\\NirSoft\\serviwin.exe"],
+					["System Information", "%programs%\\Windows\\msinfo32.exe"],
+					["Task Manager", "%windir%\\System32\\taskmgr.exe"],
+					["Windows Deployment Services Image Capture Wizard", "%windir%\\System32\\wdscapture.exe"],
+					["Windows Desaster Recovery UI", "%windir%\\System32\\bmrui.exe"],
+					["Windows Memory Diagnostics Tool", "%windir%\\System32\\MdSched.exe"],
+				]
+			],
+		], 326
+	],
+	["Network",
+		[
+			["Initialize Network", "%windir%\\System32\\wpeutil.exe,InitializeNetwork", 257],
+			["PENetwork", "%programs%\\PENetwork\\PENetwork.exe"],
+			["Firewall",
+				[
+					["Disable", "%windir%\\System32\\wpeutil.exe,DisableFirewall", 240],
+					["Enable", "%windir%\\System32\\wpeutil.exe,EnableFirewall", 16802],
+				], "firewall.ico"
+			]
+		], 18
+	],
+	["Search", "%programs%\\SwiftSearch\\SwiftSearch64.exe"],
+	"-",
+	["Run...", "python:main.show_run_dialog()", 25],
+	"-",
+	["Reboot", "python:main.reboot()", 290],
+	["Shutdown", "python:main.shutdown()", 28],
+]

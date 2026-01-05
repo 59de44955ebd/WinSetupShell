@@ -48,27 +48,40 @@ WinSetupShell can also be used with a multi-boot USB drive created with [Ventoy]
 
 ## Network
 
-Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `Network` from the start menu, both do the same thing, they start `PENetwork`. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
+Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `Network -> Initialize Network` from the start menu. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
 
 If you want to start network by default, add line  
-`start "" "%programs%\PENetwork\PENetwork.exe"`   
+`wpeutil.exe InitializeNetwork`  
 to the end of file  
 `shell_data\userprofile\AppData\autoexec.bat`.
 
+## Hotkeys
+
+- Win: Toggle start menu
+- Win + Alt + Del: Open Task Manager (Ctrl+Alt+Del doesn't work in PE and AFAIK can't be overwritten)
+- Win + D: Show desktop (toggle visible application windows)
+- Win + E: Open new Explorer++ instance/window
+- Win + R: Open "Run" dialog
+- Win + S: Open Search (defaults to SwiftSearch) 
+
 ## Included applications (Freeware/Shareware/Trialware)
+
 - [7-Zip](https://www.7-zip.org/)
 - [AgentRansack](https://www.mythicsoft.com/agentransack/)
 - [BootIce](https://www.majorgeeks.com/files/details/bootice_64_bit.html)
 - [Check Disk GUI](https://alternativeto.net/software/chkdsk-gui/about/)
+- [Classic Calulator](https://win7games.com/#calc)
 - [CPU-Z](https://www.cpuid.com/softwares/cpu-z.html)
 - [Crystal Disk Info](https://crystalmark.info/en/software/crystaldiskinfo/)
 - [Defraggler](https://www.ccleaner.com/defraggler)
 - [DiskGenius](https://www.diskgenius.com/)
+- [DMDE](https://dmde.com/)
 - [Drive Snapshot](http://www.drivesnapshot.de/en/)
 - [EasyUEFI](https://www.easyuefi.com/) (Trial version)
 - [Explorer++](https://explorerplusplus.com/)
 - [FileZilla](https://filezilla-project.org/)
 - [Firefox](https://www.firefox.com/)
+- [GSmartControl](https://gsmartcontrol.shaduri.dev/)
 - [HWiNFO](https://www.hwinfo.com/download/)
 - [HxD](https://mh-nexus.de/de/hxd/)
 - [IrfanView](https://www.irfanview.com/)
@@ -77,8 +90,10 @@ to the end of file
 - [MiniTool Partition Wizard](https://www.minitool.com/partition-manager/)
 - [NirSoft (suite)](https://www.nirsoft.net/)
 - [Notepad++](https://notepad-plus-plus.org/)
+- [NTPWedit](http://www.cdslow.org.ru/en/ntpwedit/)
 - [PENetwork](https://www.penetworkmanager.de/)
 - [PortableGit](https://git-scm.com/install/windows) (Git Bash, Git CMD)
+- [PowerISO](https://www.poweriso.com/)
 - [PowerShell 7](https://github.com/PowerShell/PowerShell)
 - [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/)
 - [Python 3.12.10](https://python.org)
@@ -97,6 +112,7 @@ to the end of file
 - [WordPad](https://en.wikipedia.org/wiki/WordPad) (classic)
 
 ## Notes
+
 - Windows PE doesn't provide shell notications for file system changes. That's why in Explorer++ you have to explicitely refresh the current view (with F5) after deleting or moving files etc. WinSetupShell tries to circumvent this issue for its desktop as effectively as possible, but there are still some occasions where you have to refresh manually to update the view.
 
 - WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Exit" from the popup menu.
@@ -129,9 +145,11 @@ using an arbitrary text editor. The format should be self-explanatory, here some
 
 - Menu separators are represented by a "-".
 
-- The "Search" item at the root of the start menu by default starts `SwiftSearch`, but feel free to edit its item to point to one of the other two provided search apps instead, `AgentRansack` or `UltraSearch`.
+- The "Search" item at the root of the start menu by default starts `SwiftSearch`, but feel free to edit its item to make it point to one of the other provided search apps (`AgentRansack`, `SearchMyFiles`, `UltraSearch`) instead.
 
-- Instead of using an exe's default icon - or for start menu commands based on CMD or PowerShell scripts, so without their own icon - you can either append a system icon index to the menu item's list, the icon will then be loaded from shell32.dll using the specified icon index. Or put your own .ico file into folder `shell_data\userprofile\AppData\custom_icons` and append its filename to the menu item's list.
+- Instead of using an exe's default icon - or for start menu commands based on CMD or PowerShell scripts, so without their own icon - you can either append a system icon index to the menu item's list, the icon will then be loaded from shell32.dll using the specified icon index. Or put your own .ico file into folder  
+`shell_data\userprofile\AppData\custom_icons`  
+and append its filename to the menu item's list.
 
 - If you want to pass parameters to an executable, separate the full command line from the executable by a single comma.
 
@@ -151,10 +169,14 @@ To add or remove applications to/from the quick launch toolbar, edit file
 `shell_data\userprofile\AppData\quick_launch.pson`  
 accordingly.
 
-Since the Windows PE system doesn't provide persistant icon caching, WinSetupShell uses custom caching to speed up its start. Therefor, whenever you changed something in the start menu or quick launch toolbar, you have to delete the folder `shell_data\userprofile\AppData\icon_cache` or its contents on the USB drive. The cache will then be rebuilt when the shell is started for the next time (which will take a couple of seconds).
+Since the Windows PE system doesn't provide persistant icon caching, WinSetupShell uses custom caching to speed up its start. Therefor, whenever you changed something in the start menu or quick launch toolbar, you have to delete the folder  
+`shell_data\userprofile\AppData\icon_cache`  
+or its contents on the USB drive. The cache will then be rebuilt when the shell is started for the next time (which will take a couple of seconds).
 
-You can change the wallpaper by replacing file `shell_data\userprofile\AppData\wallpaper.jpg` with a different .jpg file with this file name. The wallpaper is always scaled to the current desktop dimensions, but never distorted, so it might be cropped if needed.
+You can change the wallpaper by replacing file  
+`shell_data\userprofile\AppData\wallpaper.jpg`  
+with a different .jpg file with this file name. The wallpaper is always scaled to the current desktop dimensions, but never distorted, so it might be cropped if needed.
 
-If you prefer a plain desktop background color, simply remove/rename `wallpaper.jpg`. The background color defaults to some warmish dark blue, but can be changed by editing file `shell_data\userprofile\AppData\config.pson`. This config file also allows to change various other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).
-
-
+If you prefer a plain desktop background color, simply remove/rename `wallpaper.jpg`. The background color defaults to some warmish dark blue, but can be changed by editing file  
+`shell_data\userprofile\AppData\config.pson`.  
+This config file also allows to change various other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).

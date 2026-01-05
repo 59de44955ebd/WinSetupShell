@@ -86,6 +86,15 @@ class NMTOOLBARW(Structure):
     ]
 LPNMTOOLBARW = POINTER(NMTOOLBARW)
 
+class NMTBGETINFOTIPW(Structure):
+    _fields_ = [
+        ("hdr", NMHDR),
+        ("pszText", LPVOID),
+        ("cchTextMax", INT),
+        ("iItem", INT),
+        ("lParam", LPARAM),
+    ]
+
 DARK_TOOLBAR_BUTTON_BORDER_BRUSH = gdi32.CreateSolidBrush(0x636363)
 DARK_TOOLBAR_BUTTON_BG_BRUSH = gdi32.CreateSolidBrush(0x424242)
 DARK_TOOLBAR_BUTTON_ROLLOVER_BG_COLOR = 0x2b2b2b

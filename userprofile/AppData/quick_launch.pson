@@ -1,0 +1,8 @@
+# encoding=utf-8
+[
+	["Explorer++", "%PROGRAMS%\\Explorer++\\Explorer++.exe"],
+	["CMD", "%windir%\\System32\\cmd.exe"],
+	["PowerShell7", "%PROGRAMS%\\PowerShell\\pwsh.exe"],
+	["Process Explorer", "%PROGRAMS%\\SysinternalsSuite\\procexp64.exe"],
+	["Notepad", "%windir%\\Notepad.exe"]
+]

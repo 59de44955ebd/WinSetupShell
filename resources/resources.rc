@@ -12,9 +12,15 @@ IDI_NETWORK_LIGHT ICON "icon-network-light.ico"
 IDI_USB_DARK ICON "icon-usb-dark.ico"
 IDI_USB_LIGHT ICON "icon-usb-light.ico"
 
+IDI_BATTERY_DARK ICON "icon-battery-dark.ico"
+IDI_BATTERY_LIGHT ICON "icon-battery-light.ico"
+
+IDI_KEYBOARD_DARK ICON "icon-keyboard-dark.ico"
+IDI_KEYBOARD_LIGHT ICON "icon-keyboard-light.ico"
+
 1 VERSIONINFO
-FILEVERSION 0,9,0,0
-PRODUCTVERSION 0,9,0,0
+FILEVERSION 0,11,0,0
+PRODUCTVERSION 0,11,0,0
 FILEOS 0x40004
 FILETYPE 0x1
 {
@@ -24,11 +30,11 @@ BLOCK "StringFileInfo"
 	{
 		VALUE "CompanyName", "59de44955ebd"
 		VALUE "FileDescription", "PyShell"
-		VALUE "FileVersion", "0.9.0.0)"
+		VALUE "FileVersion", "0.11.0.0)"
 		VALUE "InternalName", "PyShell"
 		VALUE "OriginalFilename", "shell.exe"
 		VALUE "ProductName", "PyShell"
-		VALUE "ProductVersion", "0,9,0,0"
+		VALUE "ProductVersion", "0,11,0,0"
 	}
 }
 
@@ -55,5 +61,13 @@ BEGIN
     MENUITEM "Open Explorer++ here",IDM_OPEN_LOCATION
     MENUITEM "Open CMD here",IDM_OPEN_CMD
     MENUITEM "Open PowerShell here",IDM_OPEN_POWERSHELL
+  END
+END
+
+POPUP_MENU_TASKS MENU
+BEGIN
+  POPUP "Popup"
+  BEGIN
+    MENUITEM "Task Manager\tWin+Alt+Del",IDM_OPEN_TASKMANAGER
   END
 END

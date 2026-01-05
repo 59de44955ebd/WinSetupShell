@@ -2,8 +2,8 @@ from ctypes import *
 from ctypes.wintypes import *
 
 from .const import *
-from .types import WNDPROC, WNDENUMPROC
-from .dlls import gdi32, kernel32, user32, uxtheme
+from .types import *
+from .dlls import *
 from .controls.common import *
 from .themes import *
 
@@ -227,7 +227,7 @@ class Window(object):
         self.hfont = hfont
 
     def set_parent(self, win=None):
-        user32.SetParent(self.hwnd, win.hwnd if win else 0)
+        user32.SetParent(self.hwnd, win.hwnd if win else None)
 
     def get_children(self):
         children = []
@@ -253,3 +253,13 @@ class Window(object):
         self.is_dark = is_dark
         for child in self.children:
             child.apply_theme(is_dark)
+
+    def get_dropped_items(self, hdrop):
+        dropped_items = []
+        cnt = shell32.DragQueryFileW(hdrop, 0xFFFFFFFF, None, 0)
+        for i in range(cnt):
+            file_buffer = create_unicode_buffer('', MAX_PATH)
+            shell32.DragQueryFileW(hdrop, i, file_buffer, MAX_PATH)
+            dropped_items.append(file_buffer[:].split('\0', 1)[0])
+        shell32.DragFinish(hdrop)
+        return dropped_items

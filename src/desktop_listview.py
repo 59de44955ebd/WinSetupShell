@@ -201,7 +201,7 @@ class Desktop(MainWin, COMObject):
             width = rc_desktop.right, height = rc_desktop.bottom - taskbar_height,
             style = WS_POPUP | WS_CHILD,
             ex_style = WS_EX_TOOLWINDOW,
-            h_brush = gdi32.CreateSolidBrush(DESKTOP_BG_COLOR)
+            h_brush = gdi32.GetStockObject(BLACK_BRUSH)  #gdi32.CreateSolidBrush(DESKTOP_BG_COLOR)
         )
 
         self.ishellfolder_desktop = (POINTER(IShellFolder))()
@@ -238,7 +238,7 @@ class Desktop(MainWin, COMObject):
 
         uxtheme.SetWindowTheme(self.listview.hwnd, 'Explorer', None)
 
-        user32.SendMessageW(self.listview.hwnd, LVM_SETBKCOLOR, 0, CLR_NONE)
+        user32.SendMessageW(self.listview.hwnd, LVM_SETBKCOLOR, 0, DESKTOP_BG_COLOR) #CLR_NONE)
         user32.SendMessageW(self.listview.hwnd, LVM_SETTEXTCOLOR, 0, DESKTOP_TEXT_COLOR)
         user32.SendMessageW(self.listview.hwnd, LVM_SETTEXTBKCOLOR, 0, CLR_NONE)
         user32.SendMessageW(self.listview.hwnd, LVM_SETICONSPACING, 0,

@@ -1329,6 +1329,7 @@ MA_NOACTIVATE = 3
 MA_NOACTIVATEANDEAT = 4
 ICON_SMALL = 0
 ICON_BIG = 1
+ICON_SMALL2 = 2
 SIZE_RESTORED = 0
 SIZE_MINIMIZED = 1
 SIZE_MAXIMIZED = 2
@@ -6842,6 +6843,7 @@ TB_SETBUTTONWIDTH        = (WM_USER + 59)
 TB_SETMAXTEXTROWS        = (WM_USER + 60)
 TB_GETTEXTROWS           = (WM_USER + 61)
 TB_GETOBJECT             = (WM_USER + 62)  # wParam == IID, lParam void **ppv
+TB_HITTEST               = (WM_USER + 69)
 TB_GETHOTITEM            = (WM_USER + 71)
 TB_SETHOTITEM            = (WM_USER + 72)  # wParam == iHotItem
 TB_SETANCHORHIGHLIGHT    = (WM_USER + 73)  # wParam == TRUE/FALSE
@@ -6988,6 +6990,8 @@ TBN_TOOLBARCHANGE       =(TBN_FIRST-8)
 TBN_CUSTHELP            =(TBN_FIRST-9)
 TBN_DROPDOWN            =(TBN_FIRST-10)
 TBN_GETOBJECT           =(TBN_FIRST-12)
+
+TBN_GETINFOTIPW         =(TBN_FIRST-19)
 
 ########################################
 # Tooltips

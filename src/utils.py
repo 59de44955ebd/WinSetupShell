@@ -1,8 +1,10 @@
-from ctypes import Structure, sizeof, byref, create_string_buffer
+import os
+
+from ctypes import *
 from ctypes.wintypes import *
 
 from winapp.const import *
-from winapp.dlls import kernel32
+from winapp.dlls import advapi32, kernel32
 
 IS_CONSOLE = kernel32.GetStdHandle(STD_OUTPUT_HANDLE) != 0
 
@@ -71,6 +73,9 @@ class STARTUPINFOW(Structure):
         ('hStdError',             HANDLE),
     ]
 
+########################################
+#
+########################################
 def run_command(command_line: str, cwd: str = '') -> tuple[bytes, bytes, int]:
 
     h_child_stdout_read = HANDLE()
@@ -189,3 +194,42 @@ def run_command(command_line: str, cwd: str = '') -> tuple[bytes, bytes, int]:
     kernel32.CloseHandle(proc_info.hProcess)
 
     return bytes(res_stdout), bytes(res_stderr), exit_code.value
+
+########################################
+#
+########################################
+def get_locales():
+    hkey = HKEY()
+    if advapi32.RegOpenKeyW(HKEY_USERS, '.DEFAULT\\Control Panel\\International' , byref(hkey)) != ERROR_SUCCESS:
+        return None, None
+
+    data = DWORD()
+    cbData = DWORD()
+    if advapi32.RegQueryValueExW(hkey, 'Locale', None, None, None, byref(cbData)) == ERROR_SUCCESS:
+        data = create_unicode_buffer(cbData.value // sizeof(WCHAR))
+        if advapi32.RegQueryValueExW(hkey, 'Locale', None, None, data, byref(cbData)) == ERROR_SUCCESS:
+            lcid_system = '0x' + data.value[-4:]
+    advapi32.RegCloseKey(hkey)
+
+    if not lcid_system:
+        return None, None
+
+    command = os.path.expandvars(f'%windir%\\system32\\Wpeutil.exe ListKeyboardLayouts {lcid_system}')
+    out, err, exit_code = run_command(command)
+    if exit_code != 0:
+        return None, None
+
+    out = out.decode('oem')
+    locales = {}
+    buf = create_unicode_buffer(85)
+    for line in out.split('\n'):
+        if line.startswith('ID:'):
+            lcid = eval('0x' + line.rstrip()[-8:])
+            if lcid > 0xFFFF:
+                continue
+            res = kernel32.LCIDToLocaleName(lcid, buf, 85, 0)
+            if res == 0:
+                continue
+            locales[lcid] = buf.value
+
+    return eval(lcid_system), dict(sorted(locales.items(), key=lambda item: item[1]))

@@ -70,6 +70,7 @@ comdlg32.GetSaveFileNameW.argtypes = (LPVOID,)
 ########################################
 # gdi32
 ########################################
+gdi32.AddFontResourceW.argtypes = (LPCWSTR,)
 gdi32.BitBlt.argtypes = (HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD)
 gdi32.CreateBitmap.argtypes = (INT, INT, UINT, UINT, LPVOID)
 gdi32.CreateBitmap.restype = HBITMAP
@@ -82,6 +83,8 @@ gdi32.CreateDIBitmap.argtypes = (HDC, LPVOID, DWORD, LPVOID, LPVOID, UINT)
 gdi32.CreateDIBitmap.restype = HDC
 gdi32.CreateDIBSection.argtypes = (HDC, LPVOID, UINT, LPVOID, HANDLE, DWORD)
 gdi32.CreateDIBSection.restype = HBITMAP
+gdi32.CreateFontIndirectW.argtypes = (LPVOID,)  # LOGFONTW *lplf
+gdi32.CreateFontIndirectW.restype = HFONT
 gdi32.CreateFontW.argtypes = (INT, INT, INT, INT, INT, DWORD, DWORD, DWORD, DWORD, DWORD, DWORD, DWORD, DWORD, LPCWSTR)
 gdi32.CreateFontW.restype = HFONT
 gdi32.CreatePatternBrush.argtypes = (HBITMAP,)
@@ -161,6 +164,7 @@ kernel32.GlobalLock.restype = LPVOID
 kernel32.GlobalSize.argtypes = (HGLOBAL,)
 kernel32.GlobalUnlock.argtypes = (HANDLE,)
 kernel32.K32GetProcessImageFileNameW.argtypes = (HANDLE, LPWSTR, DWORD)
+kernel32.LCIDToLocaleName.argtypes = (INT, LPWSTR, INT, DWORD)
 kernel32.LoadLibraryExW.argtypes = (LPCWSTR, HANDLE, DWORD)
 kernel32.LoadLibraryExW.restype = HANDLE
 kernel32.LoadLibraryW.restype = HANDLE

@@ -23,7 +23,6 @@ from winapp.types import WNDENUMPROC
 
 from const import *
 from desktop_listview import Desktop
-#from desktop_shellbrowser import Desktop
 from resources import *
 from utils import *
 
@@ -45,19 +44,61 @@ for classname in ('CiceroUIWndFrame',):
     if hwnd:
         TASK_HWNDS_IGNORE.append(hwnd)
 
+class SYSTEM_POWER_STATUS(Structure):
+    _fields_ = [
+        ('ACLineStatus',        BYTE),
+        ('BatteryFlag',         BYTE),
+        ('BatteryLifePercent',  BYTE),
+        ('SystemStatusFlag',    BYTE),
+        ('BatteryLifeTime',     DWORD),
+        ('BatteryFullLifeTime', DWORD),
+    ]
+
+kernel32.GetSystemPowerStatus.argtypes = (POINTER(SYSTEM_POWER_STATUS),)
+
+sps = SYSTEM_POWER_STATUS()
+kernel32.GetSystemPowerStatus(byref(sps))
+HAS_BATTERY = sps.BatteryFlag & 128 == 0
+
+# Simulate
+#HAS_BATTERY = True
+
+
+if HAS_EXPLORER:
+    LCID_SYSTEM = None
+else:
+    LCID_SYSTEM, LOCALES = get_locales()
+
+
 class TaskWindow():
-    def __init__(self, hwnd, h_icon, win_text, is_iconic):
+    def __init__(self, hwnd, h_icon, win_text, is_iconic, win_class):
         self.hwnd = hwnd
         self.h_icon = h_icon
         self.win_text = win_text
         self.is_iconic = is_iconic
+        self.win_class = win_class
         self.command_id = None
         self.toolbar_index = None
 
-TRAY_COMMANDS = (
+    def __del__(self):
+        if self.h_icon:
+            user32.DestroyIcon(self.h_icon)
+
+
+TRAY_COMMANDS = [
     ('Network', IDI_NETWORK_DARK if IS_DARK else IDI_NETWORK_LIGHT, CMD_ID_NETWORK),
     ('USB Disk Ejector', IDI_USB_DARK if IS_DARK else IDI_USB_LIGHT, CMD_ID_USB),
-)
+]
+
+if LCID_SYSTEM:
+    TRAY_COMMANDS.append(
+        ('Keyboard Layout', IDI_KEYBOARD_DARK if IS_DARK else IDI_KEYBOARD_LIGHT, CMD_ID_KEYBOARD),
+    )
+
+if HAS_BATTERY:
+    TRAY_COMMANDS.append(
+        ('Battery Status', IDI_BATTERY_DARK if IS_DARK else IDI_BATTERY_LIGHT, CMD_ID_BATTERY),
+    )
 
 DARK_TASKBAR_BG_BRUSH = gdi32.CreateSolidBrush(DARK_TASKBAR_BG_COLOR)
 
@@ -70,10 +111,23 @@ class Main(MainWin):
 
         if not HAS_EXPLORER:
             # In PE mode, add and register Segoe UI (Regular), so GUI apps look nicer
-            fnt_src = os.path.expandvars('%SystemDrive%\\sources\\segoeui.ttf')
-            fnt_dst = os.path.expandvars('%windir%\\fonts\\segoeui.ttf')
-            if os.path.isfile(fnt_src) and not os.path.isfile(fnt_dst):
-                shutil.copyfile(fnt_src, fnt_dst)
+#            fnt_src = os.path.expandvars('%SystemDrive%\\sources\\segoeui.ttf')
+#            fnt_dst = os.path.expandvars('%windir%\\fonts\\segoeui.ttf')
+#            if os.path.isfile(fnt_src) and not os.path.isfile(fnt_dst):
+#                shutil.copyfile(fnt_src, fnt_dst)
+
+#            FONTS_DIR = os.path.join(APPDATA_DIR, 'Local', 'Microsoft', 'Windows', 'Fonts')
+#            for fn in os.listdir(FONTS_DIR):
+#            	gdi32.AddFontResourceW(os.path.join(FONTS_DIR, fn))
+
+#            FONTS_SRC_DIR = os.path.join(APPDATA_DIR, 'Local', 'Microsoft', 'Windows', 'Fonts')
+#            FONTS_SYS_DIR = os.path.expandvars('%windir%\\fonts')
+#            for fn in os.listdir(FONTS_SRC_DIR):
+#                if not os.path.isfile(os.path.join(FONTS_SYS_DIR, fn)):
+#                	shutil.copyfile(
+#                    	os.path.join(FONTS_SRC_DIR, fn),
+#                    	os.path.join(FONTS_SYS_DIR, fn)
+#                	)
 
             autoexec = os.path.join(APPDATA_DIR, 'autoexec.bat')
             if os.path.isfile(autoexec):
@@ -107,6 +161,12 @@ class Main(MainWin):
         self.tooltip_start = None
         self.tooltip_clock = None
         self.tooltip_show_desktop = None
+
+        self.lcid_current = LCID_SYSTEM
+
+        out, err, code = run_command(os.path.join(BIN_DIR, 'get_ip4.cmd'))
+        out = out.strip().decode()
+        self.is_online = out and out != '127.0.0.1'
 
         super().__init__(
             window_title = '',
@@ -153,6 +213,7 @@ class Main(MainWin):
             IDM_DEBUG_TOGGLE_CONSOLE:   self.toggle_console,
 
             # hotkeys
+            IDM_OPEN_TASKMANAGER:       lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars('%windir%\\System32\\taskmgr.exe'), None, None, SW_SHOWNORMAL),
             IDM_OPEN_STARTMENU:         self.handle_win_key,
             IDM_SHOW_RUN_DIALOG:        self.show_run_dialog,
             IDM_RUN_EXPLORER:           lambda: shell32.ShellExecuteW(self.hwnd, 'open', EXPLORER, None, None, SW_SHOWNORMAL),
@@ -165,6 +226,7 @@ class Main(MainWin):
 #            user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
         self._hmenu_quick = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_QUICK)), 0)
         self._hmenu_start_item = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START_MENU_ITEM)), 0)
+        self._hmenu_tasks = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_TASKS)), 0)
 
         self.load_menu()
 
@@ -194,7 +256,7 @@ class Main(MainWin):
             if y >= self._taskbar_height:
                 if self._current_menu_item_id in self.menu_item_paths:
                     path = self.menu_item_paths[self._current_menu_item_id]
-                    idm = self._show_popupmenu(self._hmenu_start_item, POINT(x, y), TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
+                    idm = self.show_popupmenu(self._hmenu_start_item, POINT(x, y), TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
                     user32.EndMenu()
                     if idm == IDM_OPEN_LOCATION:
                         shell32.ShellExecuteW(None, None, EXPLORER, path, None, SW_SHOWNORMAL)
@@ -257,10 +319,15 @@ class Main(MainWin):
                         user32.SetForegroundWindow(hwnd)
 
                 elif cmd_id == CMD_ID_NETWORK:
-                    shell32.ShellExecuteW(None, None, os.path.join(PROGS_DIR, 'PENetwork', 'PENetwork.exe'), None, None, SW_SHOWNORMAL)
+#                    if not self.is_online:
+                    self.initialize_network()
+#                        shell32.ShellExecuteW(None, None, os.path.join(PROGS_DIR, 'PENetwork', 'PENetwork.exe'), None, None, SW_SHOWNORMAL)
 
                 elif cmd_id == CMD_ID_USB:
                     self.show_usb_disks()
+
+                elif cmd_id == CMD_ID_KEYBOARD:
+                    self.show_keyboard_layout_menu()
 
                 elif wparam == STN_CLICKED:
                     if SHOW_DESKTOP_CORNER_WIDTH and lparam == self.static_show_desktop.hwnd:
@@ -319,34 +386,123 @@ class Main(MainWin):
                     )
                     return 1
 
+            elif mh.hwndFrom == self.toolbar_tray.hwnd and msg == TBN_GETINFOTIPW:
+
+                it = cast(lparam, POINTER(NMTBGETINFOTIPW)).contents
+
+                if it.iItem == CMD_ID_BATTERY:
+                    info = 'Battery Status: unknown'
+                    info = self.get_battery_status()
+                    if info:
+                        status, is_charging, pct, seconds_remaing = info
+                        if pct <= 100:
+                            info = f'Battery status: {pct}%'
+                            if seconds_remaing < 0xFFFFFFFF:  # or: if status == 0 (offline)
+                                dt = datetime.fromtimestamp(seconds_remaing)
+                                info += f'\n({dt.hour} hr {dt.minute} min remaining)'
+                    buf = create_unicode_buffer(info)
+                    memmove(it.pszText, buf, sizeof(buf))
+
+                elif it.iItem == CMD_ID_NETWORK:
+                    out, err, code = run_command(os.path.join(BIN_DIR, 'get_ip4.cmd'))
+                    out = out.strip().decode()
+#                    if out and out != '127.0.0.1':
+                    self.is_online = out and out != '127.0.0.1'
+                    buf = create_unicode_buffer(f'IPv4 address: {out}' if self.is_online else 'Network status: not connected')
+                    memmove(it.pszText, buf, sizeof(buf))
+
+
+                rc_button = RECT()
+                user32.SendMessageW(mh.hwndFrom, TB_GETRECT, it.iItem, byref(rc_button))
+                user32.MapWindowPoints(mh.hwndFrom, None, byref(rc_button), 2)
+                hwnd_tooltips = user32.SendMessageW(mh.hwndFrom, TB_GETTOOLTIPS, 0, 0)
+                rc = RECT()
+                user32.GetWindowRect(hwnd_tooltips, byref(rc))
+                user32.SetWindowPos(
+                    hwnd_tooltips,
+                    0,
+                    (rc_button.left + rc_button.right) // 2 - (rc.right - rc.left) // 2,  #rc.left,
+                    self._rc_desktop.bottom - self._taskbar_height - (rc.bottom - rc.top),
+                    0, 0,
+                    SWP_NOSIZE
+                )
+
+            elif msg == TBN_GETINFOTIPW:
+                it = cast(lparam, POINTER(NMTBGETINFOTIPW)).contents
+                rc_button = RECT()
+                user32.SendMessageW(mh.hwndFrom, TB_GETRECT, it.iItem, byref(rc_button))
+                user32.MapWindowPoints(mh.hwndFrom, None, byref(rc_button), 2)
+                hwnd_tooltips = user32.SendMessageW(mh.hwndFrom, TB_GETTOOLTIPS, 0, 0)
+                rc = RECT()
+                user32.GetWindowRect(hwnd_tooltips, byref(rc))
+                user32.SetWindowPos(
+                    hwnd_tooltips,
+                    0,
+                    (rc_button.left + rc_button.right) // 2 - (rc.right - rc.left) // 2,  #rc.left,
+                    self._rc_desktop.bottom - self._taskbar_height - (rc.bottom - rc.top),
+                    0, 0,
+                    SWP_NOSIZE
+                )
+
+            elif mh.hwndFrom == self.toolbar_tasks.hwnd and msg == NM_RCLICK:
+                self.show_popupmenu(self._hmenu_tasks)
+
         self.register_message_callback(WM_NOTIFY, _on_WM_NOTIFY)
 
         # This only works in PE, in standard Windows the windows key is reserved
         if not HAS_EXPLORER:
-            self._register_hotkeys()
+            self.register_hotkeys()
 
         if IS_DARK:
             Window.apply_theme(self, True)
             uxtheme.SetPreferredAppMode(PreferredAppMode.ForceDark)
 
         self.show()
+        self.update_window()
 
         if HWND_TRAY:
             user32.ShowWindow(HWND_TRAY, SW_HIDE)
 
-        self._register_win_notifications()
-
-        self._update_workarea(self._taskbar_height)
+        self.update_workarea(self._taskbar_height)
 
         self.set_foreground_window()
         self.set_stayontop()
 
         self.minimize_toplevel_windows()
 
+        if not HAS_EXPLORER and os.path.isdir(FONTS_DIR):
+            # Dynamically register provided Windows 11 fonts
+            for fn in os.listdir(FONTS_DIR):
+            	gdi32.AddFontResourceW(os.path.join(FONTS_DIR, fn))
+
+        self.register_win_notifications()
+
     ########################################
     #
     ########################################
-    def _register_hotkeys(self):
+    def initialize_network(self):
+        if self.is_online:
+            out, err, code = run_command(os.path.join(BIN_DIR, 'get_ip4.cmd'))
+            out = out.strip().decode()
+            self.is_online = out and out != '127.0.0.1'
+            if self.is_online:
+                user32.MessageBoxW(self.hwnd, f'IPv4 address: {out}', '', MB_ICONINFORMATION)
+                return
+
+        command = os.path.expandvars(f'%windir%\\system32\\wpeutil.exe InitializeNetwork')
+        out, err, exit_code = run_command(command)
+        if exit_code == 0:
+            out, err, code = run_command(os.path.join(BIN_DIR, 'get_ip4.cmd'))
+            out = out.strip().decode()
+            self.is_online = out and out != '127.0.0.1'
+            user32.MessageBoxW(self.hwnd, f'IPv4 address: {out}', '', MB_ICONINFORMATION)
+        else:
+            user32.MessageBoxW(self.hwnd, err.decode('oem').strip(), '', MB_ICONERROR)
+
+    ########################################
+    #
+    ########################################
+    def register_hotkeys(self):
         ########################################
         #
         ########################################
@@ -356,6 +512,9 @@ class Main(MainWin):
                 self.COMMAND_MESSAGE_MAP[wparam]()
 
         self.register_message_callback(WM_HOTKEY, _on_WM_HOTKEY)
+
+#        user32.RegisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_DELETE)
+        user32.RegisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER, MOD_WIN | MOD_ALT | MOD_NOREPEAT, VK_DELETE)
 
         user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_LWIN)
         user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_RWIN)
@@ -371,7 +530,8 @@ class Main(MainWin):
     ########################################
     #
     ########################################
-    def _unregister_hotkeys(self):
+    def unregister_hotkeys(self):
+        user32.UnregisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER)
         user32.UnregisterHotKey(self.hwnd, IDM_OPEN_STARTMENU)
         user32.UnregisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG)
         user32.UnregisterHotKey(self.hwnd, IDM_RUN_EXPLORER)
@@ -483,7 +643,8 @@ class Main(MainWin):
             bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
 
-        user32.SetWindowLongA(user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
+        hwnd_tooltips = user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETTOOLTIPS, 0, 0)
+        user32.SetWindowLongA(hwnd_tooltips, GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         # Create tasks toolbar
         self.toolbar_tasks = ToolBar(
@@ -491,8 +652,8 @@ class Main(MainWin):
             window_title = 'MSTaskSwWClass',
             icon_size = self._task_icon_size,
             style = (
-                WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN    | WS_CLIPSIBLINGS
-                | TBSTYLE_TRANSPARENT | TBSTYLE_LIST | TBSTYLE_FLAT # | TBSTYLE_TOOLTIPS # | TBSTYLE_ALTDRAG
+                WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN    #| WS_CLIPSIBLINGS
+                | TBSTYLE_TRANSPARENT | TBSTYLE_LIST | TBSTYLE_FLAT  # | TBSTYLE_TOOLTIPS # | TBSTYLE_ALTDRAG
                 | CCS_NODIVIDER
                 | CCS_NOPARENTALIGN
                 | CCS_ADJUSTABLE
@@ -503,7 +664,8 @@ class Main(MainWin):
             bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
 
-        # user32.SetWindowLongA(user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
+        # hwnd_tooltips = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETTOOLTIPS, 0, 0)
+        # user32.SetWindowLongA(hwnd_tooltips, GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         uxtheme.SetWindowTheme(self.toolbar_tasks.hwnd, "", "")
         self.toolbar_tasks.set_font("Segoe UI", 9, FW_MEDIUM)
@@ -517,6 +679,9 @@ class Main(MainWin):
                 tb = TBBUTTON()
                 user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETBUTTON, toolbar_index, byref(tb))
                 win = self._taskbar_windows_by_command[tb.idCommand]
+
+                if win.win_class in ('CabinetWClass', 'Explorer++'):
+                    return
 
                 # get exe for hwnd
                 pid = DWORD()
@@ -553,14 +718,14 @@ class Main(MainWin):
             bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
 
-        user32.SetWindowLongA(user32.SendMessageW(self.toolbar_tray.hwnd, TB_GETTOOLTIPS, 0, 0), GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
+        tooltips_hwnd = user32.SendMessageW(self.toolbar_tray.hwnd, TB_GETTOOLTIPS, 0, 0)
+        user32.SetWindowLongA(tooltips_hwnd, GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         dy = 14 * self._scale
-        quick_padding = 6 * self._scale
 
-        user32.SendMessageW(self.toolbar_quick.hwnd, TB_SETPADDING, 0, MAKELONG(quick_padding, dy))
-        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETPADDING, 0, MAKELONG(12 * self._scale, dy))
-        user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETPADDING, 0, MAKELONG(18 * self._scale, dy))
+        user32.SendMessageW(self.toolbar_quick.hwnd, TB_SETPADDING, 0, MAKELONG(QUICK_PADDING * self._scale, dy))
+        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETPADDING, 0, MAKELONG(TASK_PADDING * self._scale, dy))
+        user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETPADDING, 0, MAKELONG(TRAY_PADDING * self._scale, dy))
 
         user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tasks)
         user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tray)
@@ -571,7 +736,7 @@ class Main(MainWin):
         # Add buttons to tasks toolbar
         num_tasks = self.load_tasks()
 
-        tray_width = len(TRAY_COMMANDS) * 34 * self._scale
+        tray_width = len(TRAY_COMMANDS) * (16 + TRAY_PADDING) * self._scale
 
         # Initialize band info used by all bands.
         rbBand = REBARBANDINFOW()
@@ -707,17 +872,15 @@ class Main(MainWin):
     ########################################
     # Register win notifications
     ########################################
-    def _register_win_notifications(self):
+    def register_win_notifications(self):
         self.timer_check = None
 
         def _check_new_window():
             self.timer_check = None
-            windows = self.get_toplevel_windows()
 
-            hwnds_old = list(self._taskbar_windows_by_hwnd.keys())
-            windows_new = [w for w in windows if w.hwnd not in hwnds_old]
+            windows_new = self.get_toplevel_windows()
 
-            num_buttons = min(10, len(windows_new))
+            num_buttons = len(windows_new)  #min(10, len(windows_new))
             if num_buttons:
                 button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
                 tb_buttons = (TBBUTTON * num_buttons)()
@@ -797,6 +960,37 @@ class Main(MainWin):
 
                     self.update_taskbutton_width()
 
+            elif event == EVENT_OBJECT_NAMECHANGE:
+#                print('>>> EVENT_OBJECT_NAMECHANGE', hwnd)
+                if idChild == CHILDID_SELF and hwnd in self._taskbar_windows_by_hwnd:
+#                    print('>>>', hWinEventHook, hwnd, idObject, idChild, dwEventThread, dwmsEventTime)
+                    win = self._taskbar_windows_by_hwnd[hwnd]
+
+                    buf = create_unicode_buffer(MAX_PATH)
+                    user32.GetWindowTextW(hwnd, buf, MAX_PATH)
+                    win.win_text = buf.value
+
+                    tbi = TBBUTTONINFOW()
+                    h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_BIG, 0)
+                    if not h_icon:
+                        h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_SMALL2, 0)
+                    if not h_icon:
+                        h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
+                    if h_icon:
+                        if h_icon != win.h_icon:
+                            tbi.dwMask = TBIF_IMAGE
+                            user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETBUTTONINFO, win.command_id, byref(tbi))
+                            comctl32.ImageList_ReplaceIcon(self.h_imagelist_tasks, tbi.iImage, h_icon)
+                            user32.DestroyIcon(win.h_icon)
+                            win.h_icon = h_icon
+                        else:
+                             user32.DestroyIcon(h_icon)
+
+                    tbi.dwMask = TBIF_TEXT
+                    tbi.pszText = buf.value
+#                    tbi.cchText = MAX_PATH
+                    user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETBUTTONINFO, win.command_id, byref(tbi))
+
             elif event == EVENT_SYSTEM_FOREGROUND:
                 if hwnd in self._taskbar_windows_by_hwnd:
                     # this test is needed because ShowWindow minimized also triggers EVENT_SYSTEM_FOREGROUND
@@ -805,7 +999,11 @@ class Main(MainWin):
 
         self.winevent_proc_callback = WINEVENTPROCTYPE(_winevent_callback)
 
-        hook_events = [EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MINIMIZEEND]
+        hook_events = [
+            EVENT_SYSTEM_FOREGROUND,
+            EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, EVENT_OBJECT_NAMECHANGE,
+            EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MINIMIZEEND
+        ]
         for event_type in hook_events:
             user32.SetWinEventHook(
                 event_type,
@@ -834,9 +1032,13 @@ class Main(MainWin):
     ########################################
     def get_toplevel_windows(self):
         windows = []
-        buf_file = create_unicode_buffer(MAX_PATH)
+        buf = create_unicode_buffer(MAX_PATH)
 
         def _enumerate_windows(hwnd, lparam):
+
+            if hwnd in self._taskbar_windows_by_hwnd:
+                return 1
+
             is_iconic = user32.IsIconic(hwnd)
             if user32.IsWindowVisible(hwnd) or is_iconic:
 
@@ -848,21 +1050,17 @@ class Main(MainWin):
                 if user32.GetWindowLongA(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW:
                     return 1
 
-                user32.GetWindowTextW(hwnd, buf_file, MAX_PATH)
-                win_text = buf_file.value
+                user32.GetWindowTextW(hwnd, buf, MAX_PATH)
+                win_text = buf.value
                 if win_text != '':
-                    user32.GetClassNameW(hwnd, buf_file, MAX_PATH)
-
-                    if buf_file.value != 'Windows.UI.Core.CoreWindow':
-
-                        if buf_file.value  == 'CabinetWClass':  # Explorer window
-                            h_icon = self._hicon_folder
-                        else:
-                            h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_BIG, 0)
-                            if h_icon == 0:
-                                h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
-                        if h_icon:
-                            windows.append(TaskWindow(hwnd, h_icon, win_text, is_iconic))
+                    user32.GetClassNameW(hwnd, buf, MAX_PATH)
+                    if buf.value == 'Windows.UI.Core.CoreWindow':
+                        return 1
+                    h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_BIG, 0)
+                    if h_icon == 0:
+                        h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
+                    if h_icon:
+                        windows.append(TaskWindow(hwnd, h_icon, win_text, is_iconic, buf.value))
 
             return 1
 
@@ -884,7 +1082,7 @@ class Main(MainWin):
         ico_size = 16 * self._scale
 
         cache_bmp = os.path.join(CACHE_DIR, f'quick_launch-{self._scale}.bmp')
-        if os.path.isfile(cache_bmp):
+        if os.path.isfile(cache_bmp) and not '/rebuild' in sys.argv:
             h_bitmap = user32.LoadImageW(None, cache_bmp, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION)
         else:
 
@@ -969,16 +1167,17 @@ class Main(MainWin):
     def load_tasks(self):
         windows = self.get_toplevel_windows()
         num_buttons = len(windows)
-
         if num_buttons:
-            button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
+#            button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
+#            print('>>> button_cnt', button_cnt)
             tb_buttons = (TBBUTTON * num_buttons)()
 
-            for i in range(num_buttons):
-                command_id = self._taskbar_command_counter
+            for i, win in enumerate(windows):
 
-                w = windows[i]
-                icon_index = comctl32.ImageList_AddIcon(self.h_imagelist_tasks, w.h_icon)
+                command_id = self._taskbar_command_counter
+                self._taskbar_command_counter += 1
+
+                icon_index = comctl32.ImageList_AddIcon(self.h_imagelist_tasks, win.h_icon)
                 tb_buttons[i] = TBBUTTON(
                     icon_index,
                     command_id,
@@ -986,14 +1185,13 @@ class Main(MainWin):
                     BTNS_BUTTON | BTNS_SHOWTEXT | BTNS_GROUP,
                     (BYTE * TBBUTTON_RESERVED_SIZE)(),
                     0,
-                    w.win_text
+                    win.win_text
                 )
-                w.toolbar_index = button_cnt + i
-                w.command_id = command_id
+                win.toolbar_index = i
+                win.command_id = command_id
 
-                self._taskbar_windows_by_command[w.command_id] = w
-                self._taskbar_windows_by_hwnd[w.hwnd] = w
-                self._taskbar_command_counter += 1
+                self._taskbar_windows_by_command[win.command_id] = win
+                self._taskbar_windows_by_hwnd[win.hwnd] = win
 
             user32.SendMessageW(self.toolbar_tasks.hwnd, TB_ADDBUTTONS, num_buttons, tb_buttons)
 
@@ -1026,7 +1224,7 @@ class Main(MainWin):
             idx = 0
 
         cache_bmp = os.path.join(CACHE_DIR, f'start_menu-{self._scale}.bmp')
-        use_cache = os.path.isfile(cache_bmp)
+        use_cache = os.path.isfile(cache_bmp) and not '/rebuild' in sys.argv
         if use_cache:
             with open(cache_bmp, 'rb') as f:
                 data = f.read()
@@ -1068,7 +1266,7 @@ class Main(MainWin):
                     else:
                         h_bitmap = self._hbitmap_folder
 
-                    mid = self._get_id()
+                    mid = self.get_id()
                     hmenu_child = user32.CreateMenu()
                     user32.AppendMenuW(hmenu, MF_POPUP, hmenu_child, k)
                     info = MENUITEMINFOW()
@@ -1081,7 +1279,7 @@ class Main(MainWin):
                 else:
 
                     if v.startswith('python:'):
-                        mid = self._get_id(lambda command=v[7:], env={'main': self}: exec(command, {}, env))
+                        mid = self.get_id(lambda command=v[7:], env={'main': self}: exec(command, {}, env))
 
                     else:
                         exe = os.path.expandvars(v)
@@ -1089,7 +1287,7 @@ class Main(MainWin):
                             exe, args = exe.split(',', 1)
                         else:
                             args = None
-                        mid = self._get_id(lambda exe=exe, args=args: shell32.ShellExecuteW(None, 'open', exe, args, os.path.dirname(exe), 1))
+                        mid = self.get_id(lambda exe=exe, args=args: shell32.ShellExecuteW(None, 'open', exe, args, os.path.dirname(exe), SW_SHOWNORMAL))
                         self.menu_item_paths[mid] = os.path.dirname(exe)
 
                     if use_cache:
@@ -1129,7 +1327,7 @@ class Main(MainWin):
     ########################################
     #
     ########################################
-    def _get_id(self, callback = None):
+    def get_id(self, callback = None):
         idm = self._startmenu_command_counter
         if callback:
             self.COMMAND_MESSAGE_MAP[idm] = callback
@@ -1139,7 +1337,7 @@ class Main(MainWin):
     ########################################
     #
     ########################################
-    def _show_popupmenu(self, hmenu, pt=None, flags=TPM_LEFTBUTTON, hwnd=None):
+    def show_popupmenu(self, hmenu, pt=None, flags=TPM_LEFTBUTTON, hwnd=None):
         uxtheme.FlushMenuThemes()
         if pt is None:
             pt = POINT()
@@ -1154,13 +1352,13 @@ class Main(MainWin):
     #
     ########################################
     def show_popupmenu_start(self):
-        self._show_popupmenu(self._hmenu_start)
+        self.show_popupmenu(self._hmenu_start)
 
     ########################################
     #
     ########################################
     def show_popupmenu_quick(self):
-        self._show_popupmenu(self._hmenu_quick)
+        self.show_popupmenu(self._hmenu_quick)
 
     ########################################
     #
@@ -1175,7 +1373,7 @@ class Main(MainWin):
 
         dt = kernel32.GetTickCount() - self._last_menu_close
         if dt > 50:
-            self._show_popupmenu(self._hmenu_main, POINT(self._rc_start.left, self._rc_start.top))
+            self.show_popupmenu(self._hmenu_main, POINT(self._rc_start.left, self._rc_start.top))
 
     ########################################
     #
@@ -1198,6 +1396,18 @@ class Main(MainWin):
     ########################################
     def show_run_dialog(self):
         shell32.RunFileDlg(self.hwnd, 0, None, None, None, 0)
+
+    ########################################
+    #
+    ########################################
+    def reboot(self):
+        shell32.ShellExecuteW(None, None, 'shutdown.exe', '/r /t 0', None, SW_HIDE)
+
+    ########################################
+    #
+    ########################################
+    def shutdown(self):
+        shell32.ShellExecuteW(None, None, 'shutdown.exe', '/s /t 0', None, SW_HIDE)
 
     ########################################
     #
@@ -1304,7 +1514,7 @@ class Main(MainWin):
     ########################################
     def quit(self, start_explorer=True):
         if not HAS_EXPLORER:
-            self._unregister_hotkeys()
+            self.unregister_hotkeys()
 
         if self.desktop:
             user32.DestroyWindow(self.desktop.hwnd)
@@ -1323,12 +1533,12 @@ class Main(MainWin):
             user32.GetWindowRect(HWND_START, byref(rc))
             system_taskbar_height = rc.bottom - rc.top
             if system_taskbar_height != self._taskbar_height:
-                self._update_workarea(system_taskbar_height)
+                self.update_workarea(system_taskbar_height)
 
     ########################################
     #
     ########################################
-    def _update_workarea(self, taskbar_height):
+    def update_workarea(self, taskbar_height):
         rc = RECT(0, 0, self._rc_desktop.right, self._rc_desktop.bottom - taskbar_height)
         user32.SystemParametersInfoA(
             SPI_SETWORKAREA,
@@ -1378,6 +1588,78 @@ class Main(MainWin):
                 user32.MessageBoxW(self.hwnd, f'Disk "[{d[0]}] {d[1]} was succesfully ejected', 'Success', MB_ICONINFORMATION | MB_OK)
             else:
                 print('Error ejecting drive', err.decode())
+
+    ########################################
+    #
+    ########################################
+    def show_keyboard_layout_menu(self):
+
+        locales_main = {
+            1033: 'English US (en-US)',
+            1036: 'French (fr-FR)',
+            1031: 'German (de-DE)',
+            1037: 'Hebrew (he-IL)',
+            1040: 'Italian (it-IT)',
+            1049: 'Russian (ru-RU)',
+            1034: 'Spanish (es-ES)',
+            1055: 'Turkish (tr-TR)',
+        }
+
+        hmenu_keyboard = user32.CreatePopupMenu()
+
+        for lcid, country_code in locales_main.items():
+            if lcid in LOCALES:
+                user32.AppendMenuW(hmenu_keyboard, MF_STRING, lcid, country_code)
+
+        user32.AppendMenuW(hmenu_keyboard, MF_SEPARATOR, -1, '')
+        hmenu_others = user32.CreateMenu()
+        user32.AppendMenuW(hmenu_keyboard, MF_POPUP, hmenu_others, 'Others')
+        for lcid, country_code in LOCALES.items():
+            if lcid not in locales_main:
+                user32.AppendMenuW(hmenu_others, MF_STRING, lcid, country_code)
+
+        if self.lcid_current in locales_main:
+            user32.CheckMenuItem(hmenu_keyboard, self.lcid_current, MF_BYCOMMAND| MF_CHECKED)
+        elif self.lcid_current in LOCALES:
+            user32.CheckMenuItem(hmenu_others, self.lcid_current, MF_BYCOMMAND| MF_CHECKED)
+
+        x = self._rc_desktop.right
+        y = self._rc_desktop.bottom - self._taskbar_height
+        self.set_foreground_window()
+        lcid = user32.TrackPopupMenuEx(hmenu_keyboard, TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_BOTTOMALIGN, x, y, self.hwnd, 0)
+        user32.PostMessageW(self.hwnd, WM_NULL, 0, 0)
+        if lcid:
+            command = os.path.expandvars(f'%windir%\\system32\\wpeutil.exe SetKeyboardLayout {LCID_SYSTEM:04x}:{lcid:08x}')
+            out, err, exit_code = run_command(command)
+            if exit_code == 0:
+                user32.MessageBoxW(self.hwnd, out.decode('oem').strip(), '', MB_ICONINFORMATION)
+                self.lcid_current = lcid
+            else:
+                user32.MessageBoxW(self.hwnd, err.decode('oem').strip(), '', MB_ICONERROR)
+
+        user32.DestroyMenu(hmenu_keyboard)
+
+    ########################################
+    #
+    ########################################
+    def get_battery_status(self):
+        # Simulate
+#        return 1, 2, 87, 4000
+
+        sps = SYSTEM_POWER_STATUS()
+        ok = kernel32.GetSystemPowerStatus(byref(sps))
+        if ok:
+            # status, is_charging, pct, seconds_remaing
+            return sps.ACLineStatus, sps.BatteryFlag & 8, sps.BatteryLifePercent, sps.BatteryLifeTime
+
+        # ACLineStatus: 0=Offline, 1=Online
+        # BatteryFlag:
+        #  1 High - the battery capacity is at more than 66 percent
+        #  2 Low - the battery capacity is at less than 33 percent
+        #  4 Critical - the battery capacity is at less than five percent
+        #  8 Charging
+        #  128 No system battery
+	    # BatteryLifeTime: -1 (0xFFFFFFFF) if the device is connected to AC power
 
 
 if __name__ == '__main__':
