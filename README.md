@@ -79,6 +79,8 @@ to the end of file
 - [Drive Snapshot](http://www.drivesnapshot.de/en/)
 - [EasyUEFI](https://www.easyuefi.com/) (Trial version)
 - [Explorer++](https://explorerplusplus.com/)
+- [Fido](https://github.com/pbatard/Fido) (PowerShell script for downloading Windows ISOs from microsoft.com)
+- [FidoArch](https://github.com/59de44955ebd/FidoArch) (Fido clone for downloading Windows ISOs from archive.org)
 - [FileZilla](https://filezilla-project.org/)
 - [Firefox](https://www.firefox.com/)
 - [GSmartControl](https://gsmartcontrol.shaduri.dev/)
