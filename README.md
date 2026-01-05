@@ -46,6 +46,15 @@ WinSetupShell can also be used with a multi-boot USB drive created with [Ventoy]
 
 [*] "D" is a placeholder for the actual drive letter of your USB drive (NOT the drive letter of the booted system, loaded from boot.wim, which AFAIK is always "X"). It will be the first letter, starting at "C", that is not used by existing volumes on your PC. If there are no (valid) volumes with drive letters, it will be "C", in my case it's "D". You can enter `echo list vol | diskpart` to see a list of all existing volumes and their letters.
 
+## Hotkeys
+
+- Win: Toggle start menu
+- Win + Alt + Del: Open Task Manager (Ctrl+Alt+Del doesn't work in PE and AFAIK can't be overwritten)
+- Win + D: Show desktop (toggle visible application windows)
+- Win + E: Open new Explorer++ instance/window
+- Win + R: Open "Run" dialog
+- Win + S: Open Search (defaults to SwiftSearch)
+
 ## Network
 
 Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `Network -> Initialize Network` from the start menu. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
@@ -55,14 +64,17 @@ If you want to start network by default, add line
 to the end of file  
 `shell_data\userprofile\AppData\autoexec.bat`.
 
-## Hotkeys
+## System Tray
 
-- Win: Toggle start menu
-- Win + Alt + Del: Open Task Manager (Ctrl+Alt+Del doesn't work in PE and AFAIK can't be overwritten)
-- Win + D: Show desktop (toggle visible application windows)
-- Win + E: Open new Explorer++ instance/window
-- Win + R: Open "Run" dialog
-- Win + S: Open Search (defaults to SwiftSearch) 
+There is no real System Tray (since there is no Explorer in PE), i.e. not custom app tray icons, no "Minimze to Tray" and no tray notifications. The provided System Tray is just a toolbar with the following 4 icons:
+
+- Network: Click initializes network if it's not initialized yet. If PC is connected, tooltip shows the current (local) IPv4 address.
+
+- USB Disk Ejector: Allows to safely eject USB drives.
+
+- Keyboard Layout: Shows a popup menu that allows to switch the current keyboard layout/language. After changing the keyboard layout runnning applications have to be restarted to use the new layout.
+
+- Battery status (if there is a battery): Tooltip shows the battery charge level in % and the estimated remaining time (if the PC is not plugged in).
 
 ## Included applications (Freeware/Shareware/Trialware)
 
