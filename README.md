@@ -195,7 +195,7 @@ If you prefer a plain desktop background color, simply remove/rename `wallpaper.
 `shell_data\userprofile\AppData\config.pson`.  
 This config file also allows to change various other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).
 
-## Build WinSetupShell inside WinSetupShell
+## Building WinSetupShell inside WinSetupShell
 
 WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/freeze `shell.exe`, here the required steps:
 
@@ -211,4 +211,4 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 
 - (Possibly open `src\main.py` with Notepad++ and make your own adjustments)
 
-- Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If sucessfull they can be found in the new folder `dist\shell`.
+- Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
