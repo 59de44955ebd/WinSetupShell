@@ -2,6 +2,10 @@
 
 cd /d %~dp0
 
+REM Register font "Segoe UI"
+COPY /Y "%SystemDrive%\sources\segoeui.ttf" "%windir%\fonts\"
+REG ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" /v "Segoe UI (TrueType)" /t REG_SZ /d "segoeui.ttf" /f
+
 REG ADD "HKCU\Control Panel\Desktop\WindowMetrics" /v MinAnimate /t REG_SZ /d "0" /f >nul 2>&1
 
 REG ADD "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" /v "Desktop" /t REG_EXPAND_SZ /d "%%USERPROFILE%%\Desktop" /f
@@ -119,12 +123,13 @@ REG DELETE "HKCR\*\shellex\ContextMenuHandlers\Open With" /f
 REG DELETE "HKCR\*\OpenWithList" /f
 
 REM Associate custom OpenWith.exe with all files
-REG ADD "HKCR\*\shell\OpenWith" /ve /t REG_SZ /d "Open with..." /f
+REG ADD "HKCR\*\shell\OpenWith" /v "MUIVerb" /t REG_SZ /d "@shell32.dll,-5377" /f
 REG ADD "HKCR\*\shell\OpenWith\command" /ve /t REG_EXPAND_SZ /d """%%programs%%\OpenWith\OpenWith.exe"" ""%%1""" /f
 
 REM Associate .dll with PEView
 REG ADD "HKCR\dllfile\shell\open\command" /ve /t REG_EXPAND_SZ /d """%%programs%%\PEView\peview.exe"" ""%%1""" /f
 
 REM Autorun arbitrary programs using the "start" command
+REM wpeutil.exe InitializeNetwork
 REM start "" "%windir%\Notepad.exe"
 REM start "" "%programs%\PENetwork\PENetwork.exe"

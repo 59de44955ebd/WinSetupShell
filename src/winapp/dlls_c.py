@@ -122,6 +122,7 @@ user32.LoadImageW.argtypes = (HINSTANCE, LPCWSTR, UINT, INT, INT, UINT)
 user32.LoadImageW.restype = HANDLE
 user32.LoadMenuW.argtypes = (HINSTANCE, LPCWSTR)
 user32.LoadMenuW.restype = HMENU
+user32.LoadStringW.argtypes = (HINSTANCE, UINT, LPWSTR, INT)
 user32.MapWindowPoints.argtypes = (HWND, HWND, LPVOID, UINT)
 user32.MessageBoxW.argtypes = (HWND, LPCWSTR, LPCWSTR, UINT)
 user32.OpenClipboard.argtypes = (HWND,)

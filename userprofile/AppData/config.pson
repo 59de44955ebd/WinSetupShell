@@ -1,5 +1,11 @@
 # Note: Colors are specified in BGR format, i.e. reversed RGB.
 {
+	# Disable wallpaper
+	#"DESKTOP_WALLPAPER": None,
+
+	# Custom wallpaper path (supported formats: .bmp, .jpg, .png, .gif)
+	#"DESKTOP_WALLPAPER": "%USERPROFILE%\\AppData\\wallpaper.bmp",
+
 	# Uncommenting the following line changes the desktop background color to dark red (default: warmish dark blue).
 	#"DESKTOP_BG_COLOR": 0x000044,
 
@@ -8,4 +14,7 @@
 
 	# Uncommenting the following line activates light mode for the shell (default: dark mode).
 	#"IS_DARK": False,
+
+	# Hide Documents and Downloads
+	#"DESKTOP_ITEMS": ["ThisPC", "RecycleBin"],
 }

@@ -189,11 +189,15 @@ or its contents on the USB drive. The cache will then be rebuilt when the shell 
 
 You can change the wallpaper by replacing file  
 `shell_data\userprofile\AppData\wallpaper.jpg`  
-with a different .jpg file with this file name. The wallpaper is always scaled to the current desktop dimensions, but never distorted, so it might be cropped if needed.
-
-If you prefer a plain desktop background color, simply remove/rename `wallpaper.jpg`. The background color defaults to some warmish dark blue, but can be changed by editing file  
+with a different .jpg or by specifying a different image file in configuration file  
 `shell_data\userprofile\AppData\config.pson`.  
-This config file also allows to change various other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).
+Supported image formats are .bmp, .jpg, .png and .gif. The wallpaper is always scaled to the current desktop dimensions, but never distorted, so it might be cropped if needed.
+
+If you prefer a plain desktop background color, either remove `wallpaper.jpg` or add line  
+`"DESKTOP_WALLPAPER": None,`  
+to `config.pson`. The background color defaults to some warmish dark blue, but can also be changed via `config.pson`.
+
+`config.pson` also allows to change some other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).
 
 ## Building WinSetupShell inside WinSetupShell
 

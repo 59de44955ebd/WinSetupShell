@@ -4,7 +4,8 @@ from ctypes import *
 from ctypes.wintypes import *
 
 from winapp.const import *
-from winapp.dlls import advapi32, kernel32
+from winapp.dlls import advapi32, kernel32, user32
+from const import HMOD_RESOURCES, HMOD_SHELL32
 
 IS_CONSOLE = kernel32.GetStdHandle(STD_OUTPUT_HANDLE) != 0
 
@@ -233,3 +234,11 @@ def get_locales():
             locales[lcid] = buf.value
 
     return eval(lcid_system), dict(sorted(locales.items(), key=lambda item: item[1]))
+
+########################################
+#
+########################################
+def get_string(res_id, local = False):
+    buf = create_unicode_buffer(80)
+    user32.LoadStringW(HMOD_RESOURCES if local else HMOD_SHELL32, res_id, buf, 80)
+    return buf.value

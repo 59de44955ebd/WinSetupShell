@@ -63,7 +63,6 @@ HAS_BATTERY = sps.BatteryFlag & 128 == 0
 # Simulate
 #HAS_BATTERY = True
 
-
 if HAS_EXPLORER:
     LCID_SYSTEM = None
 else:
@@ -86,18 +85,18 @@ class TaskWindow():
 
 
 TRAY_COMMANDS = [
-    ('Network', IDI_NETWORK_DARK if IS_DARK else IDI_NETWORK_LIGHT, CMD_ID_NETWORK),
-    ('USB Disk Ejector', IDI_USB_DARK if IS_DARK else IDI_USB_LIGHT, CMD_ID_USB),
+    (get_string(9217), IDI_NETWORK_DARK if IS_DARK else IDI_NETWORK_LIGHT, CMD_ID_NETWORK),
+    (get_string(IDS_SAFELY_REMOVE_HARDWARE, True), IDI_USB_DARK if IS_DARK else IDI_USB_LIGHT, CMD_ID_USB),
 ]
 
 if LCID_SYSTEM:
     TRAY_COMMANDS.append(
-        ('Keyboard Layout', IDI_KEYBOARD_DARK if IS_DARK else IDI_KEYBOARD_LIGHT, CMD_ID_KEYBOARD),
+        (get_string(24228), IDI_KEYBOARD_DARK if IS_DARK else IDI_KEYBOARD_LIGHT, CMD_ID_KEYBOARD),
     )
 
 if HAS_BATTERY:
     TRAY_COMMANDS.append(
-        ('Battery Status', IDI_BATTERY_DARK if IS_DARK else IDI_BATTERY_LIGHT, CMD_ID_BATTERY),
+        (get_string(IDS_BATTERY_STATUS, True), IDI_BATTERY_DARK if IS_DARK else IDI_BATTERY_LIGHT, CMD_ID_BATTERY),
     )
 
 DARK_TASKBAR_BG_BRUSH = gdi32.CreateSolidBrush(DARK_TASKBAR_BG_COLOR)
@@ -110,25 +109,6 @@ class Main(MainWin):
     def __init__(self):
 
         if not HAS_EXPLORER:
-            # In PE mode, add and register Segoe UI (Regular), so GUI apps look nicer
-#            fnt_src = os.path.expandvars('%SystemDrive%\\sources\\segoeui.ttf')
-#            fnt_dst = os.path.expandvars('%windir%\\fonts\\segoeui.ttf')
-#            if os.path.isfile(fnt_src) and not os.path.isfile(fnt_dst):
-#                shutil.copyfile(fnt_src, fnt_dst)
-
-#            FONTS_DIR = os.path.join(APPDATA_DIR, 'Local', 'Microsoft', 'Windows', 'Fonts')
-#            for fn in os.listdir(FONTS_DIR):
-#            	gdi32.AddFontResourceW(os.path.join(FONTS_DIR, fn))
-
-#            FONTS_SRC_DIR = os.path.join(APPDATA_DIR, 'Local', 'Microsoft', 'Windows', 'Fonts')
-#            FONTS_SYS_DIR = os.path.expandvars('%windir%\\fonts')
-#            for fn in os.listdir(FONTS_SRC_DIR):
-#                if not os.path.isfile(os.path.join(FONTS_SYS_DIR, fn)):
-#                	shutil.copyfile(
-#                    	os.path.join(FONTS_SRC_DIR, fn),
-#                    	os.path.join(FONTS_SYS_DIR, fn)
-#                	)
-
             autoexec = os.path.join(APPDATA_DIR, 'autoexec.bat')
             if os.path.isfile(autoexec):
                 shell32.ShellExecuteW(None, None, autoexec, None, None, SW_HIDE)
@@ -391,26 +371,23 @@ class Main(MainWin):
                 it = cast(lparam, POINTER(NMTBGETINFOTIPW)).contents
 
                 if it.iItem == CMD_ID_BATTERY:
-                    info = 'Battery Status: unknown'
-                    info = self.get_battery_status()
-                    if info:
-                        status, is_charging, pct, seconds_remaing = info
+                    battery_status = self.get_battery_status()
+                    if battery_status:
+                        status, is_charging, pct, seconds_remaing = battery_status
                         if pct <= 100:
-                            info = f'Battery status: {pct}%'
+                            info = get_string(IDS_BATTERY_STATUS_FMT, True).format(pct)
                             if seconds_remaing < 0xFFFFFFFF:  # or: if status == 0 (offline)
                                 dt = datetime.fromtimestamp(seconds_remaing)
-                                info += f'\n({dt.hour} hr {dt.minute} min remaining)'
-                    buf = create_unicode_buffer(info)
-                    memmove(it.pszText, buf, sizeof(buf))
+                                info += get_string(IDS_BATTERY_TIME_REMAINING_FMT, True).format(dt.hour, dt.minute)
+                            buf = create_unicode_buffer(info)
+                            memmove(it.pszText, buf, sizeof(buf))
 
                 elif it.iItem == CMD_ID_NETWORK:
                     out, err, code = run_command(os.path.join(BIN_DIR, 'get_ip4.cmd'))
                     out = out.strip().decode()
-#                    if out and out != '127.0.0.1':
                     self.is_online = out and out != '127.0.0.1'
-                    buf = create_unicode_buffer(f'IPv4 address: {out}' if self.is_online else 'Network status: not connected')
+                    buf = create_unicode_buffer(f'IP: {out}' if self.is_online else get_string(IDS_NETWORK_OFFLINE, True))
                     memmove(it.pszText, buf, sizeof(buf))
-
 
                 rc_button = RECT()
                 user32.SendMessageW(mh.hwndFrom, TB_GETRECT, it.iItem, byref(rc_button))
@@ -486,7 +463,7 @@ class Main(MainWin):
             out = out.strip().decode()
             self.is_online = out and out != '127.0.0.1'
             if self.is_online:
-                user32.MessageBoxW(self.hwnd, f'IPv4 address: {out}', '', MB_ICONINFORMATION)
+                user32.MessageBoxW(self.hwnd, f'IP: {out}', '', MB_ICONINFORMATION)
                 return
 
         command = os.path.expandvars(f'%windir%\\system32\\wpeutil.exe InitializeNetwork')
@@ -495,7 +472,7 @@ class Main(MainWin):
             out, err, code = run_command(os.path.join(BIN_DIR, 'get_ip4.cmd'))
             out = out.strip().decode()
             self.is_online = out and out != '127.0.0.1'
-            user32.MessageBoxW(self.hwnd, f'IPv4 address: {out}', '', MB_ICONINFORMATION)
+            user32.MessageBoxW(self.hwnd, f'IP: {out}', '', MB_ICONINFORMATION)
         else:
             user32.MessageBoxW(self.hwnd, err.decode('oem').strip(), '', MB_ICONERROR)
 
@@ -828,7 +805,7 @@ class Main(MainWin):
             height = self._clock_height,
         )
 
-        self.clock.set_font('Segoe UI', 9)
+        self.clock.set_font('Segoe UI', CLOCK_FONTSIZE)
 
         user32.SetWindowTextW(self.clock.hwnd, datetime.now().strftime(CLOCK_FORMAT))
 
@@ -866,7 +843,7 @@ class Main(MainWin):
         ti.uFlags = TTF_IDISHWND | TTF_SUBCLASS
         ti.hwnd = self.hwnd
         ti.uId = self.static_show_desktop.hwnd
-        ti.lpszText = 'Show Desktop'
+        ti.lpszText = get_string(10113)
         user32.SendMessageW(self.tooltip_show_desktop.hwnd, TTM_ADDTOOLW, 0, byref(ti))
 
     ########################################
@@ -1613,7 +1590,7 @@ class Main(MainWin):
 
         user32.AppendMenuW(hmenu_keyboard, MF_SEPARATOR, -1, '')
         hmenu_others = user32.CreateMenu()
-        user32.AppendMenuW(hmenu_keyboard, MF_POPUP, hmenu_others, 'Others')
+        user32.AppendMenuW(hmenu_keyboard, MF_POPUP, hmenu_others, get_string(4249))
         for lcid, country_code in LOCALES.items():
             if lcid not in locales_main:
                 user32.AppendMenuW(hmenu_others, MF_STRING, lcid, country_code)

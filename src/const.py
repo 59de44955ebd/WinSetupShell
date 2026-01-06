@@ -54,6 +54,13 @@ DESKTOP_BG_COLOR = 0x763B0A
 DESKTOP_TEXT_COLOR = 0xFFFFFF
 DESKTOP_HOT_ITEM_BORDER_COLOR = 0xD47800
 DESKTOP_SNAP_TO_GRID = True
+DESKTOP_WALLPAPER = "%USERPROFILE%\\AppData\\wallpaper.jpg"
+DESKTOP_ITEMS = [
+    "ThisPC",
+    "Documents",
+    "Downloads",
+    "RecycleBin"
+]
 
 TASKBAR_HEIGHT = 30
 DARK_TASKBAR_BG_COLOR = 0x101010
@@ -69,6 +76,7 @@ MENU_ICON_SIZE = 16
 
 CLOCK_WIDTH = 44
 CLOCK_HEIGHT = 14
+CLOCK_FONTSIZE = 9
 CLOCK_FORMAT = '%H:%M'
 CLOCK_UPDATE_PERIOD_MS = 5000
 
@@ -106,3 +114,14 @@ else:
     HMOD_RESOURCES = kernel32.LoadLibraryW(os.path.join(APP_DIR, 'resources.dll'))
 
 HMOD_SHELL32 = kernel32.LoadLibraryW('shell32.dll')
+
+#  31382, 	"Auswerfen"
+#  38307, 	"USB Drive"
+#  38307, 	"USB-Laufwerk"
+#
+#  31376, 	"Das ausgew\xE4hlte Laufwerk oder Ger\xE4t auswerfen oder entfernen."
+#  31380, 	"Einf\xFCgen"
+#  31381, 	"Die Elemente aus der Zwischenablage an der aktuellen Stelle einf\xFCgen."
+#  31382, 	"Auswerfen"
+#  31376, 	"Eject or remove the selected drive or device."
+#    10027, 	"Netzwerkadresse"

@@ -70,3 +70,12 @@ BEGIN
     MENUITEM "Task Manager\tWin+Alt+Del",IDM_OPEN_TASKMANAGER
   END
 END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+  IDS_SAFELY_REMOVE_HARDWARE "Safely remove hardware"
+  IDS_BATTERY_STATUS "Battery status"
+  IDS_BATTERY_STATUS_FMT "Battery status: {}%"
+  IDS_BATTERY_TIME_REMAINING_FMT "\n({} hr {} min remaining)"
+  IDS_NETWORK_OFFLINE "Network status: offline"
+END

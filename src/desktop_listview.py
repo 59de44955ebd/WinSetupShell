@@ -12,12 +12,7 @@ from winapp.shellapi_min import *
 
 from const import *
 
-DESKTOP_SHELL_ITEMS = [
-    CLSID_ThisPC,
-    CLSID_Documents,
-    CLSID_Downloads,
-    CLSID_RecycleBin
-]
+DESKTOP_SHELL_ITEMS = [eval(f'CLSID_{i}') for i in DESKTOP_ITEMS]
 
 BHID_SFUIObject = GUID('{3981E225-F559-11D3-8E3A-00C04F6837D5}')
 
@@ -254,13 +249,14 @@ class Desktop(MainWin, COMObject):
 
         self.listview.hide_focus_rects()
 
-        wallpaper_path = os.path.join(APPDATA_DIR, 'wallpaper.jpg')
-        if os.path.isfile(wallpaper_path):
-            lvbi = LVBKIMAGEW()
-            lvbi.ulFlags = LVBKIF_SOURCE_HBITMAP
-            lvbi.hbm = load_image_file(wallpaper_path, rc_desktop.right, rc_desktop.bottom)
-            user32.SendMessageW(self.listview.hwnd, LVM_SETBKIMAGEW, 0, byref(lvbi))
-            gdi32.DeleteObject(lvbi.hbm)
+        if type(DESKTOP_WALLPAPER) == str:
+            wallpaper_path = os.path.expandvars(DESKTOP_WALLPAPER)
+            if os.path.isfile(wallpaper_path):
+                lvbi = LVBKIMAGEW()
+                lvbi.ulFlags = LVBKIF_SOURCE_HBITMAP
+                lvbi.hbm = load_image_file(wallpaper_path, rc_desktop.right, rc_desktop.bottom)
+                user32.SendMessageW(self.listview.hwnd, LVM_SETBKIMAGEW, 0, byref(lvbi))
+                gdi32.DeleteObject(lvbi.hbm)
 
         self.load_desktop()
 
