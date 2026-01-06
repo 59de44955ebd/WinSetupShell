@@ -114,14 +114,3 @@ else:
     HMOD_RESOURCES = kernel32.LoadLibraryW(os.path.join(APP_DIR, 'resources.dll'))
 
 HMOD_SHELL32 = kernel32.LoadLibraryW('shell32.dll')
-
-#  31382, 	"Auswerfen"
-#  38307, 	"USB Drive"
-#  38307, 	"USB-Laufwerk"
-#
-#  31376, 	"Das ausgew\xE4hlte Laufwerk oder Ger\xE4t auswerfen oder entfernen."
-#  31380, 	"Einf\xFCgen"
-#  31381, 	"Die Elemente aus der Zwischenablage an der aktuellen Stelle einf\xFCgen."
-#  31382, 	"Auswerfen"
-#  31376, 	"Eject or remove the selected drive or device."
-#    10027, 	"Netzwerkadresse"
