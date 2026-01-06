@@ -22,6 +22,7 @@ from winapp.menu import *
 from winapp.types import WNDENUMPROC
 
 from const import *
+from config import *
 from desktop_listview import Desktop
 from resources import *
 from utils import *
@@ -101,6 +102,7 @@ if HAS_BATTERY:
 
 DARK_TASKBAR_BG_BRUSH = gdi32.CreateSolidBrush(DARK_TASKBAR_BG_COLOR)
 
+
 class Main(MainWin):
 
     ########################################
@@ -174,6 +176,7 @@ class Main(MainWin):
         self._quick_icon_size = ico_size
         self._task_icon_size = ico_size
         self._tray_icon_size = ico_size
+        self._show_desktop_corner_width = ico_size + 2 * SHOW_DESKTOP_PADDING * self._scale
 
         self._hicon_folder = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(4), IMAGE_ICON, self._task_icon_size, self._task_icon_size, LR_SHARED)
 
@@ -184,9 +187,7 @@ class Main(MainWin):
 
         self.create_rebar()
         self.create_clock()
-        # Add "show desktop" static in bottom right corner
-        if SHOW_DESKTOP_CORNER_WIDTH:
-            self.create_show_desktop_static()
+        self.create_show_desktop_static()
 
         self.COMMAND_MESSAGE_MAP = {
             IDM_QUIT:                   lambda: self.quit(),
@@ -259,7 +260,7 @@ class Main(MainWin):
                 gdi32.SetBkMode(wparam, TRANSPARENT)
                 return DARK_TASKBAR_BG_BRUSH
 
-            elif SHOW_DESKTOP_CORNER_WIDTH and lparam == self.static_show_desktop.hwnd:
+            elif lparam == self.static_show_desktop.hwnd:
                 gdi32.SetBkMode(wparam, TRANSPARENT)
                 return DARK_TASKBAR_BG_BRUSH
 
@@ -310,7 +311,7 @@ class Main(MainWin):
                     self.show_keyboard_layout_menu()
 
                 elif wparam == STN_CLICKED:
-                    if SHOW_DESKTOP_CORNER_WIDTH and lparam == self.static_show_desktop.hwnd:
+                    if lparam == self.static_show_desktop.hwnd:
 #                        self.minimize_toplevel_windows()
                         self.toggle_toplevel_windows()
 
@@ -521,7 +522,7 @@ class Main(MainWin):
     # Create rebar and toolbars
     ########################################
     def create_rebar(self):
-        rebar_width = self._rc_desktop.right - self._clock_width - SHOW_DESKTOP_CORNER_WIDTH
+        rebar_width = self._rc_desktop.right - self._clock_width - self._show_desktop_corner_width
         self.rebar = ReBar(
             self,
             style = (
@@ -542,9 +543,9 @@ class Main(MainWin):
         # Disable visual styles
         uxtheme.SetWindowTheme(self.rebar.hwnd, "", "")
 
-        self.h_imagelist_start= comctl32.ImageList_Create(START_ICON_SIZE * self._scale, START_ICON_SIZE * self._scale, ILC_COLOR32, 1, 0)
-        self.h_imagelist_tasks = comctl32.ImageList_Create(self._task_icon_size, self._task_icon_size, ILC_COLOR32, 64, 0)
-        self.h_imagelist_tray = comctl32.ImageList_Create(self._tray_icon_size, self._tray_icon_size, ILC_COLOR32, 3, 0)
+        self.h_imagelist_start= comctl32.ImageList_Create(START_ICON_SIZE * self._scale, START_ICON_SIZE * self._scale, ILC_COLOR32, 1, 1)
+        self.h_imagelist_tasks = comctl32.ImageList_Create(self._task_icon_size, self._task_icon_size, ILC_COLOR32, 0, 100)
+        self.h_imagelist_tray = comctl32.ImageList_Create(self._tray_icon_size, self._tray_icon_size, ILC_COLOR32, len(TRAY_COMMANDS), 0)
 
         # Create start toolbar
         h_icon = user32.LoadImageW(
@@ -713,7 +714,7 @@ class Main(MainWin):
         # Add buttons to tasks toolbar
         num_tasks = self.load_tasks()
 
-        tray_width = len(TRAY_COMMANDS) * (16 + TRAY_PADDING) * self._scale
+        tray_width = len(TRAY_COMMANDS) * (TASKBAR_ICON_SIZE + TRAY_PADDING) * self._scale
 
         # Initialize band info used by all bands.
         rbBand = REBARBANDINFOW()
@@ -799,7 +800,7 @@ class Main(MainWin):
             self,
             style = WS_CHILD | WS_VISIBLE | SS_CENTER | SS_NOTIFY,
             ex_style = WS_EX_TRANSPARENT,
-            left = self._rc_desktop.right - self._clock_width - SHOW_DESKTOP_CORNER_WIDTH,
+            left = self._rc_desktop.right - self._clock_width - self._show_desktop_corner_width,
             top = (self._taskbar_height - self._clock_height) // 2 - self._scale,
             width = self._clock_width,
             height = self._clock_height,
@@ -830,8 +831,8 @@ class Main(MainWin):
             self,
             style = WS_CHILD | WS_VISIBLE | SS_NOTIFY   | SS_ICON | SS_CENTERIMAGE,
             ex_style = WS_EX_TRANSPARENT,
-            left = self._rc_desktop.right - SHOW_DESKTOP_CORNER_WIDTH,
-            width = SHOW_DESKTOP_CORNER_WIDTH,
+            left = self._rc_desktop.right - self._show_desktop_corner_width,
+            width = self._show_desktop_corner_width,
             height = self._taskbar_height
         )
         hicon_show_desktop = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(35), IMAGE_ICON, self._tray_icon_size, self._tray_icon_size, 0)
@@ -1056,7 +1057,7 @@ class Main(MainWin):
             quick_config = eval(f.read())
 
         num_buttons = len(quick_config)
-        ico_size = 16 * self._scale
+        ico_size = TASKBAR_ICON_SIZE * self._scale
 
         cache_bmp = os.path.join(CACHE_DIR, f'quick_launch-{self._scale}.bmp')
         if os.path.isfile(cache_bmp) and not '/rebuild' in sys.argv:

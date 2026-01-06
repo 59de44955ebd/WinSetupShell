@@ -197,7 +197,7 @@ If you prefer a plain desktop background color, either remove `wallpaper.jpg` or
 `"DESKTOP_WALLPAPER": None,`  
 to `config.pson`. The background color defaults to some warmish dark blue, but can also be changed via `config.pson`.
 
-`config.pson` also allows to change some other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips).
+`config.pson` also allows to change some other settings, like e.g. activating light mode instead of dark mode (for taskbar, menus and tooltips). See [config.py](src/config.py) for all variables that `config.pson` can overwrite.
 
 ## Building WinSetupShell inside WinSetupShell
 

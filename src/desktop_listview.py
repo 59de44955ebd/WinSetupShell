@@ -11,6 +11,7 @@ from winapp.menu import MENUITEMINFOW
 from winapp.shellapi_min import *
 
 from const import *
+from config import *
 
 DESKTOP_SHELL_ITEMS = [eval(f'CLSID_{i}') for i in DESKTOP_ITEMS]
 
@@ -683,7 +684,7 @@ class Desktop(MainWin, COMObject):
     #
     ########################################
     def load_desktop(self):
-        self.h_imagelist = comctl32.ImageList_Create(DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, ILC_COLOR32, 0, 0)
+        self.h_imagelist = comctl32.ImageList_Create(DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, ILC_COLOR32, 0, 100)
         self.listview.set_image_list(self.h_imagelist)
 
         lvi = LVITEMW()
