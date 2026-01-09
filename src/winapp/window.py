@@ -213,7 +213,7 @@ class Window(object):
         return rc
 
     def send_message(self, msg, wparam=0, lparam=0):
-        user32.SendMessageW(self.hwnd, msg, wparam, lparam)
+        return user32.SendMessageW(self.hwnd, msg, wparam, lparam)
 
     def set_focus(self):
         user32.SetFocus(self.hwnd)

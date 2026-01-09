@@ -182,6 +182,7 @@ kernel32.LockResource.restype = HANDLE
 kernel32.OpenProcess.argtypes = (DWORD, BOOL, DWORD)
 kernel32.OpenProcess.restype = HANDLE
 kernel32.PeekNamedPipe.argtypes = (HANDLE, LPVOID, DWORD, LPDWORD, LPDWORD, LPDWORD)
+kernel32.QueryFullProcessImageNameW.argtypes = (HANDLE, DWORD, LPWSTR, LPDWORD)
 # POINTER(OVERLAPPED))
 kernel32.ReadFile.argtypes = (HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)
 kernel32.SetFileAttributesW.argtypes = (LPCWSTR, DWORD)
@@ -286,7 +287,7 @@ user32.GetWindowLongW.argtypes = (HWND, INT)
 user32.GetWindowLongW.restype = LONG
 user32.GetWindowRect.argtypes = (HWND, LPRECT)
 user32.GetWindowTextW.argtypes = (HWND, LPWSTR, INT)
-user32.GetWindowThreadProcessId.argtypes = (HANDLE, LPDWORD)
+user32.GetWindowThreadProcessId.argtypes = (HWND, LPDWORD)
 user32.IntersectRect.argtypes = (LPRECT, LPRECT, LPRECT)
 user32.InvalidateRect.argtypes = (HWND, LPRECT, BOOL)
 user32.InvertRect.argtypes = (HDC, LPRECT)

@@ -27,6 +27,8 @@ from desktop_listview import Desktop
 from resources import *
 from utils import *
 
+from window_switcher import WindowSwitcher
+
 DEBUG_CONSOLE = not IS_CONSOLE and '/debug' in sys.argv
 
 TASK_HWNDS_IGNORE = []
@@ -124,6 +126,8 @@ class Main(MainWin):
         if DEBUG_CONSOLE:
             self.create_console()
 
+        self.window_switcher = None
+
         self._current_menu_item_id = None
         self.menu_item_paths = {}
 
@@ -200,6 +204,7 @@ class Main(MainWin):
             IDM_RUN_EXPLORER:           lambda: shell32.ShellExecuteW(self.hwnd, 'open', EXPLORER, None, None, SW_SHOWNORMAL),
             IDM_RUN_SEARCH:             lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars('%programs%\\SwiftSearch\\SwiftSearch64.exe'), None, None, SW_SHOWNORMAL),
             IDM_TOGGLE_DESKTOP:         self.toggle_toplevel_windows,
+            IDM_SHOW_WINDOW_SWITCHER:   self.show_window_switcher,
         }
 
         self._hmenu_start = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START)), 0)
@@ -302,7 +307,6 @@ class Main(MainWin):
                 elif cmd_id == CMD_ID_NETWORK:
 #                    if not self.is_online:
                     self.initialize_network()
-#                        shell32.ShellExecuteW(None, None, os.path.join(PROGS_DIR, 'PENetwork', 'PENetwork.exe'), None, None, SW_SHOWNORMAL)
 
                 elif cmd_id == CMD_ID_USB:
                     self.show_usb_disks()
@@ -456,7 +460,7 @@ class Main(MainWin):
         self.register_win_notifications()
 
     ########################################
-    #
+    #  shell32.ShellExecuteW(None, None, os.path.join(PROGS_DIR, 'PENetwork', 'PENetwork.exe'), None, None, SW_SHOWNORMAL)
     ########################################
     def initialize_network(self):
         if self.is_online:
@@ -481,6 +485,7 @@ class Main(MainWin):
     #
     ########################################
     def register_hotkeys(self):
+
         ########################################
         #
         ########################################
@@ -491,16 +496,14 @@ class Main(MainWin):
 
         self.register_message_callback(WM_HOTKEY, _on_WM_HOTKEY)
 
-#        user32.RegisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_DELETE)
         user32.RegisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER, MOD_WIN | MOD_ALT | MOD_NOREPEAT, VK_DELETE)
-
         user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_LWIN)
         user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_RWIN)
-
         user32.RegisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP, MOD_WIN | MOD_NOREPEAT, ord('D'))
         user32.RegisterHotKey(self.hwnd, IDM_RUN_EXPLORER, MOD_WIN | MOD_NOREPEAT, ord('E'))
         user32.RegisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG, MOD_WIN | MOD_NOREPEAT, ord('R'))
         user32.RegisterHotKey(self.hwnd, IDM_RUN_SEARCH, MOD_WIN | MOD_NOREPEAT, ord('S'))
+        user32.RegisterHotKey(self.hwnd, IDM_SHOW_WINDOW_SWITCHER, MOD_CONTROL | MOD_NOREPEAT, VK_TAB)
 
         if DEBUG_CONSOLE:
             user32.RegisterHotKey(self.hwnd, IDM_DEBUG_TOGGLE_CONSOLE, MOD_NOREPEAT, VK_F11)
@@ -515,6 +518,8 @@ class Main(MainWin):
         user32.UnregisterHotKey(self.hwnd, IDM_RUN_EXPLORER)
         user32.UnregisterHotKey(self.hwnd, IDM_RUN_SEARCH)
         user32.UnregisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP)
+        user32.UnregisterHotKey(self.hwnd, IDM_SHOW_WINDOW_SWITCHER)
+
         if DEBUG_CONSOLE:
             user32.UnregisterHotKey(self.hwnd, IDM_DEBUG_TOGGLE_CONSOLE)
 
@@ -1374,6 +1379,14 @@ class Main(MainWin):
     ########################################
     def show_run_dialog(self):
         shell32.RunFileDlg(self.hwnd, 0, None, None, None, 0)
+
+    ########################################
+    #
+    ########################################
+    def show_window_switcher(self):
+        if self.window_switcher is None:
+            self.window_switcher = WindowSwitcher(self)
+        self.window_switcher.show_window()
 
     ########################################
     #

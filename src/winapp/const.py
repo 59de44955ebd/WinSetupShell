@@ -7855,3 +7855,9 @@ TYMED_HGLOBAL = 1
 DVASPECT_CONTENT = 1
 
 MN_GETHMENU = 0x01E1
+
+SHIL_LARGE      = 0x0 # 32x32 pixels
+SHIL_SMALL      = 0x1 # 16x16 pixels
+SHIL_EXTRALARGE = 0x2 # 48x48 pixels
+SHIL_SYSSMALL   = 0x3 # GetSystemMetrics for SM_CXSMICON and SM_CYSMICON
+SHIL_JUMBO      = 0x4 # 256x256 pixels, Vista+

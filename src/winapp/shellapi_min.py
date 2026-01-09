@@ -1072,3 +1072,6 @@ IWshShortcut._methods_ = [COMMETHOD([], HRESULT, '_')] * 10 + [
 def get_lnk_target_path(lnk_path):
     shortcut = CreateObject("WScript.Shell", interface=IWshShell).CreateShortCut(lnk_path)
     return shortcut.QueryInterface(IWshShortcut).TargetPath
+
+IID_IImageList = GUID('{46EB5926-582E-4017-9FDF-E8998DAA0950}')
+#BHID_SFUIObject = GUID('{3981E225-F559-11D3-8E3A-00C04F6837D5}')
