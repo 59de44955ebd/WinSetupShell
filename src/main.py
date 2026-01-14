@@ -115,7 +115,16 @@ class Main(MainWin):
         if not HAS_EXPLORER:
             autoexec = os.path.join(APPDATA_DIR, 'autoexec.bat')
             if os.path.isfile(autoexec):
-                shell32.ShellExecuteW(None, None, autoexec, None, None, SW_HIDE)
+
+#                shell32.ShellExecuteW(None, None, autoexec, None, None, SW_HIDE)
+
+                si = SHELLEXECUTEINFOW()
+                si.fMask = SEE_MASK_NOCLOSEPROCESS
+                si.lpFile = autoexec
+                si.nShow = SW_HIDE
+                shell32.ShellExecuteExW(byref(si))
+                kernel32.WaitForSingleObject(si.hProcess, 1000)
+                kernel32.CloseHandle(si.hProcess)
 
         # This successfully adds the wallpaper to the setup UI, but it's not visible on the custom desktop
 #        if os.path.isfile(os.path.join(APPDATA_DIR, 'wallpaper.jpg')):

@@ -189,6 +189,7 @@ kernel32.SetFileAttributesW.argtypes = (LPCWSTR, DWORD)
 kernel32.SetThreadExecutionState.argtypes = (UINT,)
 kernel32.SetThreadExecutionState.restype = UINT
 kernel32.SizeofResource.argtypes = (HANDLE, HANDLE)
+kernel32.WaitForSingleObject.argtypes = (HANDLE, DWORD)
 
 ########################################
 # shell32
@@ -199,6 +200,8 @@ shell32.DragQueryFileW.argtypes = (WPARAM, UINT, LPWSTR, UINT)
 shell32.DragQueryPoint.argtypes = (WPARAM, LPPOINT)
 shell32.RunFileDlg = shell32[61]
 shell32.RunFileDlg.argtypes = (HWND, HANDLE, LPWSTR, LPWSTR, LPWSTR, UINT)
+# POINTER(SHELLEXECUTEINFOW)
+shell32.ShellExecuteExW.argtypes = (LPVOID,)
 shell32.ShellExecuteW.argtypes = (HWND, LPCWSTR, LPCWSTR, LPCWSTR, LPCWSTR, INT)
 shell32.ShellExecuteW.restype = HINSTANCE
 shell32.Shell_NotifyIconW.argtypes = (DWORD, LPVOID)
