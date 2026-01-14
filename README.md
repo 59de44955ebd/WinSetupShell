@@ -42,7 +42,7 @@ WinSetupShell can also be used with a multi-boot USB drive created with [Ventoy]
 
 - Enter `D:\shell` to start the shell. [*]
 
-- You can quit the shell by right-clicking on the start menu button and selecting "Quit" from the popup menu, you will then return to the naked Windows 11 setup window and can continue the Windows setup (if it's not visible, use Alt+Tab to bring it to the front). Or select "Reboot" or "Shutdown" in the start menu to reboot resp. shut down the PC.
+- You can quit the shell by right-clicking on the start menu button and selecting "Exit" from the popup menu, you will then return to the naked Windows 11 setup window and can continue the Windows setup (if it's not visible, use Alt+Tab to bring it to the front). Or select "Reboot" or "Shutdown" in the start menu to reboot resp. shut down the PC.
 
 [*] "D" is a placeholder for the actual drive letter of your USB drive (NOT the drive letter of the booted system, loaded from boot.wim, which AFAIK is always "X"). It will be the first letter, starting at "C", that is not used by existing volumes on your PC. If there are no (valid) volumes with drive letters, it will be "C", in my case it's "D". You can enter `echo list vol | diskpart` to see a list of all existing volumes and their letters.
 
@@ -217,3 +217,7 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 - (Possibly open `src\main.py` with Notepad++ and make your own code adjustments)
 
 - Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
+
+## ToDo
+
+Add a file manager that doesn't depend on shell notifications via SHChangeNotifyRegister, and therefor also in PE keeps its current view always in sync with the actual file system.
