@@ -5,6 +5,7 @@ from winapp.controls.toolbar import *
 from winapp.dlls import *
 from winapp.mainwin import *
 from winapp.shellapi_min import *
+from config import TASK_CLASSES_IGNORE
 from resources import IDM_SHOW_WINDOW_SWITCHER
 
 ICON_SIZE = 48
@@ -218,7 +219,7 @@ class WindowSwitcher(MainWin):
                 if win_text == '':
                     return 1
                 user32.GetClassNameW(hwnd, buf, MAX_PATH)
-                if buf.value == 'Windows.UI.Core.CoreWindow':
+                if buf.value in TASK_CLASSES_IGNORE:
                     return 1
 
                 path = get_module_path(get_window_pid(hwnd))

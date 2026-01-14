@@ -293,6 +293,7 @@ user32.InvalidateRect.argtypes = (HWND, LPRECT, BOOL)
 user32.InvertRect.argtypes = (HDC, LPRECT)
 user32.IsDialogMessageW.argtypes = (HWND, LPMSG)
 user32.IsDialogMessageW.restype = BOOL
+user32.IsTopLevelWindow.argtypes = (HWND,)
 user32.IsWindowEnabled.argtypes = (HWND,)
 user32.IsWindowVisible.argtypes = (HWND,)
 user32.IsZoomed.argtypes = (HWND,)
@@ -324,15 +325,15 @@ user32.PrintWindow.argtypes = (HWND, HDC, UINT)
 user32.PrivateExtractIconsW.argtypes = (LPCWSTR, INT, INT, INT, LPVOID, LPUINT, UINT, UINT)
 user32.RegisterHotKey.argtypes = (HWND, INT, UINT, UINT)
 user32.RegisterShellHookWindow.argtypes = (HWND,)
-
 user32.RegisterWindowMessageW.argtypes = (LPCWSTR,)
 user32.RegisterWindowMessageW.restype = UINT
-
 user32.ReleaseDC.argtypes = (HWND, HANDLE)
 user32.SendDlgItemMessageW.argtypes = (HWND, INT, UINT, LPVOID, LPVOID)
 # LPVOID to allow to send pointers
 user32.SendMessageW.argtypes = (HWND, UINT, LPVOID, LPVOID)
 user32.SendMessageW.restype = LONG_PTR
+user32.SendMessageTimeoutW.argtypes = (HWND, UINT, LPVOID, LPVOID, UINT, UINT, LPVOID)  #ctypes.POINTER(DWORD_PTR))
+user32.SendMessageTimeoutW.restype = LONG_PTR
 user32.SetCapture.argtypes = (HWND,)
 user32.SetClassLongW.argtypes = (HWND, INT, LONG)
 if IS_64_BIT:

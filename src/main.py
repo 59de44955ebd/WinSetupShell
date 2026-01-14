@@ -922,7 +922,7 @@ class Main(MainWin):
                 self._toggle_windows = None
 
             elif event == EVENT_OBJECT_CREATE:
-                if idChild == CHILDID_SELF and hwnd and self.timer_check is None:  # and user32.GetParent(hwnd) == 0
+                if self.timer_check is None and idChild == CHILDID_SELF and hwnd and user32.IsTopLevelWindow(hwnd):
                     self.timer_check = self.create_timer(_check_new_window, 500, True)
 
             elif event == EVENT_OBJECT_DESTROY:
@@ -1037,11 +1037,17 @@ class Main(MainWin):
                 win_text = buf.value
                 if win_text != '':
                     user32.GetClassNameW(hwnd, buf, MAX_PATH)
-                    if buf.value == 'Windows.UI.Core.CoreWindow':
+                    if buf.value in TASK_CLASSES_IGNORE:
                         return 1
-                    h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_BIG, 0)
-                    if h_icon == 0:
+
+                    h_icon = 0
+                    handle = HICON()
+                    if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
+                        h_icon = handle.value  #or 0
+
+                    if not h_icon:
                         h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
+
                     if h_icon:
                         windows.append(TaskWindow(hwnd, h_icon, win_text, is_iconic, buf.value))
 
