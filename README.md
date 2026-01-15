@@ -132,7 +132,7 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 
 - WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Exit" from the popup menu.
 
-- The shell itself, which only uses a few words like "Start", "Reboot", "Shutdown" and "Exit", is english only, no localisation (since I don't care). But shell items on the desktop and the time/date format in the clock are localized, and many of the provided applications are as well.
+- The shell itself, which only uses very few words like "Start" and "Exit", is english only, no localisation (since I don't care). But shell items on the desktop and the time/date format in the clock are localized, and many of the provided applications are as well. And of course you can translate the start menu (5 words and 9 category names) yourself by editing `start_menu.pson` (see below), just takes about a minute.
 
 - You can of course save files either on the USB drive or preexisting volumes on the local PC, but there is no persistance concerning registry changes etc. Which is actually a good thing, "boot.wim" is never altered, so you can't mess up the actual installation media (unless you alter it manually e.g. by using included 7-zip, which can load and save .wim files)
 
@@ -214,7 +214,7 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 
 - `cd WinSetupShell`
 
-- (Possibly open `src\main.py` with Notepad++ and make your own code adjustments)
+- (Possibly open `src\main.py` or some other .py file with Notepad++ and make your own code adjustments. Or edit `resources\resources.rc` and then compile it with `resources\make_resources_dll.cmd`.)
 
 - Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
 
