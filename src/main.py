@@ -306,7 +306,7 @@ class Main(MainWin):
 
                     elif hwnd == hwnd_top:
                         user32.ShowWindow(hwnd, SW_MINIMIZE)
-                        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, cmd_id, 0)
+                        self.toolbar_tasks.send_message(TB_CHECKBUTTON, cmd_id, 0)
 
                     else:
                         if user32.IsIconic(hwnd):
@@ -587,9 +587,9 @@ class Main(MainWin):
             hide_text = True,
             bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
-        user32.SendMessageW(self.toolbar_start.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_start)
+        self.toolbar_start.send_message(TB_SETIMAGELIST, 0, self.h_imagelist_start)
 
-        user32.SendMessageW(self.toolbar_start.hwnd, TB_SETPADDING, 0, MAKELONG(
+        self.toolbar_start.send_message(TB_SETPADDING, 0, MAKELONG(
             (START_WIDTH - START_ICON_SIZE) * self._scale,
             (TASKBAR_HEIGHT - START_ICON_SIZE) * self._scale
         ))
@@ -604,7 +604,7 @@ class Main(MainWin):
         ti.hwnd = self.hwnd
         ti.uId = self.toolbar_start.hwnd
         ti.lpszText = 'Start'
-        user32.SendMessageW(self.tooltip_start.hwnd, TTM_ADDTOOLW, 0, byref(ti))
+        self.tooltip_start.send_message(TTM_ADDTOOLW, 0, byref(ti))
 
         tb_button = TBBUTTON(
             0,
@@ -615,7 +615,7 @@ class Main(MainWin):
             0,
             'Start',
         )
-        user32.SendMessageW(self.toolbar_start.hwnd, TB_ADDBUTTONS, 1, byref(tb_button))
+        self.toolbar_start.send_message(TB_ADDBUTTONS, 1, byref(tb_button))
 
         # Create quick launch toolbar
         self.toolbar_quick = ToolBar(
@@ -635,7 +635,7 @@ class Main(MainWin):
             bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
 
-        hwnd_tooltips = user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETTOOLTIPS, 0, 0)
+        hwnd_tooltips = self.toolbar_quick.send_message(TB_GETTOOLTIPS, 0, 0)
         user32.SetWindowLongA(hwnd_tooltips, GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         # Create tasks toolbar
@@ -656,7 +656,7 @@ class Main(MainWin):
             bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
 
-        # hwnd_tooltips = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETTOOLTIPS, 0, 0)
+        # hwnd_tooltips = self.toolbar_tasks.send_message(TB_GETTOOLTIPS, 0, 0)
         # user32.SetWindowLongA(hwnd_tooltips, GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         uxtheme.SetWindowTheme(self.toolbar_tasks.hwnd, "", "")
@@ -666,10 +666,10 @@ class Main(MainWin):
             pt = POINT()
             user32.GetCursorPos(byref(pt))
             user32.ScreenToClient(self.toolbar_tasks.hwnd, byref(pt))
-            toolbar_index = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_HITTEST, 0, byref(pt))
+            toolbar_index = self.toolbar_tasks.send_message(TB_HITTEST, 0, byref(pt))
             if toolbar_index >= 0:
                 tb = TBBUTTON()
-                user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETBUTTON, toolbar_index, byref(tb))
+                self.toolbar_tasks.send_message(TB_GETBUTTON, toolbar_index, byref(tb))
                 win = self._taskbar_windows_by_command[tb.idCommand]
 
                 if win.win_class in ('CabinetWClass', 'Explorer++'):
@@ -710,17 +710,17 @@ class Main(MainWin):
             bg_brush_dark = DARK_TASKBAR_BG_BRUSH
         )
 
-        tooltips_hwnd = user32.SendMessageW(self.toolbar_tray.hwnd, TB_GETTOOLTIPS, 0, 0)
+        tooltips_hwnd = self.toolbar_tray.send_message(TB_GETTOOLTIPS, 0, 0)
         user32.SetWindowLongA(tooltips_hwnd, GWL_STYLE, WS_POPUP | TTS_ALWAYSTIP)
 
         dy = 14 * self._scale
 
-        user32.SendMessageW(self.toolbar_quick.hwnd, TB_SETPADDING, 0, MAKELONG(QUICK_PADDING * self._scale, dy))
-        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETPADDING, 0, MAKELONG(TASK_PADDING * self._scale, dy))
-        user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETPADDING, 0, MAKELONG(TRAY_PADDING * self._scale, dy))
+        self.toolbar_quick.send_message(TB_SETPADDING, 0, MAKELONG(QUICK_PADDING * self._scale, dy))
+        self.toolbar_tasks.send_message(TB_SETPADDING, 0, MAKELONG(TASK_PADDING * self._scale, dy))
+        self.toolbar_tray.send_message(TB_SETPADDING, 0, MAKELONG(TRAY_PADDING * self._scale, dy))
 
-        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tasks)
-        user32.SendMessageW(self.toolbar_tray.hwnd, TB_SETIMAGELIST, 0, self.h_imagelist_tray)
+        self.toolbar_tasks.send_message(TB_SETIMAGELIST, 0, self.h_imagelist_tasks)
+        self.toolbar_tray.send_message(TB_SETIMAGELIST, 0, self.h_imagelist_tray)
 
         # Add buttons to quick launch toolbar
         num_buttons = self.load_quickbar()
@@ -747,22 +747,22 @@ class Main(MainWin):
         s = SIZE()
 
         # Add start band to rebar
-        user32.SendMessageW(self.toolbar_start.hwnd, TB_GETIDEALSIZE, FALSE, byref(s))
+        self.toolbar_start.send_message(TB_GETIDEALSIZE, FALSE, byref(s))
         rbBand.fStyle = RBBS_HIDETITLE | CCS_TOP | RBBS_TOPALIGN | RBBS_NOGRIPPER #| RBBS_USECHEVRON
         rbBand.cx = START_WIDTH * self._scale
         rbBand.cxIdeal = s.cx
         rbBand.cxMinChild = START_WIDTH * self._scale
         rbBand.hwndChild = self.toolbar_start.hwnd
-        user32.SendMessageW(self.rebar.hwnd, RB_INSERTBANDW, -1, byref(rbBand))
+        self.rebar.send_message(RB_INSERTBANDW, -1, byref(rbBand))
 
         # Add quick launch band to rebar
-        user32.SendMessageW(self.toolbar_quick.hwnd, TB_GETIDEALSIZE, FALSE, byref(s))
+        self.toolbar_quick.send_message(TB_GETIDEALSIZE, FALSE, byref(s))
         rbBand.fStyle = RBBS_HIDETITLE | CCS_TOP | RBBS_TOPALIGN | RBBS_NOGRIPPER #| RBBS_USECHEVRON
         rbBand.cx = self._quick_bar_width
         rbBand.cxIdeal = s.cx
         rbBand.cxMinChild = 23 * self._scale
         rbBand.hwndChild = self.toolbar_quick.hwnd
-        user32.SendMessageW(self.rebar.hwnd, RB_INSERTBANDW, -1, byref(rbBand))
+        self.rebar.send_message(RB_INSERTBANDW, -1, byref(rbBand))
 
         # Add tasklist band to rebar
         tasklist_width = rebar_width - self._quick_bar_width - tray_width
@@ -770,7 +770,7 @@ class Main(MainWin):
         rbBand.cx = rbBand.cxIdeal = tasklist_width
         rbBand.cxMinChild = 23 * self._scale
         rbBand.hwndChild = self.toolbar_tasks.hwnd
-        user32.SendMessageW(self.rebar.hwnd, RB_INSERTBANDW, -1, byref(rbBand))
+        self.rebar.send_message(RB_INSERTBANDW, -1, byref(rbBand))
 
         # Add tray band to rebar
         num_buttons = len(TRAY_COMMANDS)
@@ -784,7 +784,7 @@ class Main(MainWin):
             rbBand.cx = rbBand.cxIdeal = tray_width
             rbBand.cxMinChild = tray_width
             rbBand.hwndChild = self.toolbar_tray.hwnd
-            res = user32.SendMessageW(self.rebar.hwnd, RB_INSERTBANDW, -1, byref(rbBand))
+            res = self.rebar.send_message(RB_INSERTBANDW, -1, byref(rbBand))
 
             tb_buttons = (TBBUTTON * num_buttons)()
 
@@ -799,10 +799,10 @@ class Main(MainWin):
                     cmd[0],
                 )
 
-            user32.SendMessageW(self.toolbar_tray.hwnd, TB_ADDBUTTONS, num_buttons, tb_buttons)
+            self.toolbar_tray.send_message(TB_ADDBUTTONS, num_buttons, tb_buttons)
 
         rc = RECT(0, 0, rebar_width, self._taskbar_height)
-        user32.SendMessageW(self.rebar.hwnd, RB_SIZETORECT, 0, byref(rc))
+        self.rebar.send_message(RB_SIZETORECT, 0, byref(rc))
 
         self.update_taskbutton_width()
 
@@ -831,7 +831,7 @@ class Main(MainWin):
         toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS
         toolInfo.uId = self.clock.hwnd
         toolInfo.lpszText = LPSTR_TEXTCALLBACKW
-        user32.SendMessageW(self.tooltip_clock.hwnd, TTM_ADDTOOLW, 0, byref(toolInfo))
+        self.tooltip_clock.send_message(TTM_ADDTOOLW, 0, byref(toolInfo))
 
         def _update_clock():
             user32.SetWindowTextW(self.clock.hwnd, datetime.now().strftime(CLOCK_FORMAT))
@@ -850,7 +850,7 @@ class Main(MainWin):
             height = self._taskbar_height
         )
         hicon_show_desktop = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(35), IMAGE_ICON, self._tray_icon_size, self._tray_icon_size, 0)
-        user32.SendMessageW(self.static_show_desktop.hwnd, STM_SETICON, hicon_show_desktop, 0)
+        self.static_show_desktop.send_message(STM_SETICON, hicon_show_desktop, 0)
         self.tooltip_show_desktop = Tooltips()
         if IS_DARK:
             self.tooltip_show_desktop.apply_theme(True)
@@ -859,7 +859,7 @@ class Main(MainWin):
         ti.hwnd = self.hwnd
         ti.uId = self.static_show_desktop.hwnd
         ti.lpszText = get_string(10113)
-        user32.SendMessageW(self.tooltip_show_desktop.hwnd, TTM_ADDTOOLW, 0, byref(ti))
+        self.tooltip_show_desktop.send_message(TTM_ADDTOOLW, 0, byref(ti))
 
     ########################################
     # Register win notifications
@@ -874,7 +874,7 @@ class Main(MainWin):
 
             num_buttons = len(windows_new)  #min(10, len(windows_new))
             if num_buttons:
-                button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
+                button_cnt = self.toolbar_tasks.send_message(TB_BUTTONCOUNT, 0, 0)
                 tb_buttons = (TBBUTTON * num_buttons)()
                 rc = RECT()
                 for i in range(num_buttons):
@@ -904,13 +904,13 @@ class Main(MainWin):
                     if user32.IsIconic(w.hwnd):
                         user32.ShowWindow(w.hwnd, SW_SHOWNORMAL)
 
-                user32.SendMessageW(self.toolbar_tasks.hwnd, TB_ADDBUTTONS, num_buttons, tb_buttons)
+                self.toolbar_tasks.send_message(TB_ADDBUTTONS, num_buttons, tb_buttons)
 
                 self.update_taskbutton_width()
 
                 hwnd_foreground = user32.GetForegroundWindow()
                 if hwnd_foreground in self._taskbar_windows_by_hwnd:
-                    user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd_foreground].command_id, 1)
+                    self.toolbar_tasks.send_message(TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd_foreground].command_id, 1)
 
         def _winevent_callback(hWinEventHook, event, hwnd, idObject, idChild, dwEventThread, dwmsEventTime):
 
@@ -921,7 +921,7 @@ class Main(MainWin):
                 user32.SetWindowPos(hwnd, 0, rc.left + OFFSET_ICONIC, rc.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)
 
                 if hwnd in self._taskbar_windows_by_hwnd:
-                    user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd].command_id, FALSE)
+                    self.toolbar_tasks.send_message(TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd].command_id, FALSE)
 
             elif event == EVENT_SYSTEM_MINIMIZEEND:
                 rc = RECT()
@@ -939,7 +939,7 @@ class Main(MainWin):
                     win = self._taskbar_windows_by_hwnd[hwnd]
 
                     # Remove from toolbar
-                    user32.SendMessageW(self.toolbar_tasks.hwnd, TB_DELETEBUTTON, win.toolbar_index, 0)
+                    self.toolbar_tasks.send_message(TB_DELETEBUTTON, win.toolbar_index, 0)
 
                     # Decrease toolbar_index
                     for w in self._taskbar_windows_by_command.values():
@@ -963,15 +963,24 @@ class Main(MainWin):
                     win.win_text = buf.value
 
                     tbi = TBBUTTONINFOW()
-                    h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_BIG, 0)
-                    if not h_icon:
-                        h_icon = user32.SendMessageW(hwnd, WM_GETICON, ICON_SMALL2, 0)
+
+                    h_icon = 0
+                    handle = HICON()
+                    if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
+                        h_icon = handle.value
+
+#                    if not h_icon:
+#                        # Does this make sense?
+#                        if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_SMALL2, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
+#                            h_icon = handle.value
+
                     if not h_icon:
                         h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
+
                     if h_icon:
                         if h_icon != win.h_icon:
                             tbi.dwMask = TBIF_IMAGE
-                            user32.SendMessageW(self.toolbar_tasks.hwnd, TB_GETBUTTONINFO, win.command_id, byref(tbi))
+                            self.toolbar_tasks.send_message(TB_GETBUTTONINFO, win.command_id, byref(tbi))
                             comctl32.ImageList_ReplaceIcon(self.h_imagelist_tasks, tbi.iImage, h_icon)
                             user32.DestroyIcon(win.h_icon)
                             win.h_icon = h_icon
@@ -981,13 +990,13 @@ class Main(MainWin):
                     tbi.dwMask = TBIF_TEXT
                     tbi.pszText = buf.value
 #                    tbi.cchText = MAX_PATH
-                    user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETBUTTONINFO, win.command_id, byref(tbi))
+                    self.toolbar_tasks.send_message(TB_SETBUTTONINFO, win.command_id, byref(tbi))
 
             elif event == EVENT_SYSTEM_FOREGROUND:
                 if hwnd in self._taskbar_windows_by_hwnd:
                     # this test is needed because ShowWindow minimized also triggers EVENT_SYSTEM_FOREGROUND
                     if not user32.IsIconic(hwnd):
-                        user32.SendMessageW(self.toolbar_tasks.hwnd, TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd].command_id, 1)
+                        self.toolbar_tasks.send_message(TB_CHECKBUTTON, self._taskbar_windows_by_hwnd[hwnd].command_id, 1)
 
         self.winevent_proc_callback = WINEVENTPROCTYPE(_winevent_callback)
 
@@ -1135,7 +1144,7 @@ class Main(MainWin):
         tb = TBADDBITMAP()
         tb.hInst = None
         tb.nID = h_bitmap
-        user32.SendMessageW(self.toolbar_quick.hwnd, TB_ADDBITMAP, num_buttons, byref(tb))
+        self.toolbar_quick.send_message(TB_ADDBITMAP, num_buttons, byref(tb))
 
         for i, row in enumerate(quick_config):
             label, command = row
@@ -1153,7 +1162,7 @@ class Main(MainWin):
             self._quickbar_commands[command_id_counter] = os.path.expandvars(command)
             command_id_counter += 1
 
-        user32.SendMessageW(self.toolbar_quick.hwnd, TB_ADDBUTTONS, num_buttons, tb_buttons)
+        self.toolbar_quick.send_message(TB_ADDBUTTONS, num_buttons, tb_buttons)
 
         self._quick_bar_width = num_buttons * (self._quick_icon_size + 6 * self._scale) + 16 * self._scale
 
@@ -1166,7 +1175,7 @@ class Main(MainWin):
         windows = self.get_toplevel_windows()
         num_buttons = len(windows)
         if num_buttons:
-#            button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
+#            button_cnt = self.toolbar_tasks.send_message(TB_BUTTONCOUNT, 0, 0)
 #            print('>>> button_cnt', button_cnt)
             tb_buttons = (TBBUTTON * num_buttons)()
 
@@ -1191,7 +1200,7 @@ class Main(MainWin):
                 self._taskbar_windows_by_command[win.command_id] = win
                 self._taskbar_windows_by_hwnd[win.hwnd] = win
 
-            user32.SendMessageW(self.toolbar_tasks.hwnd, TB_ADDBUTTONS, num_buttons, tb_buttons)
+            self.toolbar_tasks.send_message(TB_ADDBUTTONS, num_buttons, tb_buttons)
 
         return num_buttons
 
@@ -1452,14 +1461,14 @@ class Main(MainWin):
     #
     ########################################
     def update_taskbutton_width(self, tasklist_width=None):
-        button_cnt = user32.SendMessageW(self.toolbar_tasks.hwnd, TB_BUTTONCOUNT, 0, 0)
+        button_cnt = self.toolbar_tasks.send_message(TB_BUTTONCOUNT, 0, 0)
         if button_cnt > 0:
             if tasklist_width is None:
                 rc = RECT()
                 user32.GetWindowRect(self.toolbar_tasks.hwnd, byref(rc))
                 tasklist_width = rc.right - rc.left
             w = max(TASK_BUTTON_MIN_WIDTH * self._scale, min(TASK_BUTTON_MAX_WIDTH * self._scale, tasklist_width // button_cnt))
-            user32.SendMessageW(self.toolbar_tasks.hwnd, TB_SETBUTTONWIDTH, 0, MAKELONG(20, w))
+            self.toolbar_tasks.send_message(TB_SETBUTTONWIDTH, 0, MAKELONG(20, w))
 
     ########################################
     #

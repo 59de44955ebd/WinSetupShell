@@ -234,10 +234,10 @@ class Desktop(MainWin, COMObject):
 
         uxtheme.SetWindowTheme(self.listview.hwnd, 'Explorer', None)
 
-        user32.SendMessageW(self.listview.hwnd, LVM_SETBKCOLOR, 0, DESKTOP_BG_COLOR) #CLR_NONE)
-        user32.SendMessageW(self.listview.hwnd, LVM_SETTEXTCOLOR, 0, DESKTOP_TEXT_COLOR)
-        user32.SendMessageW(self.listview.hwnd, LVM_SETTEXTBKCOLOR, 0, CLR_NONE)
-        user32.SendMessageW(self.listview.hwnd, LVM_SETICONSPACING, 0,
+        self.listview.send_message(LVM_SETBKCOLOR, 0, DESKTOP_BG_COLOR) #CLR_NONE)
+        self.listview.send_message(LVM_SETTEXTCOLOR, 0, DESKTOP_TEXT_COLOR)
+        self.listview.send_message(LVM_SETTEXTBKCOLOR, 0, CLR_NONE)
+        self.listview.send_message(LVM_SETICONSPACING, 0,
             MAKELPARAM(
                 self.scale * (DESKTOP_ICON_SIZE + DESKTOP_ICON_SPACING_HORIZONTAL),
                 self.scale * (DESKTOP_ICON_SIZE + DESKTOP_ICON_SPACING_VERTICAL)
@@ -256,7 +256,7 @@ class Desktop(MainWin, COMObject):
                 lvbi = LVBKIMAGEW()
                 lvbi.ulFlags = LVBKIF_SOURCE_HBITMAP
                 lvbi.hbm = load_image_file(wallpaper_path, rc_desktop.right, rc_desktop.bottom)
-                user32.SendMessageW(self.listview.hwnd, LVM_SETBKIMAGEW, 0, byref(lvbi))
+                self.listview.send_message(LVM_SETBKIMAGEW, 0, byref(lvbi))
                 gdi32.DeleteObject(lvbi.hbm)
 
         self.load_desktop()
@@ -284,12 +284,12 @@ class Desktop(MainWin, COMObject):
 
             if msg == LVN_BEGINLABELEDITW:
                 lvdi = cast(lparam, POINTER(NMLVDISPINFO)).contents
-                item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, lvdi.item.iItem, 0)
+                item_id = self.listview.send_message(LVM_MAPINDEXTOID, lvdi.item.iItem, 0)
                 desktop_item = self.desktop_item_map[item_id]
                 if desktop_item.item_type == ITEM_TYPE_FILE:
                     ext = os.path.splitext(desktop_item.name)[1]
                     if ext:
-                        hwnd_edit = user32.SendMessageW(self.listview.hwnd, LVM_GETEDITCONTROL, 0, 0)
+                        hwnd_edit = self.listview.send_message(LVM_GETEDITCONTROL, 0, 0)
                         user32.SendMessageW(hwnd_edit, EM_SETSEL, 0, len(desktop_item.name) - len(ext))
 
                 ########################################
@@ -301,7 +301,7 @@ class Desktop(MainWin, COMObject):
             elif msg == LVN_ENDLABELEDITW:
                 lvdi = cast(lparam, POINTER(NMLVDISPINFO)).contents
                 if lvdi.item.pszText:
-                    item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, lvdi.item.iItem, 0)
+                    item_id = self.listview.send_message(LVM_MAPINDEXTOID, lvdi.item.iItem, 0)
                     desktop_item = self.desktop_item_map[item_id]
                     fos = SHFILEOPSTRUCTW()
                     fos.hwnd = self.listview.hwnd  # window handle to the dialog box to display information
@@ -323,7 +323,7 @@ class Desktop(MainWin, COMObject):
                 mi = cast(lparam, LPNMITEMACTIVATE).contents
                 if mi.iItem < 0:
                     return
-                item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, mi.iItem, 0)
+                item_id = self.listview.send_message(LVM_MAPINDEXTOID, mi.iItem, 0)
                 desktop_item = self.desktop_item_map[item_id]
                 if desktop_item.item_type == ITEM_TYPE_SHELL:
                     shell32.ShellExecuteW(self.hwnd, 'open', EXPLORER, '::' + desktop_item.clsid, None, SW_SHOWNORMAL)
@@ -355,13 +355,13 @@ class Desktop(MainWin, COMObject):
                     user32.GetCursorPos(byref(cursor_pos))  # In screen coordinates
 
                     pt = POINT()
-                    user32.SendMessageW(self.listview.hwnd, LVM_GETITEMPOSITION, nm.iItem, byref(pt))
+                    self.listview.send_message(LVM_GETITEMPOSITION, nm.iItem, byref(pt))
                     dx, dy = cursor_pos.x - pt.x, cursor_pos.y - pt.y
 
                     lvi = LVITEMW()
                     lvi.iItem = nm.iItem
                     lvi.mask = LVIF_IMAGE
-                    user32.SendMessageW(self.listview.hwnd, LVM_GETITEMW, 0, byref(lvi))
+                    self.listview.send_message(LVM_GETITEMW, 0, byref(lvi))
 
                     # Begins dragging an image. dxHotspot, dyHotspot: drag position relative to the upper-left corner
                     comctl32.ImageList_BeginDrag(self.h_imagelist, lvi.iImage, dx, dy)
@@ -396,7 +396,7 @@ class Desktop(MainWin, COMObject):
             if wparam == VK_DELETE:
                 files = []
                 for item_idx in self.get_selected_item_indexes():
-                    item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, item_idx, 0)
+                    item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
                     desktop_item = self.desktop_item_map[item_id]
                     if desktop_item.item_type != ITEM_TYPE_SHELL:
                         files.append(os.path.join(DESKTOP_DIR, desktop_item.name))
@@ -450,10 +450,10 @@ class Desktop(MainWin, COMObject):
 
             lvhti = LVHITTESTINFO()
             lvhti.pt = pt
-            item_idx = user32.SendMessageW(self.listview.hwnd, LVM_HITTEST, 0, byref(lvhti))
+            item_idx = self.listview.send_message(LVM_HITTEST, 0, byref(lvhti))
             if item_idx > -1:
 
-                target_item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, item_idx, 0)
+                target_item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
                 target_item = self.desktop_item_map[target_item_id]
 
                 if item_idx != self.hot_item_idx and item_idx not in self.drag_items_idx_list:
@@ -463,8 +463,8 @@ class Desktop(MainWin, COMObject):
                         lvi.stateMask = LVIS_DROPHILITED
                         comctl32.ImageList_DragMove(-1000, -1000)
                         lvi.state = LVIS_DROPHILITED
-                        user32.SendMessageW(self.listview.hwnd, LVM_SETITEMSTATE, item_idx, byref(lvi))
-                        user32.SendMessageW(self.listview.hwnd, LVM_REDRAWITEMS, item_idx, item_idx)
+                        self.listview.send_message(LVM_SETITEMSTATE, item_idx, byref(lvi))
+                        self.listview.send_message(LVM_REDRAWITEMS, item_idx, item_idx)
                         self.listview.update_window()
                         self.hot_item_idx = item_idx
 
@@ -473,8 +473,8 @@ class Desktop(MainWin, COMObject):
                 lvi.stateMask = LVIS_DROPHILITED
                 lvi.state = 0
                 comctl32.ImageList_DragMove(-1000, -1000)
-                user32.SendMessageW(self.listview.hwnd, LVM_SETITEMSTATE, self.hot_item_idx, byref(lvi))
-                user32.SendMessageW(self.listview.hwnd, LVM_REDRAWITEMS, self.hot_item_idx, self.hot_item_idx)
+                self.listview.send_message(LVM_SETITEMSTATE, self.hot_item_idx, byref(lvi))
+                self.listview.send_message(LVM_REDRAWITEMS, self.hot_item_idx, self.hot_item_idx)
                 self.listview.update_window()
                 self.hot_item_idx = None
 
@@ -511,17 +511,17 @@ class Desktop(MainWin, COMObject):
             # Determine if items were dropped to another item
             lvhti = LVHITTESTINFO()
             lvhti.pt = pt
-            target_item_idx = user32.SendMessageW(self.listview.hwnd, LVM_HITTEST, 0, byref(lvhti))
+            target_item_idx = self.listview.send_message(LVM_HITTEST, 0, byref(lvhti))
             if target_item_idx > -1 and target_item_idx not in self.drag_items_idx_list:
-                target_item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, target_item_idx, 0)
+                target_item_id = self.listview.send_message(LVM_MAPINDEXTOID, target_item_idx, 0)
                 target_desktop_item = self.desktop_item_map[target_item_id]
 
                 if self.hot_item_idx:
                     lvi = LVITEMW()
                     lvi.stateMask = LVIS_DROPHILITED
                     lvi.state = 0
-                    user32.SendMessageW(self.listview.hwnd, LVM_SETITEMSTATE, self.hot_item_idx, byref(lvi))
-                    user32.SendMessageW(self.listview.hwnd, LVM_REDRAWITEMS, self.hot_item_idx, self.hot_item_idx)
+                    self.listview.send_message(LVM_SETITEMSTATE, self.hot_item_idx, byref(lvi))
+                    self.listview.send_message(LVM_REDRAWITEMS, self.hot_item_idx, self.hot_item_idx)
                     self.listview.update_window()
                     self.hot_item_idx = None
 
@@ -537,7 +537,7 @@ class Desktop(MainWin, COMObject):
 
                 # if target item is a folder, move all (filesystem-)items into this folder
                 if is_recyclebin or os.path.isdir(target_path):
-                    drag_list_ids = [user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, idx, 0) for idx in self.drag_items_idx_list]
+                    drag_list_ids = [self.listview.send_message(LVM_MAPINDEXTOID, idx, 0) for idx in self.drag_items_idx_list]
                     filenames = [os.path.join(DESKTOP_DIR, self.desktop_item_map[item_id].name) for item_id in drag_list_ids if self.desktop_item_map[item_id].item_type != ITEM_TYPE_SHELL]
 
                     fos = SHFILEOPSTRUCTW()
@@ -557,7 +557,7 @@ class Desktop(MainWin, COMObject):
                 elif os.path.isfile(target_path):
                     if os.path.splitext(target_path)[1].lower() in ('.exe', '.cmd', '.bat'):
                         # First file only (?)
-                        item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, self.drag_items_idx_list[0], 0)
+                        item_id = self.listview.send_message(LVM_MAPINDEXTOID, self.drag_items_idx_list[0], 0)
                         filename = os.path.join(DESKTOP_DIR, self.desktop_item_map[item_id].name)
 
                         shell32.ShellExecuteW(None, None, target_path, filename, None, SW_SHOWNORMAL)
@@ -566,7 +566,7 @@ class Desktop(MainWin, COMObject):
             if self.drop_key_state == 1:  # left button
                 # Move the items
                 for item_idx in self.drag_items_idx_list:
-                    user32.SendMessageW(self.listview.hwnd, LVM_SETITEMPOSITION, item_idx, MAKELPARAM(pt.x - self.drag_hotspot.x, pt.y - self.drag_hotspot.y))
+                    self.listview.send_message(LVM_SETITEMPOSITION, item_idx, MAKELPARAM(pt.x - self.drag_hotspot.x, pt.y - self.drag_hotspot.y))
                 self.drag_items_idx_list = None
 
             else:  # Show popup menu with copy and link
@@ -607,7 +607,7 @@ class Desktop(MainWin, COMObject):
         item_idx = -1
         selected = []
         while True:
-            item_idx = user32.SendMessageW(self.listview.hwnd, LVM_GETNEXTITEM, item_idx, LVNI_SELECTED)
+            item_idx = self.listview.send_message(LVM_GETNEXTITEM, item_idx, LVNI_SELECTED)
             if item_idx < 0:
                 break
             selected.append(item_idx)
@@ -619,7 +619,7 @@ class Desktop(MainWin, COMObject):
     def get_item_pidls(self, item_indexes):
         pidls = []
         for item_idx in item_indexes:
-            item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, item_idx, 0)
+            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
             desktop_item = self.desktop_item_map[item_id]
             if desktop_item.item_type == ITEM_TYPE_SHELL:
                 continue
@@ -641,12 +641,12 @@ class Desktop(MainWin, COMObject):
         for f in deleted_files:
             for item_id, di in self.desktop_item_map.items():
                 if di.name == f:
-                    item_idx = user32.SendMessageW(self.listview.hwnd, LVM_MAPIDTOINDEX, item_id, 0)
-                    user32.SendMessageW(self.listview.hwnd, LVM_DELETEITEM, item_idx, 0)
+                    item_idx = self.listview.send_message(LVM_MAPIDTOINDEX, item_id, 0)
+                    self.listview.send_message(LVM_DELETEITEM, item_idx, 0)
                     del self.desktop_item_map[item_id]
                     break
 
-        i = user32.SendMessageW(self.listview.hwnd, LVM_GETITEMCOUNT, 0, 0)
+        i = self.listview.send_message(LVM_GETITEMCOUNT, 0, 0)
 
         lvi = LVITEMW()
         lvi.mask = LVIF_TEXT | LVIF_IMAGE
@@ -668,11 +668,11 @@ class Desktop(MainWin, COMObject):
             item_idx = self.listview.insert_item(lvi)
 
             if drop_point:
-                user32.SendMessageW(self.listview.hwnd, LVM_SETITEMPOSITION, item_idx,
+                self.listview.send_message(LVM_SETITEMPOSITION, item_idx,
                     MAKELPARAM(drop_point.x, drop_point.y)
                 )
 
-            item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, item_idx, 0)
+            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
             self.desktop_item_map[item_id] = DesktopItem(fn, ITEM_TYPE_FOLDER if is_dir else (ITEM_TYPE_LNK if is_lnk else ITEM_TYPE_FILE))
             new_items.append(item_idx)
 
@@ -727,7 +727,7 @@ class Desktop(MainWin, COMObject):
             lvi.pszText = display_name
             lvi.iImage = idx_icon
             item_idx = self.listview.insert_item(lvi)
-            item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, item_idx, 0)
+            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
 
             self.desktop_item_map[item_id] = DesktopItem(
                 display_name,
@@ -761,7 +761,7 @@ class Desktop(MainWin, COMObject):
             lvi.pszText = fn[:-4] if is_lnk else fn
             lvi.iImage = icon_idx
             item_idx = self.listview.insert_item(lvi)
-            item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, item_idx, 0)
+            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
 
             self.desktop_item_map[item_id] = DesktopItem(fn, ITEM_TYPE_FOLDER if is_dir else (ITEM_TYPE_LNK if is_lnk else ITEM_TYPE_FILE))
 
@@ -783,7 +783,7 @@ class Desktop(MainWin, COMObject):
     def show_shell_menu_items(self, x, y, selected_indexes):
         selected_paths = []
         for item_idx in selected_indexes:
-            item_id = user32.SendMessageW(self.listview.hwnd, LVM_MAPINDEXTOID, item_idx, 0)
+            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
 
             desktop_item = self.desktop_item_map[item_id]
 
@@ -828,7 +828,7 @@ class Desktop(MainWin, COMObject):
 #            print(verb)
 
             if verb == 'rename':
-                user32.SendMessageW(self.listview.hwnd, LVM_EDITLABELW, selected_indexes[0], 0)
+                self.listview.send_message(LVM_EDITLABELW, selected_indexes[0], 0)
 
             else:
                 info = CMINVOKECOMMANDINFO()
@@ -971,7 +971,7 @@ class Desktop(MainWin, COMObject):
                 if verb.startswith('New') or verb.startswith('.'):
                     new_items = self.update_desktop()
                     if len(new_items) == 1:
-                        user32.SendMessageW(self.listview.hwnd, LVM_EDITLABELW, new_items[0], 0)
+                        self.listview.send_message(LVM_EDITLABELW, new_items[0], 0)
 
         self.unregister_message_callback(WM_INITMENUPOPUP)
         user32.DestroyMenu(h_menu)
@@ -996,4 +996,4 @@ class Desktop(MainWin, COMObject):
             self.h_icon_recyclebin_filled if self.is_recyclebin_filled() else self.h_icon_recyclebin
         )
         idx = DESKTOP_SHELL_ITEMS.index(CLSID_RecycleBin)
-        user32.SendMessageW(self.listview.hwnd, LVM_REDRAWITEMS, idx, idx)
+        self.listview.send_message(LVM_REDRAWITEMS, idx, idx)
