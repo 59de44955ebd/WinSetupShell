@@ -955,42 +955,45 @@ class Main(MainWin):
             elif event == EVENT_OBJECT_NAMECHANGE:
 #                print('>>> EVENT_OBJECT_NAMECHANGE', hwnd)
                 if idChild == CHILDID_SELF and hwnd in self._taskbar_windows_by_hwnd:
-#                    print('>>>', hWinEventHook, hwnd, idObject, idChild, dwEventThread, dwmsEventTime)
-                    win = self._taskbar_windows_by_hwnd[hwnd]
 
-                    buf = create_unicode_buffer(MAX_PATH)
-                    user32.GetWindowTextW(hwnd, buf, MAX_PATH)
-                    win.win_text = buf.value
+                    ########################################
+                    # The window's icon might also have changed (e.g. in case of Explorer/Explorer++).
+                    # But (for Explorer++) the notification is received before the icon upddate, so
+                    # we delay the check by 100 ms.
+                    ########################################
+                    def _check(hwnd = hwnd):
+                        win = self._taskbar_windows_by_hwnd[hwnd]
 
-                    tbi = TBBUTTONINFOW()
+                        buf = create_unicode_buffer(MAX_PATH)
+                        user32.GetWindowTextW(hwnd, buf, MAX_PATH)
+                        win.win_text = buf.value
 
-                    h_icon = 0
-                    handle = HICON()
-                    if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
-                        h_icon = handle.value
+                        tbi = TBBUTTONINFOW()
 
-#                    if not h_icon:
-#                        # Does this make sense?
-#                        if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_SMALL2, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
-#                            h_icon = handle.value
+                        h_icon = 0
+                        handle = HICON()
 
-                    if not h_icon:
-                        h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
+    #                    if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
+    #                        h_icon = handle.value
 
-                    if h_icon:
-                        if h_icon != win.h_icon:
-                            tbi.dwMask = TBIF_IMAGE
-                            self.toolbar_tasks.send_message(TB_GETBUTTONINFO, win.command_id, byref(tbi))
-                            comctl32.ImageList_ReplaceIcon(self.h_imagelist_tasks, tbi.iImage, h_icon)
-                            user32.DestroyIcon(win.h_icon)
-                            win.h_icon = h_icon
-                        else:
-                             user32.DestroyIcon(h_icon)
+                        if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_SMALL, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
+                            h_icon = handle.value
 
-                    tbi.dwMask = TBIF_TEXT
-                    tbi.pszText = buf.value
-#                    tbi.cchText = MAX_PATH
-                    self.toolbar_tasks.send_message(TB_SETBUTTONINFO, win.command_id, byref(tbi))
+                        if h_icon:
+                            if h_icon != win.h_icon:
+                                tbi.dwMask = TBIF_IMAGE
+                                self.toolbar_tasks.send_message(TB_GETBUTTONINFO, win.command_id, byref(tbi))
+                                comctl32.ImageList_ReplaceIcon(self.h_imagelist_tasks, tbi.iImage, h_icon)
+                                user32.DestroyIcon(win.h_icon)
+                                win.h_icon = h_icon
+                            else:
+                                user32.DestroyIcon(h_icon)
+
+                        tbi.dwMask = TBIF_TEXT
+                        tbi.pszText = buf.value
+                        self.toolbar_tasks.send_message(TB_SETBUTTONINFO, win.command_id, byref(tbi))
+
+                    self.create_timer(_check, 100, True)
 
             elif event == EVENT_SYSTEM_FOREGROUND:
                 if hwnd in self._taskbar_windows_by_hwnd:
@@ -1043,11 +1046,11 @@ class Main(MainWin):
             is_iconic = user32.IsIconic(hwnd)
             if user32.IsWindowVisible(hwnd) or is_iconic:
 
-                # ignore debug console window
+                # Ignore debug console window
                 if DEBUG_CONSOLE and hwnd == self._hwnd_console:
                     return 1
 
-                # ignore if WS_EX_TOOLWINDOW
+                # Ignore if WS_EX_TOOLWINDOW
                 if user32.GetWindowLongA(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW:
                     return 1
 
@@ -1060,8 +1063,13 @@ class Main(MainWin):
 
                     h_icon = 0
                     handle = HICON()
-                    if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
-                        h_icon = handle.value  #or 0
+
+                    if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_SMALL2, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
+                        h_icon = handle.value
+
+#                    if not h_icon:
+#                        if user32.SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, TASK_ICON_TIMEOUT_MS, byref(handle)):
+#                            h_icon = handle.value
 
                     if not h_icon:
                         h_icon = user32.GetClassLongW(hwnd, GCLP_HICON)
@@ -1082,7 +1090,7 @@ class Main(MainWin):
         command_id_counter = CMD_ID_QUICK_START
         self._quickbar_commands = {}
 
-        with open(os.path.join(APPDATA_DIR, 'quick_launch.pson'), 'r', encoding='utf-8') as f:
+        with open(os.path.join(APPDATA_DIR, 'quick_launch.pson'), 'r', encoding = 'utf-8') as f:
             quick_config = eval(f.read())
 
         num_buttons = len(quick_config)
@@ -1175,8 +1183,6 @@ class Main(MainWin):
         windows = self.get_toplevel_windows()
         num_buttons = len(windows)
         if num_buttons:
-#            button_cnt = self.toolbar_tasks.send_message(TB_BUTTONCOUNT, 0, 0)
-#            print('>>> button_cnt', button_cnt)
             tb_buttons = (TBBUTTON * num_buttons)()
 
             for i, win in enumerate(windows):
