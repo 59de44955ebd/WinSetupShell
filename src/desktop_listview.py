@@ -603,6 +603,23 @@ class Desktop(MainWin, COMObject):
     ########################################
     #
     ########################################
+    def invoke_verb_on_selection(self, verb):
+        selected_indexes = self.get_selected_item_indexes()
+        if not selected_indexes:
+            return
+        selected_pidls = self.get_item_pidls(selected_indexes)
+        num_items = len(selected_pidls)
+        pidl_list = (PIDL * num_items)(*selected_pidls)
+        shell_item_array = (POINTER(IShellItemArray))()
+        HRCHECK(shell32.SHCreateShellItemArrayFromIDLists(num_items, pidl_list, byref(shell_item_array)))
+        icontextmenu = (POINTER(IContextMenu))()
+        shell_item_array.BindToHandler(None, BHID_SFUIObject, byref(IContextMenu._iid_), byref(icontextmenu))
+        if self.invoke_verb(icontextmenu, verb):
+            return selected_indexes
+
+    ########################################
+    #
+    ########################################
     def get_selected_item_indexes(self):
         item_idx = -1
         selected = []
@@ -621,10 +638,18 @@ class Desktop(MainWin, COMObject):
         for item_idx in item_indexes:
             item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
             desktop_item = self.desktop_item_map[item_id]
-            if desktop_item.item_type == ITEM_TYPE_SHELL:
-                continue
+
+#            if desktop_item.item_type == ITEM_TYPE_SHELL:
+#                continue
+
             pidl_child = PIDL()
-            self.ishellfolder_desktop.ParseDisplayName(None, None, os.path.join(DESKTOP_DIR, desktop_item.name), None, byref(pidl_child), None)
+
+            if desktop_item.item_type == ITEM_TYPE_SHELL:
+                shell32.SHParseDisplayName('::' + desktop_item.clsid, None, byref(pidl_child), 0, None)
+            else:
+
+                self.ishellfolder_desktop.ParseDisplayName(None, None, os.path.join(DESKTOP_DIR, desktop_item.name), None, byref(pidl_child), None)
+
             pidls.append(pidl_child)
         return pidls
 
@@ -903,56 +928,18 @@ class Desktop(MainWin, COMObject):
 
             # For PE
             if verb == 'refresh':
-                self.update_desktop()
-                self.update_recyclebin()
+                self.action_refresh()
 
 #            elif verb == 'undo':
 #                if self.last_op == FO_DELETE:
 #                    self.undo_last_delete()
+
 #                elif verb == 'redo':
 #                    if self.last_op == FO_UNDO:
 #                        self.redo_last_delete()
 
             elif verb == 'paste':
-                if not user32.IsClipboardFormatAvailable(CF_HDROP):
-                    return
-                if not user32.OpenClipboard(self.hwnd):
-                    return
-                data = user32.GetClipboardData(CF_HDROP)
-                if data is None:
-                    user32.CloseClipboard()
-                    return
-                drop_effect = DROPEFFECT_COPY
-                paths = []
-
-                data_locked = kernel32.GlobalLock(data)
-
-                cnt = shell32.DragQueryFileW(data_locked, 0xFFFFFFFF, None, 0)
-                buf = ctypes.create_unicode_buffer(MAX_PATH)
-                for i in range(cnt):
-                    shell32.DragQueryFileW(data_locked, i, buf, MAX_PATH)
-                    paths.append(buf.value)
-
-                kernel32.GlobalUnlock(data_locked)
-
-                if user32.IsClipboardFormatAvailable(FMT_PREFERRED_DROPEFFECT):
-                    handle = user32.GetClipboardData(FMT_PREFERRED_DROPEFFECT)
-                    handle_locked = kernel32.GlobalLock(handle)
-                    drop_effect = cast(handle_locked, LPDWORD).contents.value
-                    kernel32.GlobalUnlock(handle_locked)
-
-                user32.CloseClipboard()
-
-                fos = SHFILEOPSTRUCTW()
-                fos.hwnd = self.listview.hwnd
-                fos.wFunc = FO_MOVE if drop_effect & DROPEFFECT_MOVE else FO_COPY
-                fos.pFrom = '\0'.join(paths) + '\0'
-                fos.pTo = DESKTOP_DIR + '\0'
-                fos.fFlags = FOF_ALLOWUNDO
-
-                shell32.SHFileOperationW(byref(fos))
-
-                self.update_desktop()
+                self.action_paste()
 
             elif verb == 'cmd':
                 shell32.ShellExecuteW(self.hwnd, None, os.path.expandvars('%windir%\\System32\\cmd.exe'), None, DESKTOP_DIR, SW_SHOWNORMAL)
@@ -997,3 +984,84 @@ class Desktop(MainWin, COMObject):
         )
         idx = DESKTOP_SHELL_ITEMS.index(CLSID_RecycleBin)
         self.listview.send_message(LVM_REDRAWITEMS, idx, idx)
+
+    ########################################
+    #
+    ########################################
+    def action_cut(self):
+        selected_indexes = self.invoke_verb_on_selection(b'cut')
+#        if selected_indexes:
+#            self.listview.ghost_items(selected_indexes)
+
+    ########################################
+    #
+    ########################################
+    def action_copy(self):
+        self.invoke_verb_on_selection(b'copy')
+
+    ########################################
+    #
+    ########################################
+    def action_paste(self):
+        if not user32.IsClipboardFormatAvailable(CF_HDROP):
+            return
+        if not user32.OpenClipboard(self.hwnd):
+            return
+        data = user32.GetClipboardData(CF_HDROP)
+        if data is None:
+            user32.CloseClipboard()
+            return
+        drop_effect = DROPEFFECT_COPY
+        paths = []
+
+        data_locked = kernel32.GlobalLock(data)
+
+        cnt = shell32.DragQueryFileW(data_locked, 0xFFFFFFFF, None, 0)
+        buf = ctypes.create_unicode_buffer(MAX_PATH)
+        for i in range(cnt):
+            shell32.DragQueryFileW(data_locked, i, buf, MAX_PATH)
+            paths.append(buf.value)
+
+        kernel32.GlobalUnlock(data_locked)
+
+        if user32.IsClipboardFormatAvailable(FMT_PREFERRED_DROPEFFECT):
+            handle = user32.GetClipboardData(FMT_PREFERRED_DROPEFFECT)
+            handle_locked = kernel32.GlobalLock(handle)
+            drop_effect = cast(handle_locked, LPDWORD).contents.value
+            kernel32.GlobalUnlock(handle_locked)
+
+        user32.CloseClipboard()
+
+        fos = SHFILEOPSTRUCTW()
+        fos.hwnd = self.listview.hwnd
+        fos.wFunc = FO_MOVE if drop_effect & DROPEFFECT_MOVE else FO_COPY
+        fos.pFrom = '\0'.join(paths) + '\0'
+        fos.pTo = DESKTOP_DIR + '\0'
+        fos.fFlags = FOF_ALLOWUNDO
+
+        shell32.SHFileOperationW(byref(fos))
+
+        self.update_desktop()
+
+    ########################################
+    #
+    ########################################
+    def action_delete(self):
+        self.invoke_verb_on_selection(b'delete')
+        self.action_refresh()
+
+    ########################################
+    #
+    ########################################
+    def action_refresh(self):
+        self.update_desktop()
+        self.update_recyclebin()
+
+    ########################################
+    #
+    ########################################
+    def action_select_all(self):
+        lvi = LVITEMW()
+        lvi.stateMask = LVIS_SELECTED
+        lvi.state = LVIS_SELECTED
+        self.listview.send_message(LVM_SETITEMSTATE, -1, byref(lvi))

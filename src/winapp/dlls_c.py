@@ -122,6 +122,7 @@ user32.LoadIconW.argtypes = (HINSTANCE, LPCWSTR)
 user32.LoadIconW.restype = HICON
 user32.LoadImageW.argtypes = (HINSTANCE, LPCWSTR, UINT, INT, INT, UINT)
 user32.LoadImageW.restype = HANDLE
+user32.LoadKeyboardLayoutW.argtypes = (LPCWSTR, UINT)
 user32.LoadMenuW.argtypes = (HINSTANCE, LPCWSTR)
 user32.LoadMenuW.restype = HMENU
 user32.LoadStringW.argtypes = (HINSTANCE, UINT, LPWSTR, INT)

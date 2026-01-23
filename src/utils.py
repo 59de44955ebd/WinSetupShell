@@ -199,11 +199,11 @@ def run_command(command_line: str, cwd: str = '') -> tuple[bytes, bytes, int]:
 ########################################
 #
 ########################################
-def get_locales():
+def get_system_locale_str():
     hkey = HKEY()
     if advapi32.RegOpenKeyW(HKEY_USERS, '.DEFAULT\\Control Panel\\International' , byref(hkey)) != ERROR_SUCCESS:
-        return None, None
-
+        return None
+    lcid_system = None
     data = DWORD()
     cbData = DWORD()
     if advapi32.RegQueryValueExW(hkey, 'Locale', None, None, None, byref(cbData)) == ERROR_SUCCESS:
@@ -211,7 +211,13 @@ def get_locales():
         if advapi32.RegQueryValueExW(hkey, 'Locale', None, None, data, byref(cbData)) == ERROR_SUCCESS:
             lcid_system = '0x' + data.value[-4:]
     advapi32.RegCloseKey(hkey)
+    return lcid_system
 
+########################################
+#
+########################################
+def get_locales():
+    lcid_system = get_system_locale_str()
     if not lcid_system:
         return None, None
 

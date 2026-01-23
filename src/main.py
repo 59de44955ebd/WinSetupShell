@@ -67,7 +67,11 @@ HAS_BATTERY = sps.BatteryFlag & 128 == 0
 #HAS_BATTERY = True
 
 if HAS_EXPLORER:
-    LCID_SYSTEM = None
+#    LCID_SYSTEM = None
+    LCID_SYSTEM = get_system_locale_str()
+    if LCID_SYSTEM:
+        LCID_SYSTEM = eval(LCID_SYSTEM)
+    LOCALES = None
 else:
     LCID_SYSTEM, LOCALES = get_locales()
 
@@ -168,6 +172,7 @@ class Main(MainWin):
             window_class = APP_CLASS,
             style = WS_POPUP,
             ex_style = WS_EX_TOOLWINDOW,
+            h_accel = user32.LoadAcceleratorsW(HMOD_RESOURCES, MAKEINTRESOURCEW(1)),
             h_brush = DARK_TASKBAR_BG_BRUSH if IS_DARK else COLOR_3DFACE + 1,
         )
 
@@ -205,6 +210,17 @@ class Main(MainWin):
         self.COMMAND_MESSAGE_MAP = {
             IDM_QUIT:                   lambda: self.quit(),
             IDM_DEBUG_TOGGLE_CONSOLE:   self.toggle_console,
+
+            # Accelerators
+            IDM_CUT:                    self.desktop.action_cut,
+            IDM_COPY:                   self.desktop.action_copy,
+            IDM_PASTE:                  self.desktop.action_paste,
+            IDM_DELETE:                 self.desktop.action_delete,
+            IDM_REFRESH:                self.desktop.action_refresh,
+            IDM_SELECT_ALL:             self.desktop.action_select_all,
+
+#            IDM_UNDO:                   self.desktop.action_undo,
+#            IDM_REDO:                   self.desktop.action_redo,
 
             # hotkeys
             IDM_OPEN_TASKMANAGER:       lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars('%windir%\\System32\\taskmgr.exe'), None, None, SW_SHOWNORMAL),
@@ -1629,19 +1645,20 @@ class Main(MainWin):
         hmenu_keyboard = user32.CreatePopupMenu()
 
         for lcid, country_code in locales_main.items():
-            if lcid in LOCALES:
+            if LOCALES is None or lcid in LOCALES:
                 user32.AppendMenuW(hmenu_keyboard, MF_STRING, lcid, country_code)
 
-        user32.AppendMenuW(hmenu_keyboard, MF_SEPARATOR, -1, '')
-        hmenu_others = user32.CreateMenu()
-        user32.AppendMenuW(hmenu_keyboard, MF_POPUP, hmenu_others, get_string(4249))
-        for lcid, country_code in LOCALES.items():
-            if lcid not in locales_main:
-                user32.AppendMenuW(hmenu_others, MF_STRING, lcid, country_code)
+        if LOCALES:
+            user32.AppendMenuW(hmenu_keyboard, MF_SEPARATOR, -1, '')
+            hmenu_others = user32.CreateMenu()
+            user32.AppendMenuW(hmenu_keyboard, MF_POPUP, hmenu_others, get_string(4249))
+            for lcid, country_code in LOCALES.items():
+                if lcid not in locales_main:
+                    user32.AppendMenuW(hmenu_others, MF_STRING, lcid, country_code)
 
         if self.lcid_current in locales_main:
             user32.CheckMenuItem(hmenu_keyboard, self.lcid_current, MF_BYCOMMAND| MF_CHECKED)
-        elif self.lcid_current in LOCALES:
+        elif LOCALES and self.lcid_current in LOCALES:
             user32.CheckMenuItem(hmenu_others, self.lcid_current, MF_BYCOMMAND| MF_CHECKED)
 
         x = self._rc_desktop.right
@@ -1650,13 +1667,18 @@ class Main(MainWin):
         lcid = user32.TrackPopupMenuEx(hmenu_keyboard, TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_BOTTOMALIGN, x, y, self.hwnd, 0)
         user32.PostMessageW(self.hwnd, WM_NULL, 0, 0)
         if lcid:
-            command = os.path.expandvars(f'%windir%\\system32\\wpeutil.exe SetKeyboardLayout {LCID_SYSTEM:04x}:{lcid:08x}')
-            out, err, exit_code = run_command(command)
-            if exit_code == 0:
-                user32.MessageBoxW(self.hwnd, out.decode('oem').strip(), '', MB_ICONINFORMATION)
-                self.lcid_current = lcid
+            if HAS_EXPLORER:
+                if user32.LoadKeyboardLayoutW(f"{lcid:08x}", 1):
+                    self.lcid_current = lcid
             else:
-                user32.MessageBoxW(self.hwnd, err.decode('oem').strip(), '', MB_ICONERROR)
+                command = os.path.expandvars(f'%windir%\\system32\\wpeutil.exe SetKeyboardLayout {LCID_SYSTEM:04x}:{lcid:08x}')
+                out, err, exit_code = run_command(command)
+                if exit_code == 0:
+#                    user32.MessageBoxW(self.hwnd, out.decode('oem').strip(), '', MB_ICONINFORMATION)
+                    user32.LoadKeyboardLayoutW(f'{lcid:08x}', 1)
+                    self.lcid_current = lcid
+                else:
+                    user32.MessageBoxW(self.hwnd, err.decode('oem').strip(), '', MB_ICONERROR)
 
         user32.DestroyMenu(hmenu_keyboard)
 
