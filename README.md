@@ -61,7 +61,7 @@ WinSetupShell can also be used with a multi-boot USB drive created with [Ventoy]
 Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `Network -> Initialize Network` from the start menu. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
 
 If you want to start network by default, add line  
-`wpeutil.exe InitializeNetwork`  
+`wpeutil.exe InitializeNetwork /NoWait`  
 to the end of file  
 `shell_data\userprofile\AppData\autoexec.bat`.
 
@@ -217,7 +217,3 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 - (Possibly open `src\main.py` or some other .py file with Notepad++ and make your own code adjustments. Or edit `resources\resources.rc` and then compile it with `resources\make_resources_dll.cmd`.)
 
 - Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
-
-## ToDo
-
-Add a file manager that doesn't depend on shell notifications via SHChangeNotifyRegister, and therefor also in PE keeps its current view always in sync with the actual file system.
