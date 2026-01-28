@@ -130,6 +130,6 @@ REM Associate .dll with PEView
 REG ADD "HKCR\dllfile\shell\open\command" /ve /t REG_EXPAND_SZ /d """%%programs%%\PEView\peview.exe"" ""%%1""" /f
 
 REM Autorun arbitrary programs using the "start" command
-REM wpeutil.exe InitializeNetwork
+REM wpeutil.exe InitializeNetwork /NoWait
 REM start "" "%windir%\Notepad.exe"
 REM start "" "%programs%\PENetwork\PENetwork.exe"

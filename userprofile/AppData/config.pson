@@ -17,4 +17,10 @@
 
 	# Hide Documents and Downloads
 	#"DESKTOP_ITEMS": ["ThisPC", "RecycleBin"],
+
+	# Increase taskbar and icon size by factor 2
+	#"SCALE": 2,
+
+	# Provide a debug console (toggle with F11)
+	#"DEBUG": True,
 }

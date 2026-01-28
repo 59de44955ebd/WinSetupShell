@@ -2,6 +2,8 @@
 from const import APPDATA_DIR
 
 IS_DARK = True
+DEBUG = False
+SCALE = 0  # 0 = auto
 
 DESKTOP_ICON_SIZE = 32
 DESKTOP_ICON_SPACING_HORIZONTAL = 50  # Win 11 default: 75

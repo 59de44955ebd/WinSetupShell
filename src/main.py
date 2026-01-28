@@ -29,7 +29,7 @@ from utils import *
 
 from window_switcher import WindowSwitcher
 
-DEBUG_CONSOLE = not IS_CONSOLE and '/debug' in sys.argv
+DEBUG_CONSOLE = not IS_CONSOLE and (DEBUG or '/debug' in sys.argv)
 
 TASK_HWNDS_IGNORE = []
 
@@ -176,11 +176,14 @@ class Main(MainWin):
             h_brush = DARK_TASKBAR_BG_BRUSH if IS_DARK else COLOR_3DFACE + 1,
         )
 
-        self._scale = max(1, min(3, user32.GetDpiForWindow(self.hwnd) // 96))
         if '/x2' in sys.argv:
             self._scale = 2
         elif '/x3' in sys.argv:
             self._scale = 3
+        elif SCALE:
+            self._scale = SCALE
+        else:
+            self._scale = max(1, min(3, user32.GetDpiForWindow(self.hwnd) // 96))
 
         self._taskbar_height = TASKBAR_HEIGHT * self._scale
 
@@ -457,8 +460,7 @@ class Main(MainWin):
         self.register_message_callback(WM_NOTIFY, _on_WM_NOTIFY)
 
         # This only works in PE, in standard Windows the windows key is reserved
-        if not HAS_EXPLORER:
-            self.register_hotkeys()
+        self.register_hotkeys()
 
         if IS_DARK:
             Window.apply_theme(self, True)
@@ -521,13 +523,14 @@ class Main(MainWin):
 
         self.register_message_callback(WM_HOTKEY, _on_WM_HOTKEY)
 
-        user32.RegisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER, MOD_WIN | MOD_ALT | MOD_NOREPEAT, VK_DELETE)
-        user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_LWIN)
-        user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_RWIN)
-        user32.RegisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP, MOD_WIN | MOD_NOREPEAT, ord('D'))
-        user32.RegisterHotKey(self.hwnd, IDM_RUN_EXPLORER, MOD_WIN | MOD_NOREPEAT, ord('E'))
-        user32.RegisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG, MOD_WIN | MOD_NOREPEAT, ord('R'))
-        user32.RegisterHotKey(self.hwnd, IDM_RUN_SEARCH, MOD_WIN | MOD_NOREPEAT, ord('S'))
+        if not HAS_EXPLORER:
+            user32.RegisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER, MOD_WIN | MOD_ALT | MOD_NOREPEAT, VK_DELETE)
+            user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_LWIN)
+            user32.RegisterHotKey(self.hwnd, IDM_OPEN_STARTMENU, MOD_WIN | MOD_NOREPEAT, VK_RWIN)
+            user32.RegisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP, MOD_WIN | MOD_NOREPEAT, ord('D'))
+            user32.RegisterHotKey(self.hwnd, IDM_RUN_EXPLORER, MOD_WIN | MOD_NOREPEAT, ord('E'))
+            user32.RegisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG, MOD_WIN | MOD_NOREPEAT, ord('R'))
+            user32.RegisterHotKey(self.hwnd, IDM_RUN_SEARCH, MOD_WIN | MOD_NOREPEAT, ord('S'))
         user32.RegisterHotKey(self.hwnd, IDM_SHOW_WINDOW_SWITCHER, MOD_CONTROL | MOD_NOREPEAT, VK_TAB)
 
         if DEBUG_CONSOLE:
@@ -537,12 +540,13 @@ class Main(MainWin):
     #
     ########################################
     def unregister_hotkeys(self):
-        user32.UnregisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER)
-        user32.UnregisterHotKey(self.hwnd, IDM_OPEN_STARTMENU)
-        user32.UnregisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG)
-        user32.UnregisterHotKey(self.hwnd, IDM_RUN_EXPLORER)
-        user32.UnregisterHotKey(self.hwnd, IDM_RUN_SEARCH)
-        user32.UnregisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP)
+        if not HAS_EXPLORER:
+            user32.UnregisterHotKey(self.hwnd, IDM_OPEN_TASKMANAGER)
+            user32.UnregisterHotKey(self.hwnd, IDM_OPEN_STARTMENU)
+            user32.UnregisterHotKey(self.hwnd, IDM_SHOW_RUN_DIALOG)
+            user32.UnregisterHotKey(self.hwnd, IDM_RUN_EXPLORER)
+            user32.UnregisterHotKey(self.hwnd, IDM_RUN_SEARCH)
+            user32.UnregisterHotKey(self.hwnd, IDM_TOGGLE_DESKTOP)
         user32.UnregisterHotKey(self.hwnd, IDM_SHOW_WINDOW_SWITCHER)
 
         if DEBUG_CONSOLE:
@@ -1550,8 +1554,7 @@ class Main(MainWin):
     #
     ########################################
     def quit(self, start_explorer=True):
-        if not HAS_EXPLORER:
-            self.unregister_hotkeys()
+        self.unregister_hotkeys()
 
         if self.desktop:
             user32.DestroyWindow(self.desktop.hwnd)
