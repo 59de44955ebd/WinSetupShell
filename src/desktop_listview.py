@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 from winapp.comtypes import COMObject
 from winapp.const import *
@@ -10,10 +11,13 @@ from winapp.mainwin import *
 from winapp.menu import MENUITEMINFOW
 from winapp.shellapi_min import *
 
+from filesystem_watcher import *
+
 from const import *
 from config import *
 
 DESKTOP_SHELL_ITEMS = [eval(f'CLSID_{i}') for i in DESKTOP_ITEMS]
+HAS_RECYCLEBIN = 'RecycleBin' in DESKTOP_ITEMS
 
 BHID_SFUIObject = GUID('{3981E225-F559-11D3-8E3A-00C04F6837D5}')
 
@@ -178,15 +182,17 @@ class Desktop(MainWin, COMObject):
         COMObject.__init__(self)
         ole32.OleInitialize(0)
 
-        self.desktop_item_map = {}  # item_id: DesktopItem
+        self.desktop_item_map = {}  # item_id => DesktopItem
         self.hot_item_idx = None
         self.is_dragging = False
         self.is_internal_drag = False
         self.pdto = POINTER(IDataObject)()
         self.scale = mainwin._scale
 
-        self.h_icon_recyclebin = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(32), IMAGE_ICON, DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, 0)
-        self.h_icon_recyclebin_filled = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(33), IMAGE_ICON, DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, 0)
+        self.last_new_timestamp = 0
+        self.last_drop_timestamp = 0
+        self.is_copy = False
+        self.last_mouse_pos = POINT()
 
         rc_desktop = RECT()
         user32.GetWindowRect(user32.GetDesktopWindow(), byref(rc_desktop))
@@ -219,11 +225,17 @@ class Desktop(MainWin, COMObject):
         ########################################
         # Recycle Bin
         ########################################
-        self.pidl_recyclebin = PIDL()
-        HRCHECK(shell32.SHGetSpecialFolderLocation(0, CSIDL_BITBUCKET, byref(self.pidl_recyclebin)))
+        if HAS_RECYCLEBIN:
+            self.h_icon_recyclebin = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(32), IMAGE_ICON, DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, 0)
+            self.h_icon_recyclebin_filled = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(33), IMAGE_ICON, DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, 0)
 
-        self.ishellfolder_recyclebin = (POINTER(IShellFolder))()
-        self.ishellfolder_desktop.BindToObject(self.pidl_recyclebin, 0, IShellFolder._iid_, byref(self.ishellfolder_recyclebin))
+            self.pidl_recyclebin = PIDL()
+            HRCHECK(shell32.SHGetSpecialFolderLocation(0, CSIDL_BITBUCKET, byref(self.pidl_recyclebin)))
+
+            self.ishellfolder_recyclebin = (POINTER(IShellFolder))()
+            self.ishellfolder_desktop.BindToObject(self.pidl_recyclebin, 0, IShellFolder._iid_, byref(self.ishellfolder_recyclebin))
+
+            self.recyclebin_filled = self.is_recyclebin_filled()
 
         self.listview = ListView(
             self,
@@ -344,94 +356,136 @@ class Desktop(MainWin, COMObject):
             #
             ########################################
             elif msg == LVN_BEGINDRAG or msg == LVN_BEGINRDRAG:
+
                 self.is_internal_drag = True
                 self.drag_items_idx_list = self.get_selected_item_indexes()
 
                 selected_pidls = self.get_item_pidls(self.drag_items_idx_list)
-                if selected_pidls:
-                    nm = cast(lparam, LPNMLISTVIEW).contents
+                nm = cast(lparam, LPNMLISTVIEW).contents
 
-                    cursor_pos = POINT()
-                    user32.GetCursorPos(byref(cursor_pos))  # In screen coordinates
+                cursor_pos = POINT()
+                user32.GetCursorPos(byref(cursor_pos))  # In screen coordinates
 
-                    pt = POINT()
-                    self.listview.send_message(LVM_GETITEMPOSITION, nm.iItem, byref(pt))
-                    dx, dy = cursor_pos.x - pt.x, cursor_pos.y - pt.y
+                pt = POINT()
+                self.listview.send_message(LVM_GETITEMPOSITION, nm.iItem, byref(pt))
+                dx, dy = cursor_pos.x - pt.x, cursor_pos.y - pt.y
 
-                    lvi = LVITEMW()
-                    lvi.iItem = nm.iItem
-                    lvi.mask = LVIF_IMAGE
-                    self.listview.send_message(LVM_GETITEMW, 0, byref(lvi))
+                lvi = LVITEMW()
+                lvi.iItem = nm.iItem
+                lvi.mask = LVIF_IMAGE
+                self.listview.send_message(LVM_GETITEMW, 0, byref(lvi))
 
-                    # Begins dragging an image. dxHotspot, dyHotspot: drag position relative to the upper-left corner
-                    comctl32.ImageList_BeginDrag(self.h_imagelist, lvi.iImage, dx, dy)
+                # Begins dragging an image. dxHotspot, dyHotspot: drag position relative to the upper-left corner
+                comctl32.ImageList_BeginDrag(self.h_imagelist, lvi.iImage, dx, dy)
 
-                    # Displays the drag image at the specified position within the window.
-                    # Coordinate are relative to the upper-left corner of the window, not the client area
-                    comctl32.ImageList_DragEnter(self.listview.hwnd, -dx, -dy)
-                    self.drag_hotspot = POINT(dx, dy)
+                # Displays the drag image at the specified position within the window.
+                # Coordinate are relative to the upper-left corner of the window, not the client area
+                comctl32.ImageList_DragEnter(self.listview.hwnd, -dx, -dy)
+                self.drag_hotspot = POINT(dx, dy)
 
-                    cidl = len(selected_pidls)
-                    apidl = (PIDL * cidl)(*selected_pidls)
+                cidl = len(selected_pidls)
+                apidl = (PIDL * cidl)(*selected_pidls)
 
-                    # apidl: array of child PIDLs relative to shell folder
-                    self.ishellfolder_desktop.GetUIObjectOf(self.listview.hwnd, cidl, apidl, IDataObject._iid_, None, byref(self.pdto))
+                # apidl: array of child PIDLs relative to shell folder
+                self.ishellfolder_desktop.GetUIObjectOf(self.listview.hwnd, cidl, apidl, IDataObject._iid_, None, byref(self.pdto))
 
-                    dwEffect = DWORD()
-                    shell32.SHDoDragDrop(
-                        self.listview.hwnd,
-                        self.pdto,
-                        None,
-                        DROPEFFECT_COPY | DROPEFFECT_MOVE | (DROPEFFECT_LINK if msg == LVN_BEGINRDRAG else 0),
-                        byref(dwEffect)
-                    )
+                dwEffect = DWORD()
+                shell32.SHDoDragDrop(
+                    self.listview.hwnd,
+                    self.pdto,
+                    None,
+                    DROPEFFECT_COPY | DROPEFFECT_MOVE | (DROPEFFECT_LINK if msg == LVN_BEGINRDRAG else 0),
+                    byref(dwEffect)
+                )
+                self.is_internal_drag = False
 
         self.register_message_callback(WM_NOTIFY, _on_WM_NOTIFY)
-
-        ########################################
-        #
-        ########################################
-        def _on_WM_KEYDOWN(hwnd, wparam, lparam):
-
-            if wparam == VK_DELETE:
-                files = []
-                for item_idx in self.get_selected_item_indexes():
-                    item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
-                    desktop_item = self.desktop_item_map[item_id]
-                    if desktop_item.item_type != ITEM_TYPE_SHELL:
-                        files.append(os.path.join(DESKTOP_DIR, desktop_item.name))
-                num_files = len(files)
-                if num_files:
-                    pidl_list = (PIDL * num_files)()
-                    for i, fn in enumerate(files):
-                        pidl_list[i] = shell32.ILCreateFromPathW(os.path.join(DESKTOP_DIR, fn))
-
-                    shell_item_array = (POINTER(IShellItemArray))()
-                    HRCHECK(shell32.SHCreateShellItemArrayFromIDLists(num_files, pidl_list, byref(shell_item_array)))
-                    icontextmenu = (POINTER(IContextMenu))()
-                    shell_item_array.BindToHandler(None, BHID_SFUIObject, byref(IContextMenu._iid_), byref(icontextmenu))
-                    self.invoke_verb(icontextmenu, b'delete')
-                    for i in range(num_files):
-                        shell32.ILFree(pidl_list[i])
-
-                    self.update_desktop()
-                    self.update_recyclebin()
-
-            elif wparam == VK_F5:
-                self.update_desktop()
-                self.update_recyclebin()
-
-        self.listview.register_message_callback(WM_KEYDOWN, _on_WM_KEYDOWN)
 
         self.show()
 
         HRCHECK(ole32.RegisterDragDrop(self.listview.hwnd, self))
 
+        self.watcher = FileSystemWatcher()
+
+        ########################################
+        #
+        ########################################
+        def _on_item_created(path, is_dir):
+            fn = os.path.basename(path)
+            is_lnk = not is_dir and fn.lower().endswith('.lnk')
+
+            lvi = LVITEMW()
+            lvi.mask = LVIF_TEXT | LVIF_IMAGE
+
+            sfi = SHFILEINFOW()
+            shell32.SHGetFileInfoW(path, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_ADDOVERLAYS) # SHGFI_SMALLICON
+            idx_icon = comctl32.ImageList_ReplaceIcon(self.h_imagelist, -1, sfi.hIcon)
+
+            lvi.iItem = self.listview.send_message(LVM_GETITEMCOUNT, 0, 0)
+            lvi.pszText = fn[:-4] if not is_dir and is_lnk else fn
+            lvi.iImage = idx_icon
+            item_idx = self.listview.insert_item(lvi)
+
+            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
+            self.desktop_item_map[item_id] = DesktopItem(fn, ITEM_TYPE_FOLDER if is_dir else (ITEM_TYPE_LNK if is_lnk else ITEM_TYPE_FILE))
+
+            now = time.time()
+            if now - self.last_new_timestamp < 1:
+                self.listview.send_message(LVM_SETITEMPOSITION, item_idx, MAKELPARAM(self.last_mouse_pos.x, self.last_mouse_pos.y))
+                self.listview.send_message(LVM_EDITLABELW, item_idx, 0)
+
+            elif now - self.last_drop_timestamp < 1 or self.is_copy:
+                self.listview.send_message(LVM_SETITEMPOSITION, item_idx, MAKELPARAM(self.last_mouse_pos.x, self.last_mouse_pos.y))
+                self.last_mouse_pos.y += self.scale * (DESKTOP_ICON_SIZE + DESKTOP_ICON_SPACING_VERTICAL)
+
+        self.watcher.connect(EVENT_ITEM_CREATED, _on_item_created)
+
+        ########################################
+        #
+        ########################################
+        def _on_item_removed(path, is_dir):
+            fn = os.path.basename(path)
+            for item_id, di in self.desktop_item_map.items():
+                if di.name == fn:
+                    item_idx = self.listview.send_message(LVM_MAPIDTOINDEX, item_id, 0)
+                    self.listview.send_message(LVM_DELETEITEM, item_idx, 0)
+                    del self.desktop_item_map[item_id]
+                    break
+
+        self.watcher.connect(EVENT_ITEM_REMOVED, _on_item_removed)
+
+        ########################################
+        #
+        ########################################
+        def _on_item_renamed(path_old, path_new, is_dir):
+            fn_old = os.path.basename(path_old)
+            for item_id, di in self.desktop_item_map.items():
+                if di.name == fn_old:
+                    item_idx = self.listview.send_message(LVM_MAPIDTOINDEX, item_id, 0)
+
+                    fn_new = os.path.basename(path_new)
+                    di.name = fn_new
+
+                    lvi = LVITEMW()
+                    lvi.mask = LVIF_TEXT
+                    lvi.pszText = fn_new[:-4] if di.item_type == ITEM_TYPE_LNK else fn_new
+
+                    self.listview.send_message(LVM_SETITEMTEXTW, item_idx, byref(lvi))
+
+                    break
+
+        self.watcher.connect(EVENT_ITEM_RENAMED, _on_item_renamed)
+
+        self.watcher.start_watching(DESKTOP_DIR)
+
+        if HAS_RECYCLEBIN:
+            # Without shell notifications we have to poll
+            mainwin.create_timer(self.update_recyclebin, DESKTOP_RECYCLEBIN_POLL_PERIOD_MS)
+
     ########################################
     # IDropTarget
     ########################################
     def IDropTarget_DragEnter(self, data_obj, key_state, pt, effect):
-        #print('>>>> DragEnter', key_state, (pt.x, pt.y), effect.contents.value)
 
         if self.is_internal_drag:
             self.drop_key_state = key_state
@@ -444,7 +498,6 @@ class Desktop(MainWin, COMObject):
     # IDropTarget
     ########################################
     def IDropTarget_DragOver(self, key_state, pt, effect):
-#        print('DragOver')
 
         if self.is_internal_drag:
 
@@ -489,7 +542,7 @@ class Desktop(MainWin, COMObject):
     # IDropTarget
     ########################################
     def IDropTarget_DragLeave(self):
-#        print('IDropTarget_DragLeave')
+
         if self.is_internal_drag:
             comctl32.ImageList_DragMove(-1000, -1000)
             self.drop_files = None
@@ -501,7 +554,7 @@ class Desktop(MainWin, COMObject):
     # IDropTarget
     ########################################
     def IDropTarget_Drop(self, data_obj, key_state, pt, effect):
-#        print('>>>> Drop', key_state, (pt.x, pt.y), effect.contents.value)
+
         if self.is_internal_drag:
             self.is_internal_drag = False
 
@@ -548,7 +601,6 @@ class Desktop(MainWin, COMObject):
                     fos.fFlags = FOF_ALLOWUNDO
                     shell32.SHFileOperationW(byref(fos))
 
-                    self.update_desktop()
                     if is_recyclebin:
                         self.update_recyclebin()
 
@@ -569,17 +621,23 @@ class Desktop(MainWin, COMObject):
                     self.listview.send_message(LVM_SETITEMPOSITION, item_idx, MAKELPARAM(pt.x - self.drag_hotspot.x, pt.y - self.drag_hotspot.y))
                 self.drag_items_idx_list = None
 
-            else:  # Show popup menu with copy and link
+            else:  # right button - Show popup menu with copy and link
                 self.idroptarget_desktop_dir.DragEnter(data_obj, self.drop_key_state, pt, effect)
                 effect.contents = DWORD(DROPEFFECT_COPY | DROPEFFECT_LINK)
+                self.last_mouse_pos = pt
+                self.is_copy = True
                 self.idroptarget_desktop_dir.Drop(data_obj, self.drop_key_state, pt, effect)
-                self.create_timer(lambda drop_point=pt: self.update_desktop(drop_point), 100, True)
+                self.is_copy = False
                 return effect.contents
 
             return DROPEFFECT_NONE
 
+        # Drop from Explorer++
+        self.last_drop_timestamp = time.time()
+        self.last_mouse_pos = pt
+
         self.idroptarget_desktop_dir.Drop(data_obj, key_state, pt, effect)
-        self.create_timer(lambda drop_point=pt: self.update_desktop(drop_point), 100, True)
+
         return effect.contents
 
     ########################################
@@ -638,72 +696,13 @@ class Desktop(MainWin, COMObject):
         for item_idx in item_indexes:
             item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
             desktop_item = self.desktop_item_map[item_id]
-
-#            if desktop_item.item_type == ITEM_TYPE_SHELL:
-#                continue
-
             pidl_child = PIDL()
-
             if desktop_item.item_type == ITEM_TYPE_SHELL:
                 shell32.SHParseDisplayName('::' + desktop_item.clsid, None, byref(pidl_child), 0, None)
             else:
-
                 self.ishellfolder_desktop.ParseDisplayName(None, None, os.path.join(DESKTOP_DIR, desktop_item.name), None, byref(pidl_child), None)
-
             pidls.append(pidl_child)
         return pidls
-
-    ########################################
-    #
-    ########################################
-    def update_desktop(self, drop_point = None):
-        files = [f for f in os.listdir(DESKTOP_DIR) if f.lower() != 'desktop.ini']
-
-        previous_files = [di.name for di in self.desktop_item_map.values() if di.item_type != ITEM_TYPE_SHELL]
-        new_files = [f for f in files if f not in previous_files]
-        deleted_files = [f for f in previous_files if f not in files]
-
-        for f in deleted_files:
-            for item_id, di in self.desktop_item_map.items():
-                if di.name == f:
-                    item_idx = self.listview.send_message(LVM_MAPIDTOINDEX, item_id, 0)
-                    self.listview.send_message(LVM_DELETEITEM, item_idx, 0)
-                    del self.desktop_item_map[item_id]
-                    break
-
-        i = self.listview.send_message(LVM_GETITEMCOUNT, 0, 0)
-
-        lvi = LVITEMW()
-        lvi.mask = LVIF_TEXT | LVIF_IMAGE
-
-        new_items = []
-
-        for fn in new_files:
-            path = os.path.join(DESKTOP_DIR, fn)
-            is_dir = os.path.isdir(path)
-            is_lnk = not is_dir and fn.lower().endswith('.lnk')
-
-            sfi = SHFILEINFOW()
-            shell32.SHGetFileInfoW(path, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_ADDOVERLAYS) # SHGFI_SMALLICON
-            idx_icon = comctl32.ImageList_ReplaceIcon(self.h_imagelist, -1, sfi.hIcon)
-
-            lvi.iItem = i
-            lvi.pszText = fn[:-4] if not is_dir and is_lnk else fn
-            lvi.iImage = idx_icon
-            item_idx = self.listview.insert_item(lvi)
-
-            if drop_point:
-                self.listview.send_message(LVM_SETITEMPOSITION, item_idx,
-                    MAKELPARAM(drop_point.x, drop_point.y)
-                )
-
-            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
-            self.desktop_item_map[item_id] = DesktopItem(fn, ITEM_TYPE_FOLDER if is_dir else (ITEM_TYPE_LNK if is_lnk else ITEM_TYPE_FILE))
-            new_items.append(item_idx)
-
-            i += 1
-
-        return new_items
 
     ########################################
     #
@@ -729,17 +728,12 @@ class Desktop(MainWin, COMObject):
             display_name = st.pOleStr
 
             if clsid == CLSID_RecycleBin:
-                h_icon = self.h_icon_recyclebin_filled if self.is_recyclebin_filled() else self.h_icon_recyclebin
+                h_icon = self.h_icon_recyclebin_filled if self.recyclebin_filled else self.h_icon_recyclebin
                 idx_icon = self.idx_icon_recyclebin = comctl32.ImageList_ReplaceIcon(self.h_imagelist, -1, h_icon)
             else:
                 # A)
-#                h_imagelist = shell32.SHGetFileInfoW(pidl, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_SYSICONINDEX | SHGFI_PIDL)  #  | SHGFI_ICON | SHGFI_SMALLICON)
+#                h_imagelist = shell32.SHGetFileInfoW(pidl, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_SYSICONINDEX | SHGFI_PIDL)
 #                h_icon = comctl32.ImageList_GetIcon(h_imagelist, sfi.iIcon, ILD_NORMAL)
-
-                # TEST
-#                cx, cy = INT(), INT()
-#                comctl32.ImageList_GetIconSize(h_imagelist, byref(cx), byref(cy))
-#                print('TEST SHELL', cx, cy)
 
                 # B)
                 shell32.SHGetFileInfoW(pidl, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_PIDL | SHGFI_ICON | SHGFI_LARGEICON)
@@ -773,11 +767,6 @@ class Desktop(MainWin, COMObject):
             is_lnk = not is_dir and fn.lower().endswith('.lnk')
 
             shell32.SHGetFileInfoW(path, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_ADDOVERLAYS | SHGFI_LARGEICON)
-
-            # TEST
-#            cx, cy = INT(), INT()
-#            comctl32.ImageList_GetIconSize(self.h_imagelist, byref(cx), byref(cy))
-#            print('TEST', cx, cy)
 
             icon_idx = comctl32.ImageList_ReplaceIcon(self.h_imagelist, -1, sfi.hIcon)
             user32.DestroyIcon(sfi.hIcon)
@@ -865,27 +854,11 @@ class Desktop(MainWin, COMObject):
                 info.nShow = SW_SHOWNORMAL
                 context_menu.InvokeCommand(byref(info))
 
-                if verb == 'delete':
-                    self.update_desktop()
+                if HAS_RECYCLEBIN and verb == 'delete':
                     self.update_recyclebin()
-
-                elif verb == 'empty':
-                    self.create_timer(self.handle_empty, 500, True)
 
         self.unregister_message_callback(WM_INITMENUPOPUP)
         user32.DestroyMenu(h_menu)
-
-    ########################################
-    #
-    ########################################
-    def handle_empty(self):
-        def _check_empty():
-            if not self.is_recyclebin_filled():
-                self.kill_timer(self.timer_id_check_recyclebin)
-                self.timer_id_check_recyclebin = None
-                self.update_recyclebin()
-        self.timer_id_check_recyclebin = self.create_timer(_check_empty, 250)
-        self.create_timer(lambda: self.kill_timer(self.timer_id_check_recyclebin) if self.timer_id_check_recyclebin else None, 10000, True)
 
     ########################################
     # Show context menu for BACKGROUND of DESKTOP_DIR
@@ -930,14 +903,6 @@ class Desktop(MainWin, COMObject):
             if verb == 'refresh':
                 self.action_refresh()
 
-#            elif verb == 'undo':
-#                if self.last_op == FO_DELETE:
-#                    self.undo_last_delete()
-
-#                elif verb == 'redo':
-#                    if self.last_op == FO_UNDO:
-#                        self.redo_last_delete()
-
             elif verb == 'paste':
                 self.action_paste()
 
@@ -948,17 +913,16 @@ class Desktop(MainWin, COMObject):
                 shell32.ShellExecuteW(self.hwnd, None, os.path.expandvars('%programs%\\PowerShell\\pwsh.exe'), None, DESKTOP_DIR, SW_SHOWNORMAL)
 
             else:
+                if verb == 'NewFolder' or verb.startswith('.'):
+                    self.last_new_timestamp = time.time()
+                    self.last_mouse_pos = POINT(x, y)
+
                 info = CMINVOKECOMMANDINFO()
                 info.hwnd = self.hwnd
                 info.lpVerb = MAKEINTRESOURCEA(cmd_id)
                 info.fMask = CMIC_MASK_NOASYNC
                 info.nShow = SW_SHOWNORMAL
                 context_menu.InvokeCommand(byref(info))
-
-                if verb.startswith('New') or verb.startswith('.'):
-                    new_items = self.update_desktop()
-                    if len(new_items) == 1:
-                        self.listview.send_message(LVM_EDITLABELW, new_items[0], 0)
 
         self.unregister_message_callback(WM_INITMENUPOPUP)
         user32.DestroyMenu(h_menu)
@@ -970,28 +934,45 @@ class Desktop(MainWin, COMObject):
         enum_files = (POINTER(IEnumIDList))()
         self.ishellfolder_recyclebin.EnumObjects(0, SHCONTF_FOLDERS | SHCONTF_NONFOLDERS | SHCONTF_INCLUDEHIDDEN, byref(enum_files))
         pidl = PIDL()
-        return enum_files.Next(1, byref(pidl), None) != S_FALSE
+        is_filled = enum_files.Next(1, byref(pidl), None) != S_FALSE
+        if is_filled:
+            shell32.ILFree(pidl)
+        return is_filled
 
     ########################################
     #
     ########################################
     def update_recyclebin(self):
-        recyclebin_filled = self.is_recyclebin_filled()
-        comctl32.ImageList_ReplaceIcon(
-            self.h_imagelist,
-            self.idx_icon_recyclebin,
-            self.h_icon_recyclebin_filled if self.is_recyclebin_filled() else self.h_icon_recyclebin
-        )
-        idx = DESKTOP_SHELL_ITEMS.index(CLSID_RecycleBin)
-        self.listview.send_message(LVM_REDRAWITEMS, idx, idx)
+        is_filled = self.is_recyclebin_filled()
+        if is_filled != self.recyclebin_filled:
+            self.recyclebin_filled = is_filled
+            comctl32.ImageList_ReplaceIcon(
+                self.h_imagelist,
+                self.idx_icon_recyclebin,
+                self.h_icon_recyclebin_filled if is_filled else self.h_icon_recyclebin
+            )
+            idx = DESKTOP_SHELL_ITEMS.index(CLSID_RecycleBin)
+            self.listview.send_message(LVM_REDRAWITEMS, idx, idx)
+
+    ########################################
+    #
+    ########################################
+    def ghost_items(self, item_indexes):
+        lvi = LVITEMW()
+        lvi.mask = LVIF_STATE
+        lvi.stateMask = LVIS_CUT
+        lvi.state = LVIS_CUT
+        for item_idx in item_indexes:
+            lvi.iItem = item_idx
+            self.listview.send_message(LVM_SETITEMW, 0, byref(lvi))
 
     ########################################
     #
     ########################################
     def action_cut(self):
         selected_indexes = self.invoke_verb_on_selection(b'cut')
-#        if selected_indexes:
-#            self.listview.ghost_items(selected_indexes)
+        if selected_indexes:
+            self.ghost_items(selected_indexes)
 
     ########################################
     #
@@ -1041,21 +1022,59 @@ class Desktop(MainWin, COMObject):
 
         shell32.SHFileOperationW(byref(fos))
 
-        self.update_desktop()
-
     ########################################
     #
     ########################################
     def action_delete(self):
         self.invoke_verb_on_selection(b'delete')
-        self.action_refresh()
 
     ########################################
-    #
+    # If the filesystem watcher works fine, this should never make a difference
     ########################################
     def action_refresh(self):
-        self.update_desktop()
-        self.update_recyclebin()
+        files = [f for f in os.listdir(DESKTOP_DIR) if f.lower() != 'desktop.ini']
+
+        previous_files = [di.name for di in self.desktop_item_map.values() if di.item_type != ITEM_TYPE_SHELL]
+        new_files = [f for f in files if f not in previous_files]
+        deleted_files = [f for f in previous_files if f not in files]
+
+        for f in deleted_files:
+            for item_id, di in self.desktop_item_map.items():
+                if di.name == f:
+                    item_idx = self.listview.send_message(LVM_MAPIDTOINDEX, item_id, 0)
+                    self.listview.send_message(LVM_DELETEITEM, item_idx, 0)
+                    del self.desktop_item_map[item_id]
+                    break
+
+        i = self.listview.send_message(LVM_GETITEMCOUNT, 0, 0)
+
+        lvi = LVITEMW()
+        lvi.mask = LVIF_TEXT | LVIF_IMAGE
+
+        new_items = []
+
+        for fn in new_files:
+            path = os.path.join(DESKTOP_DIR, fn)
+            is_dir = os.path.isdir(path)
+            is_lnk = not is_dir and fn.lower().endswith('.lnk')
+
+            sfi = SHFILEINFOW()
+            shell32.SHGetFileInfoW(path, 0, byref(sfi), sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_ADDOVERLAYS) # SHGFI_SMALLICON
+            idx_icon = comctl32.ImageList_ReplaceIcon(self.h_imagelist, -1, sfi.hIcon)
+
+            lvi.iItem = i
+            lvi.pszText = fn[:-4] if not is_dir and is_lnk else fn
+            lvi.iImage = idx_icon
+            item_idx = self.listview.insert_item(lvi)
+
+            item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
+            self.desktop_item_map[item_id] = DesktopItem(fn, ITEM_TYPE_FOLDER if is_dir else (ITEM_TYPE_LNK if is_lnk else ITEM_TYPE_FILE))
+            new_items.append(item_idx)
+
+            i += 1
+
+        if HAS_RECYCLEBIN:
+            self.update_recyclebin()
 
     ########################################
     #

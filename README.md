@@ -128,8 +128,6 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 
 ## Notes
 
-- Windows PE doesn't provide shell notications for file system changes, therefor there are occasions where you have to refresh the current view manually (via right-click popup menu or F5).
-
 - WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Exit" from the popup menu.
 
 - The shell itself, which only uses very few words like "Start" and "Exit", is english only, no localisation (since I don't care). But shell items on the desktop and the time/date format in the clock are localized, and many of the provided applications are as well. And of course you can translate the start menu (5 words and 9 category names) yourself by editing `start_menu.pson` (see below), just takes about a minute.
@@ -144,7 +142,7 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 
 - Only portable x64 applications based on the plain WinAPI can be used, so no .NET, UWP etc.
 
-- There might be issues with some HiDPI displays.
+- There might be issues with some HiDPI displays. If you have a HiDPI display and the taskbar is too small or the clock's text doesn't fit correctly, try adding line `"SCALE": 2,` or `"SCALE": 3,` to `config.pson`.
 
 - WinSetupShell can also be used with Windows 10 22H2 setup media instead of Windows 11, but not all provided programs will work. In particular PortableGit and TestDisk fail in the Windows 10 setup PE.
 

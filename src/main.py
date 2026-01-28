@@ -26,7 +26,6 @@ from config import *
 from desktop_listview import Desktop
 from resources import *
 from utils import *
-
 from window_switcher import WindowSwitcher
 
 DEBUG_CONSOLE = not IS_CONSOLE and (DEBUG or '/debug' in sys.argv)
@@ -119,15 +118,12 @@ class Main(MainWin):
         if not HAS_EXPLORER:
             autoexec = os.path.join(APPDATA_DIR, 'autoexec.bat')
             if os.path.isfile(autoexec):
-
-#                shell32.ShellExecuteW(None, None, autoexec, None, None, SW_HIDE)
-
                 si = SHELLEXECUTEINFOW()
                 si.fMask = SEE_MASK_NOCLOSEPROCESS
                 si.lpFile = autoexec
                 si.nShow = SW_HIDE
                 shell32.ShellExecuteExW(byref(si))
-                kernel32.WaitForSingleObject(si.hProcess, 1000)
+                kernel32.WaitForSingleObject(si.hProcess, 1000)  # INFINITE
                 kernel32.CloseHandle(si.hProcess)
 
         # This successfully adds the wallpaper to the setup UI, but it's not visible on the custom desktop
@@ -222,9 +218,6 @@ class Main(MainWin):
             IDM_REFRESH:                self.desktop.action_refresh,
             IDM_SELECT_ALL:             self.desktop.action_select_all,
 
-#            IDM_UNDO:                   self.desktop.action_undo,
-#            IDM_REDO:                   self.desktop.action_redo,
-
             # hotkeys
             IDM_OPEN_TASKMANAGER:       lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars('%windir%\\System32\\taskmgr.exe'), None, None, SW_SHOWNORMAL),
             IDM_OPEN_STARTMENU:         self.handle_win_key,
@@ -236,8 +229,6 @@ class Main(MainWin):
         }
 
         self._hmenu_start = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START)), 0)
-#        if not DEBUG_CONSOLE:
-#            user32.DeleteMenu(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND)
         self._hmenu_quick = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_QUICK)), 0)
         self._hmenu_start_item = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START_MENU_ITEM)), 0)
         self._hmenu_tasks = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_TASKS)), 0)
@@ -363,6 +354,21 @@ class Main(MainWin):
                 elif msg == NM_RCLICK:
                     user32.EndMenu()
                     self.create_timer(self.show_popupmenu_start, 10, True)
+
+            elif mh.hwndFrom == self.toolbar_quick.hwnd:
+                if msg == NM_RCLICK:
+                    nm = cast(lparam, POINTER(NMMOUSE)).contents
+                    if nm.dwItemSpec in self._quickbar_commands:
+                        exe, args = self._quickbar_commands[nm.dwItemSpec]
+                        path = os.path.dirname(exe)
+                        idm = self.show_popupmenu(self._hmenu_start_item, flags=TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
+                        user32.EndMenu()
+                        if idm == IDM_OPEN_LOCATION:
+                            shell32.ShellExecuteW(None, None, EXPLORER, path, None, SW_SHOWNORMAL)
+                        elif idm == IDM_OPEN_CMD:
+                            shell32.ShellExecuteW(None, None, 'cmd.exe', None, path, SW_SHOWNORMAL)
+                        elif idm == IDM_OPEN_POWERSHELL:
+                            shell32.ShellExecuteW(None, None, 'pwsh.exe', None, path, SW_SHOWNORMAL)
 
             # Clock tooltip
             elif self.tooltip_clock and mh.hwndFrom == self.tooltip_clock.hwnd:
@@ -1131,17 +1137,30 @@ class Main(MainWin):
 
             x = 0
             for row in quick_config:
-                h_icon = HICON()
-                res = user32.PrivateExtractIconsW(
-                    os.path.expandvars(row[1]),
-                    0,
-                    ico_size, ico_size,
-                    byref(h_icon),
-                    None,
-                    1,
-                    0
-                )
+                if len(row) == 3:
+                    label, exe, ico = row
+                else:
+                     label, exe, ico = *row, None
+                if ',' in exe:
+                    exe = exe.split(',', 1)[0]
+                if ico:
+                    if type(ico) == int:
+                        h_icon = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(ico), IMAGE_ICON, ico_size, ico_size, 0)
+                    else:
+                        h_icon = user32.LoadImageW(None, os.path.join(APPDATA_DIR, 'custom_icons', ico), IMAGE_ICON, ico_size, ico_size, LR_LOADFROMFILE)
+                else:
+                    h_icon = HICON()
+                    res = user32.PrivateExtractIconsW(
+                        os.path.expandvars(exe),
+                        0,
+                        ico_size, ico_size,
+                        byref(h_icon),
+                        None,
+                        1,
+                        0
+                    )
                 user32.DrawIconEx(hdc_dest, x, 0, h_icon, ico_size, ico_size, 0, None, DI_NORMAL)
+                user32.DestroyIcon(h_icon)
                 x += ico_size
 
             bmi = BITMAPINFO()
@@ -1175,8 +1194,7 @@ class Main(MainWin):
         self.toolbar_quick.send_message(TB_ADDBITMAP, num_buttons, byref(tb))
 
         for i, row in enumerate(quick_config):
-            label, command = row
-
+            label, exe = row[:2]
             tb_buttons[i] = TBBUTTON(
                 i,
                 command_id_counter,
@@ -1186,8 +1204,12 @@ class Main(MainWin):
                 0,
                 label,
             )
-
-            self._quickbar_commands[command_id_counter] = os.path.expandvars(command)
+            exe = os.path.expandvars(exe)
+            if ',' in exe:
+                exe, args = exe.split(',', 1)
+            else:
+                args = None
+            self._quickbar_commands[command_id_counter] = (exe, args)
             command_id_counter += 1
 
         self.toolbar_quick.send_message(TB_ADDBUTTONS, num_buttons, tb_buttons)

@@ -22,7 +22,6 @@ comctl32.ImageList_BeginDrag.argtypes = (HANDLE, INT, INT, INT)
 comctl32.ImageList_Create.restype = HANDLE
 comctl32.ImageList_GetIcon.argtypes = (HANDLE, INT, UINT)
 comctl32.ImageList_GetIcon.restype = HICON
-comctl32.ImageList_GetIconSize.argtypes = (HANDLE, LPINT, LPINT)
 comctl32.ImageList_ReplaceIcon.argtypes = (HANDLE, INT, HICON)
 gdi32.AddFontResourceW.argtypes = (LPCWSTR,)
 gdi32.CreateBitmap.argtypes = (INT, INT, UINT, UINT, LPVOID)
