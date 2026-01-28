@@ -128,7 +128,7 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 
 ## Notes
 
-- Windows PE doesn't provide shell notications for file system changes. That's why in Explorer++ you have to explicitely refresh the current view (with F5) after deleting or moving files etc. WinSetupShell tries to circumvent this issue for its desktop as effectively as possible, but there are still some occasions where you have to refresh manually to update the view.
+- Windows PE doesn't provide shell notications for file system changes, therefor there are occasions where you have to refresh the current view manually (via right-click popup menu or F5).
 
 - WinSetupShell is meant for Windows PE as provided by Windows 11 setup media, but for testing purposes it can also be run inside a regular Windows 11 system. Just unpack the release .7z and start "shell.exe". The shell (desktop) will then run fullscreen on top of the regular Windows desktop. You can quit it by right-clicking on the start menu button and selecting "Exit" from the popup menu.
 
