@@ -217,3 +217,7 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 - (Possibly open `src\main.py` or some other .py file with Notepad++ and make your own code adjustments. Or edit `resources\resources.rc` and then compile it with `resources\make_resources_dll.cmd`.)
 
 - Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
+
+## TinyWin11
+
+As by-product of this project there is another project called [TinyWin11](https://github.com/59de44955ebd/TinyWin11). It's a minimal live USB, released as disk image, based on the same custom shell and the official Windows PE as provided by Microsoft's [Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289980).
