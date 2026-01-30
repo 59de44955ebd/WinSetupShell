@@ -1,6 +1,7 @@
 build/
 dist/
 releases/
+releases_tinywin11/
 stuff/
 *.spec
 _backup.rar
@@ -8,3 +9,6 @@ programs/
 userprofile/AppData/Local
 userprofile/AppData/icon_cache/*.bmp
 userprofile/Favorites
+WinPE/
+TinyWin11_English.img
+vmware/TinyWin11_English.vmdk

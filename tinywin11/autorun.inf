@@ -1,0 +1,9 @@
+[autorun]
+open=shell.exe
+icon=shell.exe
+label=TinyWin11
+
+[AutoRun.Amd64]
+open=shell.exe
+icon=shell.exe
+label=TinyWin11

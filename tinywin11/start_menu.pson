@@ -1,0 +1,50 @@
+# encoding=utf-8
+[
+	["Explorer++", "%programs%\\Explorer++\\Explorer++.exe"],
+	"-",
+	["Programs",
+		[
+			["Accessories",
+				[
+					["Character Map", "%programs%\\Windows\\charmap.exe"],
+					["Magnifier", "%programs%\\Windows\\magnify.exe"],
+					["Notepad", "%windir%\\Notepad.exe"],
+					["WordPad", "%programs%\\WordPad\\wordpad.exe"],
+				]
+			],
+			["Other Tools",
+				[
+					["7-Zip File Manager", "%programs%\\7-Zip\\7zFM.exe"],
+					["IrfanView", "%programs%\\IrfanView\\i_view64.exe"],
+					["Notepad++", "%programs%\\Notepad++\\notepad++.exe"],
+				]
+			],
+			["System Tools",
+				[
+					["CMD", "%windir%\\System32\\cmd.exe"],
+					["PowerShell", "%windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"],
+					["RegEdit", "%windir%\\regedit.exe"],
+					["System Information", "%programs%\\Windows\\msinfo32.exe"],
+					["Task Manager", "%windir%\\System32\\taskmgr.exe"],
+				]
+			],
+		], 326
+	],
+	["Network",
+		[
+			["Initialize Network", "%windir%\\System32\\wpeutil.exe,InitializeNetwork", 257],
+			["Firewall",
+				[
+					["Disable", "%windir%\\System32\\wpeutil.exe,DisableFirewall", 240],
+					["Enable", "%windir%\\System32\\wpeutil.exe,EnableFirewall", 16802],
+				], "firewall.ico"
+			]
+		], 18
+	],
+	["Search", "%programs%\\SwiftSearch\\SwiftSearch64.exe"],
+	"-",
+	["Run...", "python:main.show_run_dialog()", 25],
+	"-",
+	["Reboot", "python:main.reboot()", 290],
+	["Shutdown", "python:main.shutdown()", 28],
+]

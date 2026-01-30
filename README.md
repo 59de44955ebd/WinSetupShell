@@ -213,8 +213,28 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 
 - (Possibly open `src\main.py` or some other .py file with Notepad++ and make your own code adjustments. Or edit `resources\resources.rc` and then compile it with `resources\make_resources_dll.cmd`.)
 
-- Run `make_dist_x64.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
+- Run `make_shell.cmd` to build `shell.exe` and its companion folder `shell_data`. If successful they can be found in the new folder `dist\shell`.
 
 ## TinyWin11
 
-As by-product of this project there is another project called [TinyWin11](https://github.com/59de44955ebd/TinyWin11). It's a minimal live USB, released as disk image, based on the same custom shell and the official Windows PE as provided by Microsoft's [Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289980).
+TinyWin11 is just a by-product of this project. It's a minimal live USB provided as disk image and as virtual machine. It's based on the same custom shell and the official Windows PE of Microsoft's [Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289980).
+
+To keep the disk images small, only a few 3rd party programs are included. But you can of course add more programs to the final USB drive (or virtual machine disk image), and edit `start_menu.pson` or `quick_launch.pson` accordingly.
+
+TinyWin11 is provided in two flavors:
+
+- as disk image (.img) that can be used to create a bootable USB drive using tools like [Rufus](https://rufus.ie/en/), [Etcher](https://etcher.balena.io/) or [dd](https://en.wikipedia.org/wiki/Dd_(Unix)).
+
+- as virtual machine for [VMware Workstation](https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion) (Windows, Linux) and [VMware Fusion](https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion) (macOS).  
+  Both are now free (as in beer, not open source).
+
+### Building TinyWin11
+
+Requirements are:
+
+- [Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289980)  
+  (only the "Deployment Tools" need to be installed)
+
+- [Windows PE add-on for the Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289981)  
+
+To build the system and the .img and .vmdk disk images, run `make_tinywin11.cmd` from an elevated CMD prompt.
