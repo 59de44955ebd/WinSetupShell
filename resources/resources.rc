@@ -19,8 +19,8 @@ IDI_KEYBOARD_DARK ICON "icon-keyboard-dark.ico"
 IDI_KEYBOARD_LIGHT ICON "icon-keyboard-light.ico"
 
 1 VERSIONINFO
-FILEVERSION 0,12,0,0
-PRODUCTVERSION 0,12,0,0
+FILEVERSION 0,15,0,0
+PRODUCTVERSION 0,15,0,0
 FILEOS 0x40004
 FILETYPE 0x1
 {
@@ -30,11 +30,11 @@ BLOCK "StringFileInfo"
 	{
 		VALUE "CompanyName", "59de44955ebd"
 		VALUE "FileDescription", "PyShell"
-		VALUE "FileVersion", "0.12.0.0)"
+		VALUE "FileVersion", "0.15.0.0)"
 		VALUE "InternalName", "PyShell"
 		VALUE "OriginalFilename", "shell.exe"
 		VALUE "ProductName", "PyShell"
-		VALUE "ProductVersion", "0,12,0,0"
+		VALUE "ProductVersion", "0,15,0,0"
 	}
 }
 
@@ -89,6 +89,4 @@ END
   VK_DELETE, IDM_DELETE, NOINVERT, VIRTKEY
   VK_F5, IDM_REFRESH, NOINVERT, VIRTKEY
   "A", IDM_SELECT_ALL, NOINVERT, CONTROL, VIRTKEY
-//  "Z", IDM_UNDO, NOINVERT, CONTROL, VIRTKEY
-//  "Y", IDM_REDO, NOINVERT, CONTROL, VIRTKEY
 }

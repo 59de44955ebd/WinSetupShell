@@ -208,7 +208,6 @@ class Main(MainWin):
 
         self.COMMAND_MESSAGE_MAP = {
             IDM_QUIT:                   lambda: self.quit(),
-            IDM_DEBUG_TOGGLE_CONSOLE:   self.toggle_console,
 
             # Accelerators
             IDM_CUT:                    self.desktop.action_cut,
@@ -219,13 +218,14 @@ class Main(MainWin):
             IDM_SELECT_ALL:             self.desktop.action_select_all,
 
             # hotkeys
-            IDM_OPEN_TASKMANAGER:       lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars('%windir%\\System32\\taskmgr.exe'), None, None, SW_SHOWNORMAL),
+            IDM_OPEN_TASKMANAGER:       lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars(TASK_MANAGER), None, None, SW_SHOWNORMAL),
             IDM_OPEN_STARTMENU:         self.handle_win_key,
             IDM_SHOW_RUN_DIALOG:        self.show_run_dialog,
-            IDM_RUN_EXPLORER:           lambda: shell32.ShellExecuteW(self.hwnd, 'open', EXPLORER, None, None, SW_SHOWNORMAL),
-            IDM_RUN_SEARCH:             lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars('%programs%\\SwiftSearch\\SwiftSearch64.exe'), None, None, SW_SHOWNORMAL),
+            IDM_RUN_EXPLORER:           lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars(FILE_MANAGER), None, None, SW_SHOWNORMAL),
+            IDM_RUN_SEARCH:             lambda: shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars(SEARCH_APP), None, None, SW_SHOWNORMAL),
             IDM_TOGGLE_DESKTOP:         self.toggle_toplevel_windows,
             IDM_SHOW_WINDOW_SWITCHER:   self.show_window_switcher,
+            IDM_DEBUG_TOGGLE_CONSOLE:   self.toggle_console,
         }
 
         self._hmenu_start = user32.GetSubMenu(user32.LoadMenuW(HMOD_RESOURCES, MAKEINTRESOURCEW(POPUP_MENU_START)), 0)
@@ -264,11 +264,11 @@ class Main(MainWin):
                     idm = self.show_popupmenu(self._hmenu_start_item, POINT(x, y), TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
                     user32.EndMenu()
                     if idm == IDM_OPEN_LOCATION:
-                        shell32.ShellExecuteW(None, None, EXPLORER, path, None, SW_SHOWNORMAL)
+                        shell32.ShellExecuteW(None, None, os.path.expandvars(FILE_MANAGER), path, None, SW_SHOWNORMAL)
                     elif idm == IDM_OPEN_CMD:
-                        shell32.ShellExecuteW(None, None, 'cmd.exe', None, path, SW_SHOWNORMAL)
+                        shell32.ShellExecuteW(None, None, os.path.expandvars(CMD), None, path, SW_SHOWNORMAL)
                     elif idm == IDM_OPEN_POWERSHELL:
-                        shell32.ShellExecuteW(None, None, 'pwsh.exe', None, path, SW_SHOWNORMAL)
+                        shell32.ShellExecuteW(None, None, os.path.expandvars(POWERSHELL), None, path, SW_SHOWNORMAL)
 
             return FALSE
 
@@ -304,8 +304,8 @@ class Main(MainWin):
 
             else:
                 if cmd_id in self._quickbar_commands:
-                    exe = self._quickbar_commands[cmd_id]
-                    shell32.ShellExecuteW(None, None, exe, None, os.path.dirname(exe), SW_SHOWNORMAL)
+                    exe, args = self._quickbar_commands[cmd_id]
+                    shell32.ShellExecuteW(None, None, exe, args, os.path.dirname(exe), SW_SHOWNORMAL)
 
                 elif cmd_id in self._taskbar_windows_by_command:
                     hwnd = self._taskbar_windows_by_command[cmd_id].hwnd
@@ -364,11 +364,11 @@ class Main(MainWin):
                         idm = self.show_popupmenu(self._hmenu_start_item, flags=TPM_LEFTBUTTON | TPM_RECURSE | TPM_RETURNCMD)
                         user32.EndMenu()
                         if idm == IDM_OPEN_LOCATION:
-                            shell32.ShellExecuteW(None, None, EXPLORER, path, None, SW_SHOWNORMAL)
+                            shell32.ShellExecuteW(None, None, os.path.expandvars(FILE_MANAGER), path, None, SW_SHOWNORMAL)
                         elif idm == IDM_OPEN_CMD:
-                            shell32.ShellExecuteW(None, None, 'cmd.exe', None, path, SW_SHOWNORMAL)
+                            shell32.ShellExecuteW(None, None, os.path.expandvars(CMD), None, path, SW_SHOWNORMAL)
                         elif idm == IDM_OPEN_POWERSHELL:
-                            shell32.ShellExecuteW(None, None, 'pwsh.exe', None, path, SW_SHOWNORMAL)
+                            shell32.ShellExecuteW(None, None, os.path.expandvars(POWERSHELL), None, path, SW_SHOWNORMAL)
 
             # Clock tooltip
             elif self.tooltip_clock and mh.hwndFrom == self.tooltip_clock.hwnd:
@@ -1525,7 +1525,7 @@ class Main(MainWin):
         exec_info = SHELLEXECUTEINFOW()
         exec_info.nShow = SW_HIDE
         exec_info.fMask = SEE_MASK_NOCLOSEPROCESS
-        exec_info.lpFile = 'cmd.exe'
+        exec_info.lpFile = os.path.expandvars(CMD)
         exec_info.lpParameters = '/k prompt $s && cls'
         if not shell32.ShellExecuteExW(byref(exec_info)):
             return False
@@ -1567,10 +1567,8 @@ class Main(MainWin):
     def toggle_console(self):
         if user32.IsWindowVisible(self._hwnd_console):
             user32.ShowWindow(self._hwnd_console, SW_HIDE)
-            user32.CheckMenuItem(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND | MF_UNCHECKED)
         else:
             user32.ShowWindow(self._hwnd_console, SW_SHOWNORMAL)
-            user32.CheckMenuItem(self._hmenu_start, IDM_DEBUG_TOGGLE_CONSOLE, MF_BYCOMMAND | MF_CHECKED)
 
     ########################################
     #

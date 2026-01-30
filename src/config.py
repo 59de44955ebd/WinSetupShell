@@ -13,12 +13,12 @@ DESKTOP_TEXT_COLOR = 0xFFFFFF
 DESKTOP_HOT_ITEM_BORDER_COLOR = 0xD47800
 DESKTOP_SNAP_TO_GRID = True
 DESKTOP_RECYCLEBIN_POLL_PERIOD_MS = 3000
-DESKTOP_WALLPAPER = "%USERPROFILE%\\AppData\\wallpaper.jpg"
+DESKTOP_WALLPAPER = '%USERPROFILE%\\AppData\\wallpaper.jpg'
 DESKTOP_ITEMS = [
-    "ThisPC",
-    "Documents",
-    "Downloads",
-    "RecycleBin"
+    'ThisPC',
+    'Documents',
+    'Downloads',
+    'RecycleBin'
 ]
 
 TASKBAR_HEIGHT = 30
@@ -47,6 +47,12 @@ QUICK_PADDING = 6
 TASK_PADDING = 12
 TRAY_PADDING = 12
 SHOW_DESKTOP_PADDING = 10
+
+CMD = '%windir%\\System32\\cmd.exe'
+FILE_MANAGER = '%programs%\\Explorer++\\Explorer++.exe'
+POWERSHELL = '%programs%\\PowerShell\\pwsh.exe'
+SEARCH_APP = '%programs%\\SwiftSearch\\SwiftSearch64.exe'
+TASK_MANAGER = '%windir%\\System32\\taskmgr.exe'
 
 # Overwrite variables with values from config.pson
 try:

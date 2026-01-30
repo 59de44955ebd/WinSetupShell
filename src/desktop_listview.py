@@ -262,7 +262,7 @@ class Desktop(MainWin, COMObject):
 
         self.listview.hide_focus_rects()
 
-        if type(DESKTOP_WALLPAPER) == str:
+        if DESKTOP_WALLPAPER:
             wallpaper_path = os.path.expandvars(DESKTOP_WALLPAPER)
             if os.path.isfile(wallpaper_path):
                 lvbi = LVBKIMAGEW()
@@ -338,9 +338,9 @@ class Desktop(MainWin, COMObject):
                 item_id = self.listview.send_message(LVM_MAPINDEXTOID, mi.iItem, 0)
                 desktop_item = self.desktop_item_map[item_id]
                 if desktop_item.item_type == ITEM_TYPE_SHELL:
-                    shell32.ShellExecuteW(self.hwnd, 'open', EXPLORER, '::' + desktop_item.clsid, None, SW_SHOWNORMAL)
+                    shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars(FILE_MANAGER), '::' + desktop_item.clsid, None, SW_SHOWNORMAL)
                 elif desktop_item.item_type == ITEM_TYPE_FOLDER:
-                    shell32.ShellExecuteW(self.hwnd, 'open', EXPLORER, '"' + os.path.join(DESKTOP_DIR, desktop_item.name) + '"', None, SW_SHOWNORMAL)
+                    shell32.ShellExecuteW(self.hwnd, 'open', os.path.expandvars(FILE_MANAGER), '"' + os.path.join(DESKTOP_DIR, desktop_item.name) + '"', None, SW_SHOWNORMAL)
                 else:
                     shell32.ShellExecuteW(0, None, os.path.join(DESKTOP_DIR, desktop_item.name), None, None, SW_SHOWNORMAL)
 

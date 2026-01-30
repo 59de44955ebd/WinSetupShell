@@ -100,7 +100,6 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 - [HWiNFO](https://www.hwinfo.com/download/)
 - [HxD](https://mh-nexus.de/de/hxd/)
 - [IrfanView](https://www.irfanview.com/)
-- [IsoBuster](https://www.isobuster.com/)
 - [Macrium Reflect](https://www.macrium.com/reflectfree) (Trial version)
 - [MiniTool Partition Wizard](https://www.minitool.com/partition-manager/)
 - [NirSoft (suite)](https://www.nirsoft.net/)
