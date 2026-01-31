@@ -168,14 +168,15 @@ dism /image:"%WINPE_DIR%\mount" /Add-Package /PackagePath:"%WinPERoot%\amd64\Win
 dism /image:"%WINPE_DIR%\mount" /Add-Package /PackagePath:"%WinPERoot%\amd64\WinPE_OCs\en-us\WinPE-DismCmdlets_en-us.cab"
 
 REM Copy fonts to Windows\fonts\
-xcopy /q /y /c userprofile\fonts\* "%WINPE_DIR%\mount\Windows\Fonts\"
+REM (This will cause some "access denied" error for fonts (owned by TrustedInstaller) that already exist, but they don't matter)
+xcopy /q /y /c userprofile\fonts\* "%WINPE_DIR%\mount\Windows\Fonts\" 2>nul
 
 REM Copy some stuff to Windows\System32
 xcopy /q /y /c /e tinywin11\system32\* "%WINPE_DIR%\mount\Windows\System32\"
 
 dism /unmount-wim /mountdir:"%WINPE_DIR%\mount" /commit
 
-REM Clean up
+REM Clean up the boot.wim (purge deleted stuff)
 dism /export-image /sourceimagefile:"%WINPE_DIR%\media\sources\boot.wim" /SourceIndex:1 /destinationimagefile:"%WINPE_DIR%\media\sources\boot_cleaned.wim"
 del /f "%WINPE_DIR%\media\sources\boot.wim"
 ren "%WINPE_DIR%\media\sources\boot_cleaned.wim" boot.wim
@@ -184,6 +185,12 @@ echo.
 echo ====================================
 echo Write WinPE to mounted VHD disk image...
 echo ====================================
+
+REM The following lines are extracted from ADK's MakeWinPEMedia.cmd.
+REM We can't run MakeWinPEMedia.cmd because it insists to format the
+REM drive with FAT32, but our (virtual) drive is already formatted
+REM with NTFS, and we need NTFS to make the drive's recycle bin and
+REM watching for changes of the dektop directory work.
 
 set DEST=%DRIVE_LETTER%:
 set BOOTMGRPATH=%WINPE_DIR%\bootbins\bootmgfw.efi
