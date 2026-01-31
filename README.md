@@ -219,11 +219,11 @@ WinSetupShell comes with everything needed (Git, Python, PyInstaller) to build/f
 
 TinyWin11 is just a by-product of this project. It's a minimal live USB provided as disk image and as virtual machine. It's based on the same custom shell and the official Windows PE of Microsoft's [Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289980).
 
-To keep the disk images small, only a few 3rd party programs are included. But you can of course add more programs to the final USB drive (or virtual machine disk image), and edit `start_menu.pson` or `quick_launch.pson` accordingly.
+To keep the disk images small, only a few third-party programs are included. But you can of course add more programs to the final USB drive (or the virtual machine disk image), and edit `start_menu.pson` or `quick_launch.pson` accordingly.
 
 TinyWin11 is provided in two flavors:
 
-- as disk image (.img) that can be used to create a bootable USB drive using tools like [Rufus](https://rufus.ie/en/), [Etcher](https://etcher.balena.io/) or [dd](https://en.wikipedia.org/wiki/Dd_(Unix)).
+- as raw disk image (.img) that can be used to create a bootable USB drive using tools like [Rufus](https://rufus.ie/en/), [Etcher](https://etcher.balena.io/) or [dd](https://en.wikipedia.org/wiki/Dd_(Unix)).
 
 - as virtual machine for [VMware Workstation](https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion) (Windows, Linux) and [VMware Fusion](https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion) (macOS).  
   Both are now free (as in beer, not open source).
@@ -232,9 +232,7 @@ TinyWin11 is provided in two flavors:
 
 Requirements are:
 
-- [Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289980)  
-  (only the "Deployment Tools" need to be installed)
-
+- [Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289980) (only the "Deployment Tools" need to be installed)
 - [Windows PE add-on for the Windows ADK 10.1.26100.2454](https://go.microsoft.com/fwlink/?linkid=2289981)  
 
-To build the system and the .img and .vmdk disk images, run `make_tinywin11.cmd` from an elevated CMD prompt.
+First build the shell by running `make_shell.cmd`. To build the Windows PE system (boot.wim) and the .img and .vmdk disk images, run `make_tinywin11.cmd` from an elevated CMD prompt.
