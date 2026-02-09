@@ -1,6 +1,6 @@
 # WinSetupShell (Win11PE)
 
-WinSetupShell is a simple [desktop shell](https://en.wikipedia.org/wiki/Windows_shell) (desktop, start menu, quick launch toolbar, taskbar, system tray) for [Windows PE](https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment) x64 written in pure [Python](https://www.python.org/) (no third-party modules) that can be used to enhance a regular Windows 11 (or Windows 10 22H2) setup USB drive with a [live USB system](https://en.wikipedia.org/wiki/Live_USB) that can optionally be used for system repair tasks etc., using a comfortable desktop GUI instead of only hacking commands into a CMD prompt. It provides network support and a web browser ([Firefox](https://www.firefox.com/)), so you can search for documentation or download stuff right from the live USB system, no other PC needed.
+WinSetupShell is a simple [desktop shell](https://en.wikipedia.org/wiki/Windows_shell) (desktop, start menu, quick launch toolbar, taskbar, system tray) for [Windows PE](https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment) x64 written in pure [Python](https://www.python.org/) (no third-party modules) that can be used to enhance a regular Windows 11 (or Windows 10 22H2) setup USB drive with a [live USB system](https://en.wikipedia.org/wiki/Live_USB) that can optionally be used for system repair tasks etc., using a comfortable desktop GUI instead of only hacking commands into a CMD prompt. It provides network support and a web browser ([Pale Moon](https://www.palemoon.org/)), so you can search for documentation or download stuff right from the live USB system, no other PC needed.
 
 WinSetupShell uses the original unaltered Windows PE that comes with the Windows setup, there is no "baking" involved. Windows PE is a reduced Windows OS that provides the basic WinAPI, but no Explorer file manager, and no Explorer-based desktop, therefor such a custom shell/desktop is needed. As file manager a customized version of [Explorer++](https://github.com/derceg/explorerplusplus) is used.
 
@@ -58,7 +58,7 @@ WinSetupShell can also be used with a multi-boot USB drive created with [Ventoy]
 
 ## Network
 
-Network isn't started by default, so before you can use e.g. Firefox or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `Network -> Initialize Network` from the start menu. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
+Network isn't started by default, so before you can use e.g. Pale Moon or FileZilla, you first have to initialize it, either by clicking on the network icon in the system tray or selecting `Network -> Initialize Network` from the start menu. If you are connected via Ethernet cable and DHCP is available, nothing else is needed, you should now be online.
 
 If you want to start network by default, add line  
 `wpeutil.exe InitializeNetwork /NoWait`  
@@ -95,7 +95,6 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 - [Fido](https://github.com/pbatard/Fido) (PowerShell script for downloading Windows ISOs from microsoft.com)
 - [FidoArch](https://github.com/59de44955ebd/FidoArch) (Fido clone for downloading Windows ISOs from archive.org)
 - [FileZilla](https://filezilla-project.org/)
-- [Firefox](https://www.firefox.com/)
 - [GSmartControl](https://gsmartcontrol.shaduri.dev/)
 - [HWiNFO](https://www.hwinfo.com/download/)
 - [HxD](https://mh-nexus.de/de/hxd/)
@@ -105,6 +104,7 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 - [NirSoft (suite)](https://www.nirsoft.net/)
 - [Notepad++](https://notepad-plus-plus.org/)
 - [NTPWedit](http://www.cdslow.org.ru/en/ntpwedit/)
+- [Pale Moon](https://www.palemoon.org/)
 - [PENetwork](https://www.penetworkmanager.de/)
 - [PortableGit](https://git-scm.com/install/windows) (Git Bash, Git CMD)
 - [PowerISO](https://www.poweriso.com/)

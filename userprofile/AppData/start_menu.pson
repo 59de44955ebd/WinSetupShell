@@ -74,7 +74,7 @@
 			["Network Tools",
 				[
 					["FileZilla", "%programs%\\FileZilla\\filezilla.exe"],
-					["Firefox", "%programs%\\Firefox\\firefox-portable.exe"],
+					["Pale Moon", "%programs%\\Palemoon\\palemoon-portable.exe"],
 					["PortableGit",
 						[
 							["Git Bash", "%programs%\\PortableGit\\git-bash.exe"],
