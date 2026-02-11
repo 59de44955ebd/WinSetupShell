@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!-- Preference file for Explorer++ -->
+<ExplorerPlusPlus>
+	<Settings>
+		<Setting name="AllowMultipleInstances">yes</Setting>
+		<Setting name="AlwaysOpenInNewTab">no</Setting>
+		<Setting name="AlwaysShowTabBar">yes</Setting>
+		<Setting name="AutoArrangeGlobal">yes</Setting>
+		<Setting name="CheckBoxSelection">no</Setting>
+		<Setting name="CloseMainWindowOnTabClose">yes</Setting>
+		<Setting name="ConfirmCloseTabs">no</Setting>
+		<Setting name="DisableFolderSizesNetworkRemovable">no</Setting>
+		<Setting name="DoubleClickTabClose">yes</Setting>
+		<Setting name="ExtendTabControl">no</Setting>
+		<Setting name="ForceSameTabWidth">no</Setting>
+		<Setting name="ForceSize">no</Setting>
+		<Setting name="HandleZipFiles">no</Setting>
+		<Setting name="HideLinkExtensionGlobal">yes</Setting>
+		<Setting name="HideSystemFilesGlobal">no</Setting>
+		<Setting name="InfoTipType">0</Setting>
+		<Setting name="InsertSorted">yes</Setting>
+		<Setting name="Language">9</Setting>
+		<Setting name="LargeToolbarIcons">no</Setting>
+		<Setting name="LastSelectedTab">0</Setting>
+		<Setting name="LockToolbars">yes</Setting>
+		<Setting name="NextToCurrent">no</Setting>
+		<Setting name="NewTabDirectory">::{20D04FE0-3AEA-1069-A2D8-08002B30309D}</Setting>
+		<Setting name="OneClickActivate">no</Setting>
+		<Setting name="OneClickActivateHoverTime">500</Setting>
+		<Setting name="OverwriteExistingFilesConfirmation">yes</Setting>
+		<Setting name="ReplaceExplorerMode">1</Setting>
+		<Setting name="ShowAddressBar">yes</Setting>
+		<Setting name="ShowApplicationToolbar">no</Setting>
+		<Setting name="ShowBookmarksToolbar">no</Setting>
+		<Setting name="ShowDrivesToolbar">no</Setting>
+		
+		<Setting name="ShowExtensions">yes</Setting>
+		<Setting name="ShowFilePreviews">no</Setting>
+		<Setting name="ShowFolders">yes</Setting>
+		<Setting name="ShowFolderSizes">no</Setting>
+		<Setting name="ShowFriendlyDates">yes</Setting>
+		<Setting name="ShowFullTitlePath">no</Setting>
+		<Setting name="ShowGridlinesGlobal">no</Setting>
+		<Setting name="ShowHiddenGlobal">yes</Setting>
+		<Setting name="ShowInfoTips">no</Setting>
+		<Setting name="ShowInGroupsGlobal">no</Setting>
+		<Setting name="ShowPrivilegeLevelInTitleBar">no</Setting>
+		<Setting name="ShowStatusBar">yes</Setting>
+		<Setting name="ShowTabBarAtBottom">no</Setting>
+		<Setting name="ShowTaskbarThumbnails">no</Setting>
+		<Setting name="ShowToolbar">yes</Setting>
+		<Setting name="ShowUserNameTitleBar">no</Setting>
+		<Setting name="SizeDisplayFormat">1</Setting>
+		<Setting name="SortAscendingGlobal">yes</Setting>
+		<Setting name="StartupMode">2</Setting>
+		<Setting name="SynchronizeTreeview">yes</Setting>
+		<Setting name="TVAutoExpandSelected">no</Setting>
+		<Setting name="UseFullRowSelect">no</Setting>
+		<Setting name="IconTheme">0</Setting>
+		<Setting name="ToolbarState" Button0="Back" Button1="Forward" Button2="Up" Button3="Separator" Button4="Folders" Button5="Separator" Button6="Cut" Button7="Copy" Button8="Paste" Button9="Delete" Button10="Delete Permanently" Button11="Properties" Button12="Search" Button13="Separator" Button14="New Folder" Button15="Copy To" Button16="Move To" Button17="Separator" Button18="Views" Button19="Open Command Prompt" Button20="Refresh" Button21="Separator" Button22="Bookmark the current tab" Button23="Organize Bookmarks"/>
+		<Setting name="TreeViewDelayEnabled">no</Setting>
+		<Setting name="TreeViewWidth">205</Setting>
+		<Setting name="ViewModeGlobal">4</Setting>
+		<Setting name="CheckPinnedToNamespaceTreeProperty">no</Setting>
+		<Setting name="ShowQuickAccessInTreeView">no</Setting>
+		<Setting name="Theme">0</Setting>
+		<Setting name="DisplayMixedFilesAndFolders">no</Setting>
+		<Setting name="UseNaturalSortOrder">yes</Setting>
+		<Setting name="OpenTabsInForeground">no</Setting>
+		<Setting name="GroupSortDirectionGlobal">0</Setting>
+		<Setting name="GoUpOnDoubleClick">yes</Setting>
+	</Settings>
+	<WindowPosition>
+		<Setting name="Position" Flags="0" ShowCmd="1" MinPositionX="-1" MinPositionY="-1" MaxPositionX="-1" MaxPositionY="-1" NormalPositionLeft="609" NormalPositionTop="445" NormalPositionRight="1660" NormalPositionBottom="1252"/>
+	</WindowPosition>
+	<Tabs>
+		<Tab name="0" Directory="D:\src\winapp\projects\WinSetupShell\programs\PowerShell" ApplyFilter="no" AutoArrange="yes" Filter="" FilterCaseSensitive="no" GroupMode="1" ShowHidden="yes" ShowInGroups="no" SortAscending="yes" GroupSortDirection="0" SortMode="1" ViewMode="4" Locked="no" AddressLocked="no" UseCustomName="no" CustomName="">
+			<Columns>
+				<Column name="Generic" Name="yes" Name_Width="150" Type="yes" Type_Width="150" Size="yes" Size_Width="150" DateModified="yes" DateModified_Width="150" Attributes="no" Attributes_Width="150" SizeOnDisk="no" SizeOnDisk_Width="150" ShortName="no" ShortName_Width="150" Owner="no" Owner_Width="150" ProductName="no" ProductName_Width="150" Company="no" Company_Width="150" Description="no" Description_Width="150" FileVersion="no" FileVersion_Width="150" ProductVersion="no" ProductVersion_Width="150" ShortcutTo="no" ShortcutTo_Width="150" HardLinks="no" HardLinks_Width="150" Extension="no" Extension_Width="150" Created="no" Created_Width="150" Accessed="no" Accessed_Width="150" Title="no" Title_Width="150" Subject="no" Subject_Width="150" Author="no" Author_Width="150" Keywords="no" Keywords_Width="150" Comment="no" Comment_Width="150" CameraModel="no" CameraModel_Width="150" DateTaken="no" DateTaken_Width="150" Width="no" Width_Width="150" Height="no" Height_Width="150" MediaBitrate="no" MediaBitrate_Width="150" MediaCopyright="no" MediaCopyright_Width="150" MediaDuration="no" MediaDuration_Width="150" MediaProtected="no" MediaProtected_Width="150" MediaRating="no" MediaRating_Width="150" MediaAlbumArtist="no" MediaAlbumArtist_Width="150" MediaAlbum="no" MediaAlbum_Width="150" MediaBeatsPerMinute="no" MediaBeatsPerMinute_Width="150" MediaComposer="no" MediaComposer_Width="150" MediaConductor="no" MediaConductor_Width="150" MediaDirector="no" MediaDirector_Width="150" MediaGenre="no" MediaGenre_Width="150" MediaLanguage="no" MediaLanguage_Width="150" MediaBroadcastDate="no" MediaBroadcastDate_Width="150" MediaChannel="no" MediaChannel_Width="150" MediaStationName="no" MediaStationName_Width="150" MediaMood="no" MediaMood_Width="150" MediaParentalRating="no" MediaParentalRating_Width="150" MediaParentalRatingReason="no" MediaParentalRatingReason_Width="150" MediaPeriod="no" MediaPeriod_Width="150" MediaProducer="no" MediaProducer_Width="150" MediaPublisher="no" MediaPublisher_Width="150" MediaWriter="no" MediaWriter_Width="150" MediaYear="no" MediaYear_Width="150"/>
+				<Column name="MyComputer" Name="yes" Name_Width="150" Type="yes" Type_Width="150" TotalSize="yes" TotalSize_Width="150" FreeSpace="yes" FreeSpace_Width="150" VirtualComments="no" VirtualComments_Width="150" FileSystem="no" FileSystem_Width="150"/>
+				<Column name="ControlPanel" Name="yes" Name_Width="150" VirtualComments="yes" VirtualComments_Width="150"/>
+				<Column name="RecycleBin" Name="yes" Name_Width="150" OriginalLocation="yes" OriginalLocation_Width="150" DateDeleted="yes" DateDeleted_Width="150" Size="yes" Size_Width="150" Type="yes" Type_Width="150" DateModified="yes" DateModified_Width="150"/>
+				<Column name="Printers" Name="yes" Name_Width="150" Documents="yes" Documents_Width="150" Status="yes" Status_Width="150" PrinterComments="yes" PrinterComments_Width="150" PrinterLocation="yes" PrinterLocation_Width="150" PrinterModel="yes" PrinterModel_Width="150"/>
+				<Column name="Network" Name="yes" Name_Width="150" Type="yes" Type_Width="150" NetworkAdaptorStatus="yes" NetworkAdaptorStatus_Width="150" Owner="yes" Owner_Width="150"/>
+				<Column name="NetworkPlaces" Name="yes" Name_Width="150" VirtualComments="yes" VirtualComments_Width="150"/>
+			</Columns>
+		</Tab>
+	</Tabs>
+	<DefaultColumns>
+		<Column name="Generic" Name="yes" Name_Width="150" Type="yes" Type_Width="150" Size="yes" Size_Width="150" DateModified="yes" DateModified_Width="150" Attributes="no" Attributes_Width="150" SizeOnDisk="no" SizeOnDisk_Width="150" ShortName="no" ShortName_Width="150" Owner="no" Owner_Width="150" ProductName="no" ProductName_Width="150" Company="no" Company_Width="150" Description="no" Description_Width="150" FileVersion="no" FileVersion_Width="150" ProductVersion="no" ProductVersion_Width="150" ShortcutTo="no" ShortcutTo_Width="150" HardLinks="no" HardLinks_Width="150" Extension="no" Extension_Width="150" Created="no" Created_Width="150" Accessed="no" Accessed_Width="150" Title="no" Title_Width="150" Subject="no" Subject_Width="150" Author="no" Author_Width="150" Keywords="no" Keywords_Width="150" Comment="no" Comment_Width="150" CameraModel="no" CameraModel_Width="150" DateTaken="no" DateTaken_Width="150" Width="no" Width_Width="150" Height="no" Height_Width="150" MediaBitrate="no" MediaBitrate_Width="150" MediaCopyright="no" MediaCopyright_Width="150" MediaDuration="no" MediaDuration_Width="150" MediaProtected="no" MediaProtected_Width="150" MediaRating="no" MediaRating_Width="150" MediaAlbumArtist="no" MediaAlbumArtist_Width="150" MediaAlbum="no" MediaAlbum_Width="150" MediaBeatsPerMinute="no" MediaBeatsPerMinute_Width="150" MediaComposer="no" MediaComposer_Width="150" MediaConductor="no" MediaConductor_Width="150" MediaDirector="no" MediaDirector_Width="150" MediaGenre="no" MediaGenre_Width="150" MediaLanguage="no" MediaLanguage_Width="150" MediaBroadcastDate="no" MediaBroadcastDate_Width="150" MediaChannel="no" MediaChannel_Width="150" MediaStationName="no" MediaStationName_Width="150" MediaMood="no" MediaMood_Width="150" MediaParentalRating="no" MediaParentalRating_Width="150" MediaParentalRatingReason="no" MediaParentalRatingReason_Width="150" MediaPeriod="no" MediaPeriod_Width="150" MediaProducer="no" MediaProducer_Width="150" MediaPublisher="no" MediaPublisher_Width="150" MediaWriter="no" MediaWriter_Width="150" MediaYear="no" MediaYear_Width="150"/>
+		<Column name="MyComputer" Name="yes" Name_Width="150" Type="yes" Type_Width="150" TotalSize="yes" TotalSize_Width="150" FreeSpace="yes" FreeSpace_Width="150" VirtualComments="no" VirtualComments_Width="150" FileSystem="no" FileSystem_Width="150"/>
+		<Column name="ControlPanel" Name="yes" Name_Width="150" VirtualComments="yes" VirtualComments_Width="150"/>
+		<Column name="RecycleBin" Name="yes" Name_Width="150" OriginalLocation="yes" OriginalLocation_Width="150" DateDeleted="yes" DateDeleted_Width="150" Size="yes" Size_Width="150" Type="yes" Type_Width="150" DateModified="yes" DateModified_Width="150"/>
+		<Column name="Printers" Name="yes" Name_Width="150" Documents="yes" Documents_Width="150" Status="yes" Status_Width="150" PrinterComments="yes" PrinterComments_Width="150" PrinterLocation="yes" PrinterLocation_Width="150" PrinterModel="yes" PrinterModel_Width="150"/>
+		<Column name="Network" Name="yes" Name_Width="150" Type="yes" Type_Width="150" NetworkAdaptorStatus="yes" NetworkAdaptorStatus_Width="150" Owner="yes" Owner_Width="150"/>
+		<Column name="NetworkPlaces" Name="yes" Name_Width="150" VirtualComments="yes" VirtualComments_Width="150"/>
+	</DefaultColumns>
+	<Bookmarksv2>
+		<PermanentItem name="BookmarksToolbar" DateCreatedLow="2910815438" DateCreatedHigh="30983876" DateModifiedLow="2910815438" DateModifiedHigh="30983876">
+		</PermanentItem>
+		<PermanentItem name="BookmarksMenu" DateCreatedLow="2910815438" DateCreatedHigh="30983876" DateModifiedLow="2910815438" DateModifiedHigh="30983876">
+		</PermanentItem>
+		<PermanentItem name="OtherBookmarks" DateCreatedLow="2910815438" DateCreatedHigh="30983876" DateModifiedLow="2910815438" DateModifiedHigh="30983876">
+		</PermanentItem>
+	</Bookmarksv2><ApplicationToolbar/>
+	<Toolbars>
+		<Toolbar name="0" id="0" Style="769" Length="604"/>
+		<Toolbar name="1" id="1" Style="257" Length="0"/>
+		<Toolbar name="2" id="2" Style="777" Length="0"/>
+		<Toolbar name="3" id="3" Style="777" Length="375"/>
+		<Toolbar name="4" id="4" Style="777" Length="0"/>
+	</Toolbars><ColorRules><ColorRule name="Compressed files" FilenamePattern="" CaseInsensitive="no" Attributes="2048" r="0" g="0" b="255"/><ColorRule name="Encrypted files" FilenamePattern="" CaseInsensitive="no" Attributes="16384" r="0" g="128" b="0"/></ColorRules>
+	<State>
+		<DialogState name="CustomizeColors" PosX="730" PosY="412" Width="561" Height="323"/>
+		<DialogState name="AddBookmark" PosX="978" PosY="464" Width="366" Height="427"/>
+		<DialogState name="ManageBookmarks" PosX="568" PosY="433" Width="693" Height="400"/>
+		<DialogState name="UpdateCheck" PosX="828" PosY="424" Width="291" Height="163"/>
+	</State>
+</ExplorerPlusPlus>

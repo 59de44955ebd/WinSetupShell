@@ -45,7 +45,6 @@
 					["Imaging",
 						[
 							["Disk2vhd", "%programs%\\SysinternalsSuite\\disk2vhd64.exe"],
-							["DiskReader", "%programs%\\DiskReader\\DiskReader.exe"],
 							["Drive Snapshot", "%programs%\\Snapshot\\snapshot.exe"],
 							["Fido", "%programs%\\Fido.ps1"],
 							["FidoArch", "%programs%\\FidoArch.ps1"],

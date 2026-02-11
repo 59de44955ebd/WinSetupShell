@@ -269,15 +269,15 @@ copy /y tinywin11\start_menu.pson %DRIVE_LETTER%:\shell_data\userprofile\AppData
 del /q %DRIVE_LETTER%:\shell_data\userprofile\AppData\icon_cache\*
 
 mkdir %DRIVE_LETTER%:\programs
-xcopy /q /y /e programs\7-Zip       %DRIVE_LETTER%:\programs\7-Zip\
-xcopy /q /y /e programs\Explorer++  %DRIVE_LETTER%:\programs\Explorer++\
-xcopy /q /y /e programs\IrfanView   %DRIVE_LETTER%:\programs\IrfanView\
-xcopy /q /y /e programs\Notepad++   %DRIVE_LETTER%:\programs\Notepad++\
-xcopy /q /y /e programs\OpenWith    %DRIVE_LETTER%:\programs\OpenWith\
-xcopy /q /y /e programs\SumatraPDF  %DRIVE_LETTER%:\programs\SumatraPDF\
-xcopy /q /y /e programs\SwiftSearch %DRIVE_LETTER%:\programs\SwiftSearch\
-xcopy /q /y /e programs\Windows     %DRIVE_LETTER%:\programs\Windows\
-xcopy /q /y /e programs\WordPad     %DRIVE_LETTER%:\programs\WordPad\
+xcopy /q /y /e tinywin11\programs\7-Zip       %DRIVE_LETTER%:\programs\7-Zip\
+xcopy /q /y /e tinywin11\programs\Explorer++  %DRIVE_LETTER%:\programs\Explorer++\
+xcopy /q /y /e tinywin11\programs\IrfanView   %DRIVE_LETTER%:\programs\IrfanView\
+xcopy /q /y /e tinywin11\programs\Notepad++   %DRIVE_LETTER%:\programs\Notepad++\
+xcopy /q /y /e tinywin11\programs\OpenWith    %DRIVE_LETTER%:\programs\OpenWith\
+xcopy /q /y /e tinywin11\programs\SumatraPDF  %DRIVE_LETTER%:\programs\SumatraPDF\
+xcopy /q /y /e tinywin11\programs\SwiftSearch %DRIVE_LETTER%:\programs\SwiftSearch\
+xcopy /q /y /e tinywin11\programs\Windows     %DRIVE_LETTER%:\programs\Windows\
+xcopy /q /y /e tinywin11\programs\WordPad     %DRIVE_LETTER%:\programs\WordPad\
 
 copy /y tinywin11\autorun.inf %DRIVE_LETTER%:\
 
