@@ -31,6 +31,8 @@ As far as I know WinSetupShell is the only [alternative shell for Windows](https
 
 WinSetupShell can also be used with a multi-boot USB drive created with [Ventoy](https://www.ventoy.net/en/index.html). In this case just copy `shell.exe` and the 2 folders `shell_data` and `programs` on the Ventoy volume, next to your (Windows setup) .iso files.
 
+**Important**: use `NTFS` as filesystem for the Ventoy drive. Ventoy defaults to `exFAT`, but `exFAT` doesn't support the methods that WinSetupShell uses for monitoring filesystem changes (of the desktop folder).
+
 *Ventoy USB drive with 4 Windows Setup .iso files and the 3 WinSetupShell items*  
 ![](screenshots/ventoy.png)
 
