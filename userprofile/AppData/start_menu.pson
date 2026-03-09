@@ -153,7 +153,6 @@
 	"-",
 	["Run...", "python:main.show_run_dialog()", 25],
 	"-",
-#	["Log off", "python:main.logoff()", 45],
 	["Reboot", "python:main.reboot()", 290],
 	["Shutdown", "python:main.shutdown()", 28],
 ]
