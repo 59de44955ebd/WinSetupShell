@@ -1,5 +1,6 @@
 # encoding=utf-8
 [
+	["Show Desktop", "python:main.toggle_toplevel_windows()", 35],
 	["Explorer++", "%PROGRAMS%\\Explorer++\\Explorer++.exe"],
 	["CMD", "%windir%\\System32\\cmd.exe"],
 	["PowerShell", "%windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"],
