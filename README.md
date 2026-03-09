@@ -79,6 +79,18 @@ There is no real System Tray (since there is no Explorer in PE), i.e. not custom
 
 - Battery status (if there is a battery): Tooltip shows the battery charge level in % and the estimated remaining time (if the PC is not plugged in).
 
+If the shell is run inside regular Windows 11 instead of Windows PE, there are 3 more icons:
+
+- Volume (if sound is available): Click opens a slider that allows to adjust the master volume.
+
+- Brightness: Click opens a slider that allows to adjust the screen brightness.
+
+- Sleep: Click toggles if sleep mode (stand by) of the PC is allowed or prevented.
+
+## Clock
+
+The clock in the lower right corner shows the current time without seconds, its tooltip shows the current date. Clicking on the clock opens a small pane that displays the current time with seconds as well as the current date and a browsable calendar.
+
 ## Included applications (Freeware/Shareware/Trialware)
 
 - [7-Zip](https://www.7-zip.org/)
