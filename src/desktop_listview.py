@@ -11,13 +11,13 @@ from winapp.mainwin import *
 from winapp.menu import MENUITEMINFOW
 from winapp.shellapi_min import *
 
-from filesystem_watcher import *
-
 from const import *
 from config import *
 
+from filesystem_watcher import *
+
 DESKTOP_SHELL_ITEMS = [eval(f'CLSID_{i}') for i in DESKTOP_ITEMS]
-HAS_RECYCLEBIN = 'RecycleBin' in DESKTOP_ITEMS
+HAS_DESKTOP_RECYCLEBIN = 'RecycleBin' in DESKTOP_ITEMS
 
 BHID_SFUIObject = GUID('{3981E225-F559-11D3-8E3A-00C04F6837D5}')
 
@@ -29,6 +29,13 @@ ITEM_TYPE_FILE = 2
 ITEM_TYPE_LNK = 3
 
 FMT_PREFERRED_DROPEFFECT = user32.RegisterClipboardFormatW('Preferred DropEffect')
+
+if HAS_EXPLORER and USE_LOCAL_DESKTOP_DIR:
+    DESKTOP_DIR = os.path.join(os.environ['USERPROFILE'], 'Desktop')
+else:
+    DESKTOP_DIR = os.path.join(USERPROFILE, 'Desktop')
+    if not os.path.isdir(DESKTOP_DIR):
+        os.mkdir(DESKTOP_DIR)
 
 ########################################
 #
@@ -177,7 +184,7 @@ class Desktop(MainWin, COMObject):
     ########################################
     #
     ########################################
-    def __init__(self, mainwin, taskbar_height = 30):
+    def __init__(self, mainwin, taskbar_height = 30, icon_positions = {}):
 
         COMObject.__init__(self)
         ole32.OleInitialize(0)
@@ -194,6 +201,8 @@ class Desktop(MainWin, COMObject):
         self.is_copy = False
         self.last_mouse_pos = POINT()
 
+        self.icon_positions = icon_positions
+
         rc_desktop = RECT()
         user32.GetWindowRect(user32.GetDesktopWindow(), byref(rc_desktop))
 
@@ -203,7 +212,7 @@ class Desktop(MainWin, COMObject):
             width = rc_desktop.right, height = rc_desktop.bottom - taskbar_height,
             style = WS_POPUP | WS_CHILD,
             ex_style = WS_EX_TOOLWINDOW,
-            h_brush = gdi32.GetStockObject(BLACK_BRUSH)  #gdi32.CreateSolidBrush(DESKTOP_BG_COLOR)
+            h_brush = gdi32.GetStockObject(BLACK_BRUSH)  # gdi32.CreateSolidBrush(DESKTOP_BG_COLOR)
         )
 
         self.ishellfolder_desktop = (POINTER(IShellFolder))()
@@ -225,7 +234,7 @@ class Desktop(MainWin, COMObject):
         ########################################
         # Recycle Bin
         ########################################
-        if HAS_RECYCLEBIN:
+        if HAS_DESKTOP_RECYCLEBIN:
             self.h_icon_recyclebin = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(32), IMAGE_ICON, DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, 0)
             self.h_icon_recyclebin_filled = user32.LoadImageW(HMOD_SHELL32, MAKEINTRESOURCEW(33), IMAGE_ICON, DESKTOP_ICON_SIZE * self.scale, DESKTOP_ICON_SIZE * self.scale, 0)
 
@@ -318,11 +327,17 @@ class Desktop(MainWin, COMObject):
                     fos = SHFILEOPSTRUCTW()
                     fos.hwnd = self.listview.hwnd  # window handle to the dialog box to display information
                     fos.wFunc = FO_RENAME
+
+                    filename_new = lvdi.item.pszText
+                    if desktop_item.item_type == ITEM_TYPE_LNK:
+                        filename_new += '.lnk'
+
                     fos.pFrom = os.path.join(DESKTOP_DIR, desktop_item.name) + '\0'
-                    fos.pTo = os.path.join(DESKTOP_DIR, lvdi.item.pszText) + '\0'
+                    fos.pTo = os.path.join(DESKTOP_DIR, filename_new) + '\0'
+
                     fos.fFlags = FOF_ALLOWUNDO
                     if shell32.SHFileOperationW(byref(fos)) == 0:
-                        desktop_item.name = lvdi.item.pszText
+                        desktop_item.name = filename_new
                         return TRUE
 
                 ########################################
@@ -405,7 +420,10 @@ class Desktop(MainWin, COMObject):
 
         HRCHECK(ole32.RegisterDragDrop(self.listview.hwnd, self))
 
-        self.watcher = FileSystemWatcher()
+        if HAS_EXPLORER_DESKTOP:
+            self.watcher = FileSystemWatcherChangeNotify(self)
+        else:
+            self.watcher = FileSystemWatcherThreaded()
 
         ########################################
         #
@@ -478,9 +496,59 @@ class Desktop(MainWin, COMObject):
 
         self.watcher.start_watching(DESKTOP_DIR)
 
-        if HAS_RECYCLEBIN:
-            # Without shell notifications we have to poll
-            mainwin.create_timer(self.update_recyclebin, DESKTOP_RECYCLEBIN_POLL_PERIOD_MS)
+        if HAS_DESKTOP_RECYCLEBIN:
+
+            if HAS_EXPLORER_DESKTOP:
+                WM_SHELLNOTIFY_BIN = user32.RegisterWindowMessageW("WM_SHELLNOTIFY_BIN")
+
+                def _on_WM_SHELLNOTIFY_BIN(hwnd, wparam, lparam):
+                    self.update_recyclebin()
+
+                self.register_message_callback(WM_SHELLNOTIFY_BIN, _on_WM_SHELLNOTIFY_BIN)
+
+                shcn = SHChangeNotifyEntry(self.pidl_recyclebin, FALSE)
+                reg_id = shell32.SHChangeNotifyRegister(
+                    self.hwnd,
+                    SHCNRF_ShellLevel,
+                    SHCNE_UPDATEIMAGE,
+                	WM_SHELLNOTIFY_BIN,
+                	1,
+                	byref(shcn)
+                )
+
+            else:
+                # In PE shell notifications via SHChangeNotifyRegister don't work, so we use
+                # FileSystemWatcherThreaded for all existing recycle bin folders instead
+                self.recyclebin_watchers = []
+                sys_drive = ord(os.environ['SystemDrive'][0])
+                for i in range(ord('C'), ord('Z') + 1):
+                    # Trying to watch the recyclebin of PE's SystemDrive (X) would result in BSOD
+                    if i == sys_drive:
+                        continue
+                    recyclebin_dir = f'{chr(i)}:\\$Recycle.Bin'
+                    if not os.path.isdir(recyclebin_dir):
+                        continue
+                    watcher = FileSystemWatcherThreaded()
+                    watcher.connect(EVENT_ITEM_MODIFIED, lambda *args: self.update_recyclebin())
+                    watcher.start_watching(recyclebin_dir)
+                    self.recyclebin_watchers.append(watcher)
+
+    ########################################
+    #
+    ########################################
+    def save_state(self):
+        icon_positions = {}
+        cnt = self.listview.send_message(LVM_GETITEMCOUNT, 0, 0)
+        pt = POINT()
+        lvi = LVITEMW()
+        lvi.mask = LVIF_TEXT
+        lvi.cchTextMax = MAX_PATH
+        lvi.pszText = cast(create_unicode_buffer(MAX_PATH), LPWSTR)
+        for i in range(cnt):
+            self.listview.send_message(LVM_GETITEMPOSITION, i, byref(pt))
+            self.listview.send_message(LVM_GETITEMTEXTW, i, byref(lvi))
+            icon_positions[lvi.pszText] = MAKELONG(pt.x, pt.y)
+        return icon_positions
 
     ########################################
     # IDropTarget
@@ -746,6 +814,10 @@ class Desktop(MainWin, COMObject):
             lvi.pszText = display_name
             lvi.iImage = idx_icon
             item_idx = self.listview.insert_item(lvi)
+
+            if display_name in self.icon_positions:
+                self.listview.send_message(LVM_SETITEMPOSITION, item_idx, self.icon_positions[display_name])
+
             item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
 
             self.desktop_item_map[item_id] = DesktopItem(
@@ -775,6 +847,10 @@ class Desktop(MainWin, COMObject):
             lvi.pszText = fn[:-4] if is_lnk else fn
             lvi.iImage = icon_idx
             item_idx = self.listview.insert_item(lvi)
+
+            if lvi.pszText in self.icon_positions:
+                self.listview.send_message(LVM_SETITEMPOSITION, item_idx, self.icon_positions[lvi.pszText])
+
             item_id = self.listview.send_message(LVM_MAPINDEXTOID, item_idx, 0)
 
             self.desktop_item_map[item_id] = DesktopItem(fn, ITEM_TYPE_FOLDER if is_dir else (ITEM_TYPE_LNK if is_lnk else ITEM_TYPE_FILE))
@@ -822,23 +898,23 @@ class Desktop(MainWin, COMObject):
 
         h_menu = user32.CreatePopupMenu()
 
-        context_menu = context_menu.QueryInterface(IContextMenu3)
+        context_menu3 = context_menu.QueryInterface(IContextMenu3)
 
         # Needed for filling submenus
         def _on_WM_INITMENUPOPUP(hwnd, wparam, lparam):
             if wparam != h_menu:
-                context_menu.HandleMenuMsg2(WM_INITMENUPOPUP, wparam, lparam, None)
+                context_menu3.HandleMenuMsg2(WM_INITMENUPOPUP, wparam, lparam, None)
             # If an application processes this message, it should return zero
             return 0
 
         self.register_message_callback(WM_INITMENUPOPUP, _on_WM_INITMENUPOPUP)
 
-        context_menu.QueryContextMenu(h_menu, 0, 0, 0x7FFF, CMF_EXPLORE | CMF_SYNCCASCADEMENU | CMF_ITEMMENU | CMF_CANRENAME)
+        context_menu3.QueryContextMenu(h_menu, 0, 0, 0x7FFF, CMF_EXPLORE | CMF_SYNCCASCADEMENU | CMF_ITEMMENU | CMF_CANRENAME)
 
         cmd_id = user32.TrackPopupMenuEx(h_menu, TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY, x, y, self.hwnd, 0)
 
         if cmd_id:
-            verb = get_verb(context_menu, cmd_id)
+            verb = get_verb(context_menu3, cmd_id)
 #            print(verb)
 
             if verb == 'rename':
@@ -852,9 +928,9 @@ class Desktop(MainWin, COMObject):
                 info.lpVerb = MAKEINTRESOURCEA(cmd_id)
                 info.fMask = CMIC_MASK_NOASYNC
                 info.nShow = SW_SHOWNORMAL
-                context_menu.InvokeCommand(byref(info))
+                context_menu3.InvokeCommand(byref(info))
 
-                if HAS_RECYCLEBIN and verb == 'delete':
+                if HAS_DESKTOP_RECYCLEBIN and verb == 'delete':
                     self.update_recyclebin()
 
         self.unregister_message_callback(WM_INITMENUPOPUP)
@@ -871,58 +947,75 @@ class Desktop(MainWin, COMObject):
         # your folder view window should be created as a child of hwndOwner
 
 #        self.ishellfolder_desktop.CreateViewObject(self.hwnd, byref(IShellView._iid_), byref(ishellview))
+
         self.ishellfolder_desktop_dir.CreateViewObject(self.hwnd, byref(IShellView._iid_), byref(ishellview))
 
         context_menu = (POINTER(IContextMenu))()
         ishellview.GetItemObject(SVGIO_BACKGROUND, IContextMenu._iid_, byref(context_menu))
 
-        context_menu = context_menu.QueryInterface(IContextMenu3)
+#        context_menu2 = context_menu.QueryInterface(IContextMenu2)
+        context_menu3 = context_menu.QueryInterface(IContextMenu3)
 
         h_menu = user32.CreatePopupMenu()
 
         # Needed for filling submenus
         def _on_WM_INITMENUPOPUP(hwnd, wparam, lparam):
             if wparam != h_menu:
-                context_menu.HandleMenuMsg2(WM_INITMENUPOPUP, wparam, lparam, None)
+                try:
+                    context_menu3.HandleMenuMsg2(WM_INITMENUPOPUP, wparam, lparam, None)
+                except:
+#                    context_menu2.HandleMenuMsg(WM_INITMENUPOPUP, wparam, lparam)
+                    pass
             # If an application processes this message, it should return zero
             return 0
 
         self.register_message_callback(WM_INITMENUPOPUP, _on_WM_INITMENUPOPUP)
 
-        context_menu.QueryContextMenu(h_menu, 0, 0, 0x7FFF, CMF_EXPLORE | CMF_SYNCCASCADEMENU | CMF_NODEFAULT | CMF_EXTENDEDVERBS)  #  | CMF_DISABLEDVERBS
+        context_menu3.QueryContextMenu(h_menu, 0, 0, 0x7FFF, CMF_EXPLORE | CMF_SYNCCASCADEMENU | CMF_NODEFAULT | CMF_EXTENDEDVERBS)  #  | CMF_DISABLEDVERBS
 
         update_background_context_menu(context_menu, h_menu)
 
         cmd_id = user32.TrackPopupMenuEx(h_menu, TPM_RETURNCMD, x, y, self.hwnd, 0)
 
         if cmd_id:
-            verb = get_verb(context_menu, cmd_id)
+            verb = get_verb(context_menu3, cmd_id)
 #            print(verb)
 
-            # For PE
+            # For PE only
             if verb == 'refresh':
                 self.action_refresh()
 
             elif verb == 'paste':
                 self.action_paste()
 
-            elif verb == 'cmd':
-                shell32.ShellExecuteW(self.hwnd, None, os.path.expandvars('%windir%\\System32\\cmd.exe'), None, DESKTOP_DIR, SW_SHOWNORMAL)
-
-            elif verb == 'powershell':
-                shell32.ShellExecuteW(self.hwnd, None, os.path.expandvars('%programs%\\PowerShell\\pwsh.exe'), None, DESKTOP_DIR, SW_SHOWNORMAL)
+#            elif verb == 'cmd':
+#                shell32.ShellExecuteW(self.hwnd, None, os.path.expandvars('%windir%\\System32\\cmd.exe'), None, DESKTOP_DIR, SW_SHOWNORMAL)
+#
+#            elif verb == 'powershell':
+#                shell32.ShellExecuteW(self.hwnd, None, os.path.expandvars('%programs%\\PowerShell\\pwsh.exe'), None, DESKTOP_DIR, SW_SHOWNORMAL)
 
             else:
                 if verb == 'NewFolder' or verb.startswith('.'):
                     self.last_new_timestamp = time.time()
                     self.last_mouse_pos = POINT(x, y)
 
-                info = CMINVOKECOMMANDINFO()
+#                info = CMINVOKECOMMANDINFO()
+#                info.hwnd = self.hwnd
+#                info.lpVerb = MAKEINTRESOURCEA(cmd_id)
+#                info.lpDirectory = DESKTOP_DIR.encode()
+#                info.fMask = CMIC_MASK_NOASYNC
+#                info.nShow = SW_SHOWNORMAL
+
+                info = CMINVOKECOMMANDINFOEX()
                 info.hwnd = self.hwnd
                 info.lpVerb = MAKEINTRESOURCEA(cmd_id)
-                info.fMask = CMIC_MASK_NOASYNC
+                info.lpVerbW = MAKEINTRESOURCEW(cmd_id)
+                info.lpDirectory = DESKTOP_DIR.encode()
+                info.lpDirectoryW = DESKTOP_DIR
+                info.fMask = CMIC_MASK_NOASYNC | CMIC_MASK_UNICODE
                 info.nShow = SW_SHOWNORMAL
-                context_menu.InvokeCommand(byref(info))
+
+                context_menu3.InvokeCommand(byref(info))
 
         self.unregister_message_callback(WM_INITMENUPOPUP)
         user32.DestroyMenu(h_menu)
@@ -1073,7 +1166,7 @@ class Desktop(MainWin, COMObject):
 
             i += 1
 
-        if HAS_RECYCLEBIN:
+        if HAS_DESKTOP_RECYCLEBIN:
             self.update_recyclebin()
 
     ########################################

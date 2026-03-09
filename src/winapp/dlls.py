@@ -156,6 +156,7 @@ kernel32.GetProcAddress.argtypes = (HMODULE, LPCSTR)
 #FARPROC
 kernel32.GetProcAddress.restype = HANDLE
 kernel32.GetProcessId.argytypes = (HANDLE,)
+kernel32.GetTickCount.restype = DWORD
 kernel32.GlobalAlloc.argtypes = (UINT, DWORD)
 kernel32.GlobalAlloc.restype = HGLOBAL
 kernel32.GlobalFree.argtypes =(HGLOBAL,)

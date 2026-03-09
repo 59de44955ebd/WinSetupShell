@@ -23,4 +23,7 @@
 
 	# Provide a debug console (toggle with F11)
 	#"DEBUG": True,
+
+	# If run inside normal Windows, use current user's actual desktop directory
+	#"USE_LOCAL_DESKTOP_DIR": True,
 }

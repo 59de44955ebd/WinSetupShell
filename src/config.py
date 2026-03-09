@@ -12,8 +12,9 @@ DESKTOP_BG_COLOR = 0x763B0A
 DESKTOP_TEXT_COLOR = 0xFFFFFF
 DESKTOP_HOT_ITEM_BORDER_COLOR = 0xD47800
 DESKTOP_SNAP_TO_GRID = True
-DESKTOP_RECYCLEBIN_POLL_PERIOD_MS = 3000
-DESKTOP_WALLPAPER = '%USERPROFILE%\\AppData\\wallpaper.jpg'
+
+DESKTOP_WALLPAPER = os.path.join(APPDATA_DIR, 'wallpaper.jpg')
+
 DESKTOP_ITEMS = [
     'ThisPC',
     'Documents',
@@ -37,22 +38,27 @@ TASKBAR_ICON_SIZE = 16
 TASK_CLASSES_IGNORE = ('Windows.UI.Core.CoreWindow', 'Dwm')
 TASK_ICON_TIMEOUT_MS = 100
 
+TASKBAR_FONT = ("Segoe UI Semibold", 9)
+
+TRAY_TRACKBAR_WIDTH = 240
+TRAY_TRACKBAR_HEIGHT = 30
+
 CLOCK_WIDTH = 44
-CLOCK_HEIGHT = 14
-CLOCK_FONTSIZE = 9
+CLOCK_FONT = 'Segoe UI', 9
 CLOCK_FORMAT = '%H:%M'
 CLOCK_UPDATE_PERIOD_MS = 5000
 
-QUICK_PADDING = 6
+QUICK_PADDING = 10
 TASK_PADDING = 12
 TRAY_PADDING = 12
-SHOW_DESKTOP_PADDING = 10
 
 CMD = '%windir%\\System32\\cmd.exe'
 FILE_MANAGER = '%programs%\\Explorer++\\Explorer++.exe'
 POWERSHELL = '%programs%\\PowerShell\\pwsh.exe'
 SEARCH_APP = '%programs%\\SwiftSearch\\SwiftSearch64.exe'
 TASK_MANAGER = '%windir%\\System32\\taskmgr.exe'
+
+USE_LOCAL_DESKTOP_DIR = False
 
 # Overwrite variables with values from config.pson
 try:

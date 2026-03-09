@@ -1,10 +1,10 @@
 ﻿from ctypes import byref, Structure, sizeof, create_string_buffer
 from ctypes.wintypes import *
 
+from .common_structs import SHFILEINFOW
 from .const import *
-from .dlls import gdi32, shell32, user32, comctl32
+from .dlls import *
 from .window import MAKEINTRESOURCEW
-#from .shellapi import SHFILEINFOW
 
 # Bitmap Functions
 # https://learn.microsoft.com/en-us/windows/win32/gdi/bitmap-functions
@@ -78,15 +78,6 @@ class ICONINFO(Structure):
         ("hbmColor", HBITMAP)
     ]
 
-class SHFILEINFOW(Structure):
-    _fields_ = [
-        ("hIcon",         HICON),
-        ("iIcon",         INT),
-        ("dwAttributes",  DWORD),
-        ("szDisplayName", WCHAR * MAX_PATH),
-        ("szTypeName",    WCHAR * 80),
-    ]
-
 ########################################
 #
 ########################################
@@ -128,8 +119,10 @@ def hicon_to_hbitmap(h_icon, bitmap_size=16):
     h_bitmap = gdi32.CreateCompatibleBitmap(hdc, bitmap_size, bitmap_size)
     hdc_dest = gdi32.CreateCompatibleDC(hdc)
     gdi32.SelectObject(hdc_dest, h_bitmap)
+
     user32.DrawIconEx(hdc_dest, 0, 0, h_icon, bitmap_size, bitmap_size, 0, None, DI_NORMAL)
     h_bitmap_copy = user32.CopyImage(h_bitmap, IMAGE_BITMAP, bitmap_size, bitmap_size, LR_CREATEDIBSECTION)
+
     # Clean up
     gdi32.DeleteDC(hdc_dest)
     user32.ReleaseDC(None, hdc)
@@ -137,19 +130,51 @@ def hicon_to_hbitmap(h_icon, bitmap_size=16):
     return h_bitmap_copy
 
 ########################################
-#
+# ico_idx: either index (pos) or id (neg)
 ########################################
-def get_file_hbitmap(filename, bitmap_size):
-    h_icon = get_file_hicon(filename, bitmap_size)
-    h_bitmap = hicon_to_hbitmap(h_icon, bitmap_size)
+def get_file_hbitmap(filename, ico_size, ico_idx = 0):
+
+    if ico_idx == -1:
+        ico_idx = 0
+
+    if ico_idx != 0 or filename.lower().endswith('.dll'):
+        h_icon = HICON()
+
+        # Supports .exe, .dll and .ico only.
+        # Problem: if there is no 32-bit icon (like e.g. in PENetwork.exe), an icon
+        # without alpha channel is returned. In the .bmp this then results in a black
+        # alpha channel. Full Windows can handle this and shows the menu icon anyway,
+        # but Windows PE does not.
+        # Therefor we only use this for either .dlls or .exe with non default icon index.
+        ok = shell32.ExtractIconExW(
+            filename,
+            # Zero-based index. If this value is a negative number and either phiconLarge or phiconSmall is not NULL,
+            # extracts icon whose resource identifier is equal to the absolute value.
+            ico_idx,
+            None,
+            byref(h_icon),
+            1
+        )
+
+    else:
+        h_icon = get_file_hicon(filename, ico_size)
+
+    h_bitmap = hicon_to_hbitmap(h_icon, ico_size)
     user32.DestroyIcon(h_icon)
+
     return h_bitmap
 
 ########################################
-#
+# ico_id: id, not index
 ########################################
-def get_shell_icon_as_hbitmap(hlib_shell, icon_id, ico_size):
-    h_icon = user32.LoadImageW(hlib_shell, MAKEINTRESOURCEW(icon_id), IMAGE_ICON, ico_size, ico_size, 0)
+def get_shell_icon_as_hbitmap(hlib_shell, ico_id, ico_size):
+    h_icon = user32.LoadImageW(
+        hlib_shell,
+        f'#{-ico_id}' if ico_id < 0 else MAKEINTRESOURCEW(ico_id),
+        IMAGE_ICON,
+        ico_size, ico_size,
+        0
+    )
     h_bitmap = hicon_to_hbitmap(h_icon, ico_size)
     user32.DestroyIcon(h_icon)
     return h_bitmap

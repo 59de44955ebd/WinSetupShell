@@ -1,11 +1,14 @@
 import os
+import time
 
 from ctypes import *
 from ctypes.wintypes import *
 
 from winapp.const import *
-from winapp.dlls import advapi32, kernel32, user32
-from const import HMOD_RESOURCES, HMOD_SHELL32
+from winapp.dlls import advapi32, kernel32, shell32, user32
+from winapp.types import WNDENUMPROC
+
+from const import HMOD_RESOURCES, HMOD_SHELL32, HAS_EXPLORER
 
 IS_CONSOLE = kernel32.GetStdHandle(STD_OUTPUT_HANDLE) != 0
 
@@ -221,23 +224,43 @@ def get_locales():
     if not lcid_system:
         return None, None
 
-    command = os.path.expandvars(f'%windir%\\system32\\Wpeutil.exe ListKeyboardLayouts {lcid_system}')
-    out, err, exit_code = run_command(command)
-    if exit_code != 0:
-        return None, None
-
-    out = out.decode('oem')
     locales = {}
-    buf = create_unicode_buffer(85)
-    for line in out.split('\n'):
-        if line.startswith('ID:'):
-            lcid = eval('0x' + line.rstrip()[-8:])
-            if lcid > 0xFFFF:
-                continue
-            res = kernel32.LCIDToLocaleName(lcid, buf, 85, 0)
-            if res == 0:
-                continue
-            locales[lcid] = buf.value
+
+    if HAS_EXPLORER:
+
+        hkey = HKEY()
+        if advapi32.RegOpenKeyW(HKEY_LOCAL_MACHINE, 'SYSTEM\\CurrentControlSet\\Control\\Keyboard Layouts' , byref(hkey)) == ERROR_SUCCESS:
+            buf_lcid = create_unicode_buffer(10)
+            buf = create_unicode_buffer(85)
+            i = 0
+            while advapi32.RegEnumKeyW(hkey, i, buf_lcid, 10) == ERROR_SUCCESS:
+                i += 1
+                lcid = eval('0x' + buf_lcid.value)
+                if lcid > 0xFFFF:
+                    continue
+                res = kernel32.LCIDToLocaleName(lcid, buf, 85, 0)
+                locales[lcid] = buf.value
+            advapi32.RegCloseKey(hkey)
+
+    else:
+
+        command = os.path.expandvars(f'%windir%\\system32\\Wpeutil.exe ListKeyboardLayouts {lcid_system}')
+        out, err, exit_code = run_command(command)
+        if exit_code != 0:
+            return None, None
+
+        out = out.decode('oem')
+
+        buf = create_unicode_buffer(85)
+        for line in out.split('\n'):
+            if line.startswith('ID:'):
+                lcid = eval('0x' + line.rstrip()[-8:])
+                if lcid > 0xFFFF:
+                    continue
+                res = kernel32.LCIDToLocaleName(lcid, buf, 85, 0)
+                if res == 0:
+                    continue
+                locales[lcid] = buf.value
 
     return eval(lcid_system), dict(sorted(locales.items(), key=lambda item: item[1]))
 
@@ -248,3 +271,49 @@ def get_string(res_id, local = False):
     buf = create_unicode_buffer(80)
     user32.LoadStringW(HMOD_RESOURCES if local else HMOD_SHELL32, res_id, buf, 80)
     return buf.value
+
+########################################
+#
+########################################
+def exec_controlled(exe, right, bottom, window_class=None, params=None):
+    si = SHELLEXECUTEINFOW()
+    si.lpFile = exe
+    si.lpParameters = params
+    si.nShow = SW_HIDE
+    si.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_WAITFORINPUTIDLE
+    if not shell32.ShellExecuteExW(byref(si)):
+        return
+
+    pid_new = kernel32.GetProcessId(si.hProcess)
+
+    pid = DWORD()
+    rc = RECT()
+    buf_file = create_unicode_buffer(MAX_PATH)
+
+    class ctx():
+        found = False
+
+    def _enumerate_windows(hwnd, lparam):
+        user32.GetWindowThreadProcessId(hwnd, byref(pid))
+        if pid.value == pid_new:
+            if window_class:
+                user32.GetClassNameW(hwnd, buf_file, MAX_PATH)
+                if buf_file.value != window_class:
+                    return 1
+                user32.GetWindowRect(hwnd, byref(rc))
+                user32.SetWindowPos(
+                    hwnd,
+                    0,
+                    right - (rc.right - rc.left), bottom - (rc.bottom - rc.top),
+                    0, 0,
+                    SWP_NOSIZE | SWP_SHOWWINDOW
+                )
+                ctx.found = True
+                return 0
+        return 1
+
+    for i in range(5):
+        time.sleep(.1)
+        user32.EnumWindows(WNDENUMPROC(_enumerate_windows), 0)
+        if ctx.found:
+            break

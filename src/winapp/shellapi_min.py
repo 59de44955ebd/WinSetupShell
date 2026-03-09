@@ -1,6 +1,7 @@
 ﻿from ctypes import *
 from ctypes.wintypes import *
 
+from .common_structs import SHFILEINFOW
 from .comtypes import GUID, HRESULT, COMMETHOD, IUnknown, BSTR, CreateObject
 from .comtypes.automation import IDispatch  # for LNK support only
 from .const import *
@@ -42,6 +43,28 @@ class CMINVOKECOMMANDINFO(Structure):
         ('nShow',             INT),
         ('dwHotKey',          DWORD),
         ('hIcon',             HANDLE),
+    ]
+
+class CMINVOKECOMMANDINFOEX(Structure):
+    def __init__(self, *args, **kwargs):
+        super(CMINVOKECOMMANDINFOEX, self).__init__(*args, **kwargs)
+        self.cbSize = sizeof(self)
+    _fields_ = [
+        ('cbSize',            DWORD),
+        ('fMask',             DWORD),
+        ('hwnd',              HWND),
+        ('lpVerb',            LPCSTR),
+        ('lpParameters',      LPCSTR),
+        ('lpDirectory',       LPCSTR),
+        ('nShow',             INT),
+        ('dwHotKey',          DWORD),
+        ('hIcon',             HANDLE),
+        ('lpTitle',           LPCSTR),
+        ('lpVerbW',           LPCWSTR),
+        ('lpParametersW',     LPCWSTR),
+        ('lpDirectoryW',      LPCWSTR),
+        ('lpTitleW',          LPCWSTR),
+        ('ptInvoke',          POINT),
     ]
 
 #typedef struct _STRRET {
@@ -151,16 +174,6 @@ class STGMEDIUM(Structure):
         ("tymed",           DWORD),
         ("DUMMYUNIONNAME",  LPVOID),
         ("pUnkForRelease",  POINTER(IUnknown)),
-    ]
-
-# https://learn.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-shfileinfow
-class SHFILEINFOW(Structure):
-    _fields_ = [
-        ("hIcon",         HICON),
-        ("iIcon",         INT),
-        ("dwAttributes",  DWORD),
-        ("szDisplayName", WCHAR * MAX_PATH),
-        ("szTypeName",    WCHAR * 80),
     ]
 
 class SHFILEOPSTRUCTW(Structure):
@@ -1075,3 +1088,9 @@ def get_lnk_target_path(lnk_path):
 
 IID_IImageList = GUID('{46EB5926-582E-4017-9FDF-E8998DAA0950}')
 #BHID_SFUIObject = GUID('{3981E225-F559-11D3-8E3A-00C04F6837D5}')
+
+class SHChangeNotifyEntry(Structure):
+    _fields_ = [
+        ("pidl", PIDL),
+        ("fRecursive",  BOOL),
+    ]

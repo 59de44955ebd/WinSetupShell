@@ -18,6 +18,17 @@ IDI_BATTERY_LIGHT ICON "icon-battery-light.ico"
 IDI_KEYBOARD_DARK ICON "icon-keyboard-dark.ico"
 IDI_KEYBOARD_LIGHT ICON "icon-keyboard-light.ico"
 
+IDI_SOUND_DARK ICON "icon-sound-dark.ico"
+IDI_SOUND_LIGHT ICON "icon-sound-light.ico"
+
+IDI_BRIGHTNESS_DARK ICON "icon-brightness-dark.ico"
+IDI_BRIGHTNESS_LIGHT ICON "icon-brightness-light.ico"
+
+IDI_SLEEP_OFF_DARK ICON "icon-sleep-off-dark.ico"
+IDI_SLEEP_ON_DARK ICON "icon-sleep-on-dark.ico"
+IDI_SLEEP_OFF_LIGHT ICON "icon-sleep-off-light.ico"
+IDI_SLEEP_ON_LIGHT ICON "icon-sleep-on-light.ico"
+
 1 VERSIONINFO
 FILEVERSION 0,15,0,0
 PRODUCTVERSION 0,15,0,0
@@ -58,6 +69,7 @@ POPUP_MENU_START_MENU_ITEM MENU
 BEGIN
   POPUP "Popup"
   BEGIN
+    MENUITEM "Run as Administrator",IDM_RUN_ELEVATED
     MENUITEM "Open Explorer++ here",IDM_OPEN_LOCATION
     MENUITEM "Open CMD here",IDM_OPEN_CMD
     MENUITEM "Open PowerShell here",IDM_OPEN_POWERSHELL
@@ -74,11 +86,15 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-  IDS_SAFELY_REMOVE_HARDWARE "Safely remove hardware"
+  IDS_SAFELY_REMOVE_HARDWARE "Safely remove USB drives"
   IDS_BATTERY_STATUS "Battery status"
   IDS_BATTERY_STATUS_FMT "Battery status: {}%"
   IDS_BATTERY_TIME_REMAINING_FMT "\n({} hr {} min remaining)"
   IDS_NETWORK_OFFLINE "Network status: offline"
+  IDS_VOLUME "Master Volume"
+  IDS_BRIGHTNESS "Monitor Brightness"
+  IDS_SLEEP_ALLOWED "Sleep allowed"
+  IDS_SLEEP_FORBIDDEN "Sleep prevented"
 END
 
 1 ACCELERATORS

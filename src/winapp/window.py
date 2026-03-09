@@ -4,7 +4,7 @@ from ctypes.wintypes import *
 from .const import *
 from .types import *
 from .dlls import *
-from .controls.common import *
+#from .controls.common import *
 from .themes import *
 
 hdc = user32.GetDC(None)

@@ -6,7 +6,7 @@ from ctypes.wintypes import *
 from ..const import *
 from ..window import *
 from ..dlls import user32
-from .common import NMHDR
+from ..common_structs import NMHDR
 
 class TOOLINFOW(Structure):
     def __init__(self, *args, **kwargs):
@@ -45,22 +45,18 @@ class Tooltips(Window):
 
     def __init__(
         self,
-        parent_window=None,
-        style=WS_POPUP | TTS_ALWAYSTIP, #WS_POPUP | TTS_ALWAYSTIP, # | TTS_NOANIMATE | TTS_NOFADE, # | TTS_BALLOON,
-        ex_style=WS_EX_TOPMOST,
-        left=CW_USEDEFAULT, top=CW_USEDEFAULT, width=CW_USEDEFAULT, height=CW_USEDEFAULT, window_title=None
+        parent_window = None,
+        style = WS_POPUP | TTS_ALWAYSTIP, #WS_POPUP | TTS_ALWAYSTIP, # | TTS_NOANIMATE | TTS_NOFADE, # | TTS_BALLOON,
+        ex_style = WS_EX_TOPMOST,
+        left = CW_USEDEFAULT, top = CW_USEDEFAULT, width = CW_USEDEFAULT, height = CW_USEDEFAULT, window_title = None
     ):
-
         super().__init__(
             WC_TOOLTIPS,
-            style=style,
-            ex_style=ex_style,
-            left=left,
-            top=top,
-            width=width,
-            height=height,
-            window_title=window_title,
-            parent_window=parent_window
+            style = style,
+            ex_style = ex_style,
+            left = left, top = top, width = width, height = height,
+            window_title = window_title,
+            parent_window = parent_window
         )
 
     ########################################

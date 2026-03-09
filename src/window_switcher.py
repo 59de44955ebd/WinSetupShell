@@ -149,16 +149,7 @@ class WindowSwitcher(MainWin):
 
         tb_buttons = (TBBUTTON * self.num_windows)()
         for i in range(self.num_windows):
-            win = self.windows[i]
-            tb_buttons[i] = TBBUTTON(
-                win[1],
-                i,
-                TBSTATE_ENABLED,
-                BTNS_BUTTON,
-                (BYTE * 6)(),
-                0,
-                win[2]
-            )
+            tb_buttons[i] = TBBUTTON(self.windows[i][1], i, self.windows[i][2])
 
         self.toolbar.send_message(TB_ADDBUTTONS, self.num_windows, tb_buttons)
         self.toolbar.send_message(TB_SETSTATE, self.checked_index, TBSTATE_ENABLED | TBSTATE_CHECKED)

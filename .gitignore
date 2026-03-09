@@ -14,3 +14,4 @@ vmware/TinyWin11_English.vmdk
 *.vhd
 *.spec
 _backup.rar
+desktop_state_*
