@@ -95,25 +95,30 @@ The clock in the lower right corner shows the current time without seconds, its 
 
 - [7-Zip](https://www.7-zip.org/)
 - [AgentRansack](https://www.mythicsoft.com/agentransack/)
+- [AOMEI Partition Assistant](https://www.aomei.de/partition-manager/)
 - [BootIce](https://www.majorgeeks.com/files/details/bootice_64_bit.html)
 - [Check Disk GUI](https://alternativeto.net/software/chkdsk-gui/about/)
 - [Classic Calulator](https://win7games.com/#calc)
 - [CPU-Z](https://www.cpuid.com/softwares/cpu-z.html)
 - [Crystal Disk Info](https://crystalmark.info/en/software/crystaldiskinfo/)
 - [Defraggler](https://www.ccleaner.com/defraggler)
+- [Disk2vhd](https://learn.microsoft.com/en-us/sysinternals/downloads/disk2vhd)
 - [DiskGenius](https://www.diskgenius.com/)
+- [Dism++](https://github.com/Chuyu-Team/Dism-Multi-language)
 - [DMDE](https://dmde.com/)
 - [Drive Snapshot](http://www.drivesnapshot.de/en/)
+- [Drive Letter Changer](https://www.sordum.org/8501/drive-letter-changer-v1-4/)
 - [EasyUEFI](https://www.easyuefi.com/) (Trial version)
 - [Explorer++](https://explorerplusplus.com/)
 - [Fido](https://github.com/pbatard/Fido) (PowerShell script for downloading Windows ISOs from microsoft.com)
 - [FidoArch](https://github.com/59de44955ebd/FidoArch) (Fido clone for downloading Windows ISOs from archive.org)
 - [FileZilla](https://filezilla-project.org/)
 - [GSmartControl](https://gsmartcontrol.shaduri.dev/)
+- [Hasleo Backup Suite](https://www.easyuefi.com/backup-software/backup-suite-free.html)
 - [HWiNFO](https://www.hwinfo.com/download/)
 - [HxD](https://mh-nexus.de/de/hxd/)
 - [IrfanView](https://www.irfanview.com/)
-- [Macrium Reflect](https://www.macrium.com/reflectfree) (Trial version)
+- [Macrium Reflect + Macrium ReDeploy](https://www.macrium.com/reflectfree) (Trial version)
 - [MiniTool Partition Wizard](https://www.minitool.com/partition-manager/)
 - [NirSoft (suite)](https://www.nirsoft.net/)
 - [Notepad++](https://notepad-plus-plus.org/)
@@ -135,8 +140,10 @@ The clock in the lower right corner shows the current time without seconds, its 
 - [Total Commander](https://www.ghisler.com/index.htm) (with plugin [DiskInternals Reader](https://www.diskinternals.com/reader-for-tc/), which allows to explore Linux and Mac partitions and disk images)
 - [UltraSearch](https://www.jam-software.com/ultrasearch)
 - [VeraCrypt](https://veracrypt.io/en/Home.html) (TrueCrypt fork and successor)
+- [Vhd2disk](https://github.com/wooxo/Vhd2Disk)
 - [VhdManager](https://www.sordum.org/8705/simple-vhd-manager-v1-5/)
 - [Windows Login Unlocker](https://archive.org/details/windows.-login.-unlocker.-wlu.v-2.1.-pe-10.x-64_202408)
+- [WinSnap](https://www.ntwind.com/software/winsnap.html)
 - [WordPad](https://en.wikipedia.org/wiki/WordPad) (classic)
 
 ## Notes
@@ -149,7 +156,7 @@ The clock in the lower right corner shows the current time without seconds, its 
 
 - There is no UAC, you are always user `SYSTEM` with elevated access.
 
-- No sound/video/multimedia (IMHO pointless for a system repair live system)
+- No sound/video/multimedia (in my opinion pointless for a system repair live system)
 
 - No 32-bit support, only 64-bit binaries are supported.
 
